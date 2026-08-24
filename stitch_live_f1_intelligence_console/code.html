@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RACE COMMAND CENTER - Live F1 Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#1e2023",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "critical": "#ff453a",
+                        "tyre-hard": "#d0d0d0",
+                        "background": "#0c0e11",
+                        "on-secondary-fixed": "#001c37",
+                        "border-subtle": "#1e232b",
+                        "primary-container": "#e10600",
+                        "inverse-on-surface": "#2f3034",
+                        "outline": "#af8781",
+                        "surface-variant": "#333538",
+                        "on-primary-fixed": "#410100",
+                        "on-tertiary-fixed-variant": "#650db1",
+                        "on-secondary": "#003259",
+                        "on-primary": "#680200",
+                        "primary": "#ffb4a8",
+                        "surface-container-highest": "#333538",
+                        "surface-container-high": "#282a2d",
+                        "on-secondary-fixed-variant": "#00497e",
+                        "on-surface-variant": "#e9bcb5",
+                        "warning": "#ffb340",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#a0caff",
+                        "surface-bright": "#37393d",
+                        "sector-purple": "#b26bff",
+                        "surface-elevated": "#171b21",
+                        "surface-container-low": "#1a1c1f",
+                        "outline-variant": "#5e3f3a",
+                        "secondary": "#a0caff",
+                        "secondary-fixed": "#d2e4ff",
+                        "on-tertiary-container": "#fcf1ff",
+                        "text-secondary": "#9aa3af",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "tertiary-container": "#914add",
+                        "tertiary-fixed-dim": "#dbb8ff",
+                        "on-primary-fixed-variant": "#930300",
+                        "inverse-primary": "#c00500",
+                        "on-surface": "#e2e2e6",
+                        "tertiary-fixed": "#efdbff",
+                        "surface-dim": "#121317",
+                        "surface-tint": "#ffb4a8",
+                        "tyre-inter": "#43b02a",
+                        "surface-hover": "#1c2128",
+                        "border-strong": "#2a313b",
+                        "tyre-soft": "#ee3f3d",
+                        "sector-yellow": "#ffd60a",
+                        "primary-fixed": "#ffdad4",
+                        "tertiary": "#dbb8ff",
+                        "inverse-surface": "#e2e2e6",
+                        "on-secondary-container": "#c7deff",
+                        "text-primary": "#e2e6eb",
+                        "surface-container-lowest": "#0c0e11",
+                        "tyre-wet": "#3a7bd5",
+                        "sector-green": "#30d158",
+                        "text-muted": "#5c6570",
+                        "on-tertiary": "#480082",
+                        "on-primary-container": "#fff2f0",
+                        "secondary-container": "#0063a9",
+                        "tyre-medium": "#f5d563",
+                        "on-tertiary-fixed": "#2b0052",
+                        "on-background": "#e2e2e6",
+                        "error": "#ffb4ab",
+                        "surface": "#1a1c1f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0rem",
+                        "lg": "0rem",
+                        "xl": "0rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "24px",
+                        "lg": "16px",
+                        "unit": "4px",
+                        "margin-screen": "0px",
+                        "xs": "4px",
+                        "md": "12px",
+                        "gutter": "1px"
+                    },
+                    "fontFamily": {
+                        "headline-panel": ["Inter"],
+                        "body-dense": ["Inter"],
+                        "timing-tabular": ["JetBrains Mono"],
+                        "timing-tabular-lg": ["JetBrains Mono"],
+                        "display-title": ["Inter"],
+                        "body-base": ["Inter"],
+                        "label-micro": ["Inter"],
+                        "badge-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-panel": ["11px", { "lineHeight": "16px", "letterSpacing": "0.18em", "fontWeight": "600" }],
+                        "body-dense": ["11px", { "lineHeight": "15px", "fontWeight": "400" }],
+                        "timing-tabular": ["12px", { "lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "timing-tabular-lg": ["17px", { "lineHeight": "20px", "fontWeight": "700" }],
+                        "display-title": ["20px", { "lineHeight": "24px", "letterSpacing": "0.12em", "fontWeight": "700" }],
+                        "body-base": ["13px", { "lineHeight": "19px", "fontWeight": "400" }],
+                        "label-micro": ["9px", { "lineHeight": "12px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "badge-caps": ["10px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0c0e11; color: #e2e2e6; overflow: hidden; height: 100vh; margin: 0; }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: minmax(460px, 1.4fr) 2fr 1.2fr;
+            grid-template-rows: 1fr;
+            gap: 1px;
+            height: calc(100vh - 40px);
+            padding: 0;
+            background-color: #1e232b;
+        }
+        .panel {
+            background-color: #1a1c1f;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            border-bottom: 1px solid #1e232b;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #0c0e11;
+        }
+        .telemetry-grid {
+            background-color: #0c0e11;
+        }
+        .terminal-input::placeholder { color: #5c6570; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333538; border-radius: 0; }
+        .table-grid {
+            display: grid;
+            grid-template-columns: 24px 20px 40px 30px 45px 45px 30px 55px 55px 24px 24px 45px;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+<!-- TopAppBar -->
+<header class="bg-surface-container-lowest text-primary-fixed-dim border-b border-border-subtle flex justify-between items-center h-[40px] px-4 w-full z-50">
+<div class="flex items-center gap-4 w-full">
+<span class="font-display-title text-[16px] text-primary-container tracking-tighter uppercase font-bold">RACE COMMAND CENTER</span>
+<div class="flex items-center gap-3 ml-6 w-full text-[11px] font-timing-tabular text-text-muted">
+<span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-critical animate-pulse"></span><span class="text-critical font-bold">LIVE</span></span>
+<span>|</span> <span class="text-on-surface">ITALIAN GP</span>
+<span>|</span> <span>RACE</span>
+<span>|</span> <span>MONZA</span>
+<span>|</span> <span class="text-on-surface font-bold">LAP 48/53</span>
+<span>|</span> <span>AIR 24°C</span>
+<span>|</span> <span>TRK 38°C</span>
+<span>|</span> <span>DATA 0.4s</span>
+<span>|</span> <span class="text-sector-green">WS CONNECTED</span>
+<span>|</span> <span class="text-sector-green">AI READY</span>
+</div>
+</div>
+</header>
+<div class="flex h-[calc(100vh-40px)] bg-border-subtle">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest text-primary-fixed-dim border-r border-border-subtle flex flex-col h-full py-4 items-center w-[48px] z-40 shrink-0">
+<div class="flex flex-col items-center gap-6 mt-2 w-full">
+<div class="group flex flex-col items-center gap-1 w-full cursor-pointer bg-surface-container-high text-primary-fixed-dim border-l-2 border-primary-container py-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+</div>
+<div class="group flex flex-col items-center gap-1 w-full cursor-pointer text-text-muted hover:bg-surface-hover hover:text-on-surface py-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="insights">insights</span>
+</div>
+<div class="group flex flex-col items-center gap-1 w-full cursor-pointer text-text-muted hover:bg-surface-hover hover:text-on-surface py-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="map">map</span>
+</div>
+<div class="group flex flex-col items-center gap-1 w-full cursor-pointer text-text-muted hover:bg-surface-hover hover:text-on-surface py-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="strategy">strategy</span>
+</div>
+<div class="group flex flex-col items-center gap-1 w-full cursor-pointer text-text-muted hover:bg-surface-hover hover:text-on-surface py-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="terminal">terminal</span>
+</div>
+</div>
+<div class="mt-auto flex flex-col items-center gap-6 mb-2 w-full">
+<div class="group flex flex-col items-center gap-1 w-full cursor-pointer text-text-muted hover:bg-surface-hover hover:text-on-surface py-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning">warning</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Area Grid -->
+<main class="grid-layout flex-1 overflow-hidden w-full">
+<!-- Left Column: Timing Tower -->
+<section class="panel h-full">
+<header class="panel-header">
+<span class="font-headline-panel text-on-surface uppercase">LIVE TIMING</span>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[14px] text-text-muted cursor-pointer" data-icon="filter_list">filter_list</span>
+<span class="material-symbols-outlined text-[14px] text-text-muted cursor-pointer" data-icon="more_vert">more_vert</span>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto bg-surface-container-lowest">
+<!-- Table Header -->
+<div class="table-grid px-2 py-1.5 border-b border-border-subtle bg-surface-container-lowest font-label-micro text-[9px] text-text-secondary sticky top-0 z-10 uppercase">
+<div>POS</div>
+<div>Δ</div>
+<div>DRV</div>
+<div>TM</div>
+<div class="text-right">GAP</div>
+<div class="text-right">INT</div>
+<div>LAP</div>
+<div class="text-right">LAST</div>
+<div class="text-right">BEST</div>
+<div class="text-center">TY</div>
+<div class="text-right">AG</div>
+<div class="text-right">PACE</div>
+</div>
+<!-- Timing Rows -->
+<!-- Row 1 VER -->
+<div class="table-grid items-center px-2 py-1 border-b border-border-subtle hover:bg-surface-hover bg-surface-elevated font-timing-tabular text-[11px] h-[26px] border-l-2 border-l-primary-container">
+<div class="text-on-surface">1</div>
+<div class="text-text-muted text-[9px]">-</div>
+<div class="text-on-surface font-bold">VER</div>
+<div class="text-text-secondary text-[9px]">RBR</div>
+<div class="text-right text-text-muted text-[10px]">LEADER</div>
+<div class="text-right text-text-muted text-[10px]">-</div>
+<div class="text-text-secondary">48</div>
+<div class="text-right text-on-surface">1:24.312</div>
+<div class="text-right text-text-secondary">1:23.901</div>
+<div class="flex justify-center"><span class="h-3.5 w-3.5 rounded-full bg-tyre-hard text-[8px] text-background font-bold flex items-center justify-center">H</span></div>
+<div class="text-right text-text-secondary">24</div>
+<div class="text-right text-critical">-0.18</div>
+</div>
+<!-- Row 2 NOR -->
+<div class="table-grid items-center px-2 py-1 border-b border-border-subtle hover:bg-surface-hover font-timing-tabular text-[11px] h-[26px]">
+<div class="text-on-surface">2</div>
+<div class="text-sector-green text-[9px]">▲1</div>
+<div class="text-on-surface font-bold">NOR</div>
+<div class="text-text-secondary text-[9px]">MCL</div>
+<div class="text-right text-on-surface">+1.820</div>
+<div class="text-right text-text-secondary">+1.820</div>
+<div class="text-text-secondary">48</div>
+<div class="text-right text-sector-green">1:24.132</div>
+<div class="text-right text-sector-green">1:23.714</div>
+<div class="flex justify-center"><span class="h-3.5 w-3.5 rounded-full bg-tyre-medium text-[8px] text-background font-bold flex items-center justify-center">M</span></div>
+<div class="text-right text-text-secondary">18</div>
+<div class="text-right text-sector-green">+0.42</div>
+</div>
+<!-- Row 3 PIA -->
+<div class="table-grid items-center px-2 py-1 border-b border-border-subtle hover:bg-surface-hover font-timing-tabular text-[11px] h-[26px]">
+<div class="text-on-surface">3</div>
+<div class="text-critical text-[9px]">▼1</div>
+<div class="text-on-surface font-bold">PIA</div>
+<div class="text-text-secondary text-[9px]">MCL</div>
+<div class="text-right text-text-secondary">+8.401</div>
+<div class="text-right text-text-secondary">+6.581</div>
+<div class="text-text-secondary">48</div>
+<div class="text-right text-on-surface">1:24.550</div>
+<div class="text-right text-text-secondary">1:24.112</div>
+<div class="flex justify-center"><span class="h-3.5 w-3.5 rounded-full bg-tyre-hard text-[8px] text-background font-bold flex items-center justify-center">H</span></div>
+<div class="text-right text-text-secondary">26</div>
+<div class="text-right text-text-secondary">-0.05</div>
+</div>
+<!-- Row 4 SAI -->
+<div class="table-grid items-center px-2 py-1 border-b border-border-subtle hover:bg-surface-hover font-timing-tabular text-[11px] h-[26px]">
+<div class="text-on-surface">4</div>
+<div class="text-text-muted text-[9px]">-</div>
+<div class="text-on-surface font-bold">SAI</div>
+<div class="text-text-secondary text-[9px]">FER</div>
+<div class="text-right text-text-secondary">+12.105</div>
+<div class="text-right text-text-secondary">+3.704</div>
+<div class="text-text-secondary">48</div>
+<div class="text-right text-on-surface">1:24.710</div>
+<div class="text-right text-text-secondary">1:24.200</div>
+<div class="flex justify-center"><span class="h-3.5 w-3.5 rounded-full bg-tyre-hard text-[8px] text-background font-bold flex items-center justify-center">H</span></div>
+<div class="text-right text-text-secondary">25</div>
+<div class="text-right text-text-secondary">+0.10</div>
+</div>
+<!-- More rows would go here -->
+</div>
+</section>
+<!-- Center Column: Main Workspace -->
+<div class="flex flex-col gap-[1px] h-full">
+<!-- Top Half: Circuit & Radar -->
+<div class="flex gap-[1px] h-[45%]">
+<!-- Live Circuit -->
+<section class="panel flex-[1.5] relative">
+<header class="panel-header absolute top-0 w-full z-10 bg-transparent border-none">
+<span class="font-headline-panel text-on-surface uppercase drop-shadow-md">TRACK MAP // MONZA</span>
+</header>
+<div class="flex-1 bg-surface-container-lowest relative overflow-hidden flex items-center justify-center" data-alt="A highly detailed vector-style top-down track map of the Monza Formula 1 circuit." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuArhR309LKP-uqdR7ZjlI6ghTVuyhLsSKpaTX9p8x8WmiAZhl66hvmt01BegUogVUydFoL9GYs_9iOj_TomAl9ZPS6VMgkVPNjMXx9S8qbm5Y87XFntKcK9D4vigR3PRaAPCb0bSTyv15XVszQrMdwMVeSu4nAl5BJYBJOugS2zlRHdTao-ZdbU5UGGOYubBgaxpBas75rDxjCCJkvWhCil7nZLdii7tx7xtCDEJjvvQEwPxylRq2rEnw'); background-size: cover; background-position: center;">
+<div class="absolute inset-0 bg-background/40"></div>
+<div class="absolute top-[35%] right-[25%] flex flex-col items-center">
+<div class="w-20 h-20 border border-primary-container rounded-full animate-ping absolute opacity-40"></div>
+<div class="w-20 h-20 border-2 border-primary-container rounded-full absolute"></div>
+<div class="flex gap-1 bg-surface-elevated border border-border-subtle px-1.5 py-0.5 rounded text-[10px] font-timing-tabular z-10 mt-[-24px] shadow-lg">
+<span class="text-on-surface">VER</span>
+<span class="text-primary-container">NOR</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Battle Radar -->
+<section class="panel flex-1">
+<header class="panel-header">
+<span class="font-headline-panel text-on-surface uppercase flex items-center gap-2">
+<span class="h-1.5 w-1.5 rounded-full bg-critical animate-pulse"></span> BATTLE RADAR
+                            </span>
+</header>
+<div class="flex-1 bg-surface p-4 flex flex-col justify-between">
+<div class="flex justify-between items-center">
+<div class="flex flex-col">
+<span class="font-label-micro text-text-secondary uppercase">Target</span>
+<span class="font-display-title text-[36px] font-bold text-on-surface leading-none mt-1">VER</span>
+<span class="font-label-micro text-text-muted mt-2">P1 • H (24)</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-label-micro text-text-secondary uppercase mb-2">Gap</span>
+<div class="bg-surface-elevated border border-border-strong px-4 py-1.5 rounded">
+<span class="font-timing-tabular-lg text-[22px] text-primary-container font-bold">1.82s</span>
+</div>
+<span class="font-timing-tabular text-[11px] text-sector-green mt-2">▼ -0.18s/lap</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-micro text-text-secondary uppercase">Attacker</span>
+<span class="font-display-title text-[36px] font-bold text-on-surface leading-none mt-1">NOR</span>
+<span class="font-label-micro text-text-muted mt-2">P2 • M (18)</span>
+</div>
+</div>
+<div class="mt-4 flex-1 flex flex-col justify-end relative">
+<div class="flex items-end justify-between px-4 pb-2 border-b border-border-subtle border-dashed h-20 relative">
+<div class="absolute bottom-0 w-full h-[1px] bg-border-subtle"></div>
+<div class="w-2 h-10 bg-surface-variant hover:bg-surface-bright cursor-pointer"></div>
+<div class="w-2 h-12 bg-surface-variant hover:bg-surface-bright cursor-pointer"></div>
+<div class="w-2 h-8 bg-surface-variant hover:bg-surface-bright cursor-pointer"></div>
+<div class="w-2 h-14 bg-surface-variant hover:bg-surface-bright cursor-pointer"></div>
+<div class="w-2 h-6 bg-primary-container/40 border border-primary-container cursor-pointer z-10"></div>
+</div>
+<div class="flex justify-between w-full font-label-micro text-[9px] text-text-muted mt-2 px-4">
+<span>L44</span><span>L45</span><span>L46</span><span>L47</span><span>L48</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Bottom Half: Telemetry Lab -->
+<section class="panel flex-1">
+<header class="panel-header">
+<div class="flex items-center gap-4">
+<span class="font-headline-panel text-on-surface uppercase">TELEMETRY LAB</span>
+<div class="flex gap-3">
+<span class="font-label-micro text-[10px] bg-surface-elevated px-2 py-0.5 rounded text-on-surface flex items-center gap-1.5"><div class="w-3 h-[2px] bg-white"></div> VER</span>
+<span class="font-label-micro text-[10px] bg-surface-elevated px-2 py-0.5 rounded text-on-surface flex items-center gap-1.5"><div class="w-3 h-[2px] bg-primary-container"></div> NOR</span>
+</div>
+</div>
+<div class="flex gap-2 font-label-micro text-[10px]">
+<button class="bg-surface-elevated border border-border-strong text-on-surface px-3 py-1 rounded">SPEED</button>
+<button class="bg-surface border border-border-subtle text-text-muted px-3 py-1 rounded">THROTTLE</button>
+<button class="bg-surface border border-border-subtle text-text-muted px-3 py-1 rounded">BRAKE</button>
+<button class="bg-surface border border-border-subtle text-text-muted px-3 py-1 rounded">GEAR</button>
+</div>
+</header>
+<div class="flex-1 telemetry-grid relative overflow-hidden flex flex-col p-2">
+<!-- Multi-lane layout -->
+<div class="flex-1 flex flex-col gap-1">
+<!-- Lane 1: Speed -->
+<div class="flex-1 relative border border-border-subtle bg-surface-container-lowest/50 rounded">
+<div class="absolute left-2 top-2 bottom-2 flex flex-col justify-between font-timing-tabular text-[9px] text-text-muted z-10 pointer-events-none">
+<span>350</span><span>200</span><span>50</span>
+</div>
+<div class="absolute inset-0 w-full h-full opacity-80" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuACq5TXGPSvY65nmWyg1xY-OTtd_LyPSXbqtL_LHvyYKa0cnoNbofEVSFeJY-5TTV3pBOrzgoV3ljBEVMQomBqjClJFWRPDPQ_fwoeVCWosx2xllwr3bJOw2oHA39rRj0Ulqa9TXvYsK7kzjgbYbSedgNfKpkmiML8ZoJIqxoicQHmua4HVlxNxymyvkrFpxGb8d2OV9l_wZypW0dogKLpHZ4_JoG4NE3YO5ALslum85iN0DLlAJb6-HQ'); background-size: 100% 100%; background-repeat: no-repeat;"></div>
+</div>
+<!-- Lane 2: Throttle/Brake -->
+<div class="h-[60px] relative border border-border-subtle bg-surface-container-lowest/50 rounded mt-1">
+<div class="absolute left-2 top-1 bottom-1 flex flex-col justify-between font-timing-tabular text-[9px] text-text-muted z-10 pointer-events-none">
+<span>100%</span><span>0%</span>
+</div>
+</div>
+</div>
+<div class="absolute top-0 bottom-0 left-[65%] w-[1px] bg-surface-variant border-l border-dashed border-text-secondary z-20 pointer-events-none flex items-center justify-center">
+<div class="w-3 h-3 border border-text-secondary rounded-full bg-background absolute"></div>
+</div>
+<div class="w-full flex justify-between px-8 py-1 font-timing-tabular text-[9px] text-text-muted border-t border-border-subtle mt-1">
+<span>0m</span><span>1000m</span><span>2000m</span><span>3000m</span><span>4000m</span><span>5793m</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: AI / Strategy / Sectors -->
+<div class="flex flex-col gap-[1px] h-full overflow-hidden">
+<!-- AI Race Engineer Console -->
+<section class="panel h-[40%] flex flex-col">
+<header class="panel-header">
+<span class="font-headline-panel text-on-surface uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-tertiary">terminal</span> AI ENGINEER
+                        </span>
+<div class="flex items-center gap-1.5">
+<span class="h-1.5 w-1.5 rounded-full bg-sector-green animate-pulse"></span>
+<span class="font-label-micro text-text-secondary uppercase">READY</span>
+</div>
+</header>
+<div class="flex-1 bg-surface-dim p-4 overflow-y-auto flex flex-col gap-4 font-timing-tabular text-body-dense text-text-primary">
+<div class="flex gap-3">
+<div class="text-[10px] text-text-muted w-12 pt-0.5">14:32:01</div>
+<div>
+<p class="leading-relaxed text-[12px]"><span class="text-tertiary">SYS:</span> Norris is closing on Verstappen. Advantage is primarily located in Sector 2 (Ascari chicane). Differential is approx -0.18s per lap.</p>
+<div class="flex gap-2 mt-2">
+<span class="bg-surface border border-tertiary/30 px-2 py-1 rounded text-[10px] text-tertiary cursor-pointer hover:bg-surface-bright">[PACE-14]</span>
+<span class="bg-surface border border-tertiary/30 px-2 py-1 rounded text-[10px] text-tertiary cursor-pointer hover:bg-surface-bright">[TYRE-7]</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-border-subtle bg-surface-container-lowest flex items-center">
+<span class="text-text-muted font-timing-tabular text-body-dense mr-3">&gt;</span>
+<input class="terminal-input w-full bg-transparent border-none focus:ring-0 font-timing-tabular text-[12px] text-on-surface placeholder:text-text-muted p-0 outline-none" placeholder="QUERY ENGINEER (E.G. 'NORRIS SECTOR 2 PACE')..." type="text"/>
+</div>
+</section>
+<!-- Lower Workspace: Strategy & Sectors -->
+<div class="flex-1 flex flex-col gap-[1px]">
+<!-- Strategy -->
+<section class="panel flex-1">
+<header class="panel-header">
+<span class="font-headline-panel text-on-surface uppercase">STRATEGY &amp; STINTS</span>
+</header>
+<div class="flex-1 bg-surface p-4 flex flex-col justify-center">
+<div class="flex justify-between items-center mb-4">
+<div>
+<span class="font-label-micro text-text-secondary uppercase block">Baseline</span>
+<span class="font-body-base font-semibold text-on-surface">1-STOP</span>
+</div>
+<div class="text-right">
+<span class="font-label-micro text-text-secondary uppercase block">Pit Window</span>
+<span class="font-badge-caps text-text-muted bg-surface-container-high px-2 py-1 rounded mt-1 inline-block">CLOSED</span>
+</div>
+</div>
+<div class="relative w-full">
+<div class="flex justify-between font-label-micro text-text-secondary mb-1">
+<span>L1</span><span>L24</span><span>L53</span>
+</div>
+<div class="h-3 flex w-full rounded overflow-hidden">
+<div class="bg-tyre-medium w-[45%] border-r-2 border-background"></div>
+<div class="bg-tyre-hard w-[55%]"></div>
+</div>
+<div class="flex justify-between font-timing-tabular text-[9px] text-text-muted mt-1 px-1">
+<span>M</span><span>H</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sectors -->
+<section class="panel flex-[1.2]">
+<header class="panel-header">
+<span class="font-headline-panel text-on-surface uppercase">SECTOR INTEL &amp; PACE</span>
+</header>
+<div class="flex-1 bg-surface p-4 flex flex-col gap-4 overflow-y-auto">
+<div class="grid grid-cols-3 gap-2">
+<div class="bg-sector-green/10 border border-sector-green/30 rounded p-2 flex flex-col items-center justify-center">
+<span class="font-label-micro text-text-secondary mb-1">S1</span>
+<span class="font-timing-tabular text-[13px] text-sector-green font-bold">27.142</span>
+</div>
+<div class="bg-sector-purple/10 border border-sector-purple/30 rounded p-2 flex flex-col items-center justify-center">
+<span class="font-label-micro text-text-secondary mb-1">S2</span>
+<span class="font-timing-tabular text-[13px] text-sector-purple font-bold">28.091</span>
+</div>
+<div class="bg-sector-yellow/10 border border-sector-yellow/30 rounded p-2 flex flex-col items-center justify-center">
+<span class="font-label-micro text-text-secondary mb-1">S3</span>
+<span class="font-timing-tabular text-[13px] text-sector-yellow font-bold">26.884</span>
+</div>
+</div>
+<div class="mt-2 flex flex-col gap-2">
+<span class="font-label-micro text-text-secondary uppercase border-b border-border-subtle pb-1">ROLLING PACE (LAST 5 LAPS)</span>
+<div class="flex justify-between items-center text-[12px] font-timing-tabular py-1">
+<span class="text-on-surface flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-primary-container"></div> NOR</span>
+<span class="text-sector-green">+0.42s avg</span>
+</div>
+<div class="flex justify-between items-center text-[12px] font-timing-tabular py-1">
+<span class="text-on-surface flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-white"></div> VER</span>
+<span class="text-critical">-0.18s avg</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+</body></html>

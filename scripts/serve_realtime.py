@@ -70,15 +70,15 @@ async def build_runtime(args) -> tuple:  # noqa: ANN202
                else s2.llm_api_key)
     base_url = (None if s2.llm_provider == "gemini"  # gemini default endpoint
                 else s2.llm_base_url)
-    provider = build_provider(s2.llm_provider, base_url=base_url,
+    llm_provider = build_provider(s2.llm_provider, base_url=base_url,
                               api_key=api_key, model=s2.llm_model)
     ai_runtime = AIRuntime(
-        LLMGateway(provider, min_call_interval_s=s.llm_min_call_interval_s),
-        auto_enabled=s.llm_auto_commentary,
+        LLMGateway(llm_provider, min_call_interval_s=s2.llm_min_call_interval_s),
+        auto_enabled=s2.llm_auto_commentary,
         get_mode=lambda: args.mode.upper())
     hub.attach_ai(ai_runtime)
     await ai_runtime.start_worker()
-    print(f"AI race engineer: provider={provider.name} "
+    print(f"AI race engineer: provider={llm_provider.name} "
           f"auto={s2.llm_auto_commentary}")
 
     async def upstream() -> None:

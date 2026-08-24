@@ -1,126 +1,153 @@
-/** AI Race Engineer console. Evidence-grounded; never a chatbot. */
+/**
+ * AI Race Engineer Console — Enhanced with structured queries,
+ * trust indicators, insight feed, and terminal-style appearance
+ */
 
-import { useState } from "react";
-import { askAI, useSessionState } from "../../state/store";
-import { Panel } from "../shared";
+import { FormEvent, useState, useRef, useEffect } from "react";
+import { useSessionState, askAI, apiGet } from "../../state/store";
+import { Panel, ConfidenceBadge, EvidenceChip, ProvenanceBadge, DataFreshness } from "../shared";
+import { fmtTime } from "../../logic/format";
 
-const SUGGESTIONS = [
-  "What is happening?",
-  "How are tyres behaving?",
-  "Is a battle developing?",
-  "What changed?",
-] as const;
-
-interface AIAnswer {
-  answer: string;
-  confidence: string;
-  evidence: { id: string; statement: string }[];
-  stale: boolean;
-  model: string;
-  insufficient_data?: boolean;
-}
+const SUGGESTED_QUERIES = [
+  "Why is the leader faster?",
+  "What changed in the last 5 laps?",
+  "Who should pit next?",
+  "Is there a tyre degradation concern?",
+  "Compare the top 3 strategies",
+  "Any weather risk?",
+  "Who has the pace advantage?",
+  "Explain the current battle",
+];
 
 export function AIConsole() {
   const st = useSessionState();
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<AIAnswer | null>(null);
-  const [busy, setBusy] = useState(false);
-  const sessionId: string | undefined = st.snapshot?.session_id;
+  const snap = st.snapshot as any;
+  const sessionId = snap?.session_id;
+  const aiStatus = (snap as any)?.ai_status;
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!question.trim() || !sessionId || busy) return;
-    setBusy(true);
-    setAnswer(null);
-    try {
-      setAnswer(await askAI(sessionId, question.trim()));
-      setQuestion("");
-    } catch {
-      setAnswer({
-        answer: "AI temporarily unavailable. Deterministic intelligence remains active.",
-        confidence: "NONE", evidence: [], stale: false,
-        model: "none", insufficient_data: false,
-      });
-    } finally {
-      setBusy(false);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [insights, setInsights] = useState<any[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch AI insights from WebSocket events
+  useEffect(() => {
+    const evts = snap?.recent_events ?? [];
+    const aiEvts = evts.filter((e: any) =>
+      (e.event_type ?? e.type ?? "").includes("AI") ||
+      (e.source ?? "").includes("ai")
+    );
+    if (aiEvts.length > 0) {
+      setInsights((prev) => [...prev, ...aiEvts].slice(-10));
     }
-  }
+  }, [snap?.recent_events]);
+
+  const handleAsk = async (q: string) => {
+    if (!sessionId || !q.trim()) return;
+    setLoading(true);
+    setQuestion("");
+    try {
+      const result = await askAI(sessionId, q);
+      setAnswer(result);
+    } catch {
+      setAnswer({ status: "FAILED", answer: "AI request failed. Deterministic intelligence remains active." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    handleAsk(question);
+  };
+
+  const isReady = st.status !== "DISCONNECTED";
+  const statusLabel = loading ? "ANALYZING…" :
+    isReady ? "READY" : "DISCONNECTED";
 
   return (
-    <Panel title="AI RACE ENGINEER" className="ai-console"
-           actions={
-             <span className={`ai-ready ${busy ? "analyzing" : ""}`}
-                   role="status">
-               {busy ? "\u25CB ANALYZING" : "\u25CF READY"}
-             </span>
-           }>
-      <div className="ai-answer-block" aria-live="polite">
-        {!answer && !busy && (
-          <p className="dim">Ask about pace, tyres, battles or strategy. Answers are grounded in deterministic analysis.</p>
-        )}
-        {answer && (
+    <Panel title="AI ENGINEER" className="ai-console"
+      actions={
+        <span className={`ai-ready ${loading ? "analyzing" : ""}`}
+              style={{ color: loading ? "var(--warning)" : isReady ? "var(--success)" : "var(--text-muted)" }}>
+          ● {statusLabel}
+        </span>
+      }>
+      {/* Latest answer */}
+      <div className="ai-answer-block">
+        {answer ? (
           <>
-            {answer.insufficient_data && (
-              <div className="insufficient-tag" role="note">INSUFFICIENT DATA</div>
-            )}
-            <p className="ai-text">{answer.answer}</p>
-            {answer.evidence.length > 0 && (
+            <p className="ai-text">{answer.answer ?? answer.response ?? "No response."}</p>
+
+            {/* Evidence */}
+            {answer.evidence_ids?.length > 0 && (
               <div className="evidence-row">
-                <span className="dim ev-label">EVIDENCE</span>
-                {answer.evidence.map((e, i) => (
-                  <button key={i} type="button" className="evidence-chip"
-                          title={e.statement || ""}
-                          onClick={() => navigator.clipboard?.writeText(`[${e.id}] ${e.statement}`)}>
-                    [{e.id}]
-                  </button>
+                <span className="ev-label dim">EVIDENCE</span>
+                {answer.evidence_ids.map((id: string) => (
+                  <EvidenceChip key={id} id={id} />
                 ))}
               </div>
             )}
+
+            {/* Meta row */}
             <div className="ai-meta-row">
-              <span className={`conf-badge conf-${(answer.confidence ?? "").toLowerCase()}`}>
-                {answer.confidence}
-              </span>
-              {answer.stale && <span className="stale-badge">STALE</span>}
-              <span className="mono dim text-xs">{answer.model}</span>
+              {answer.confidence && <ConfidenceBadge level={answer.confidence} />}
+              <ProvenanceBadge type="AI" />
+              {answer.timestamp && (
+                <span className="dim text-xs mono">{fmtTime(answer.timestamp)}</span>
+              )}
+              {answer.status === "FALLBACK" && (
+                <span className="insufficient-tag">DETERMINISTIC FALLBACK</span>
+              )}
+              {answer.status === "STALE" && (
+                <span className="insufficient-tag">STALE RESPONSE</span>
+              )}
             </div>
           </>
+        ) : (
+          <p className="dim text-sm" style={{ fontStyle: "italic" }}>
+            DETERMINISTIC INTELLIGENCE ACTIVE
+            {!isReady && " · AI TEMPORARILY UNAVAILABLE"}
+          </p>
         )}
       </div>
 
-      <div className="suggestions" role="group" aria-label="Suggested questions">
-        {SUGGESTIONS.map(sg => (
-          <button key={sg} type="button" className="suggestion-btn"
-                  onClick={() => setQuestion(sg)}>{sg}</button>
+      {/* Suggestions */}
+      <div className="suggestions">
+        {SUGGESTED_QUERIES.slice(0, 4).map((q) => (
+          <button key={q} className="suggestion-btn" onClick={() => handleAsk(q)}
+                  disabled={loading || !sessionId}>
+            {q}
+          </button>
         ))}
       </div>
 
-      <form onSubmit={submit} className="ai-form">
-        <input value={question} onChange={e => setQuestion(e.target.value)}
-               placeholder="Ask the race engineer\u2026" maxLength={300}
-               aria-label="Ask the race engineer" />
-        <button type="submit" disabled={busy || !sessionId}>{"\u2192"}</button>
+      {/* Input */}
+      <form className="ai-form" onSubmit={onSubmit}>
+        <input ref={inputRef}
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="> QUERY ENGINEER (E.G. 'NORRIS STRATEGY?')"
+          disabled={loading || !sessionId}
+          autoComplete="off"
+        />
+        <button type="submit" disabled={loading || !question.trim() || !sessionId}>
+          {loading ? "…" : "→"}
+        </button>
       </form>
-    </Panel>
-  );
-}
 
-export function AIInsightFeed() {
-  const st = useSessionState();
-  const insights = [...(st.aiInsights ?? [])].reverse().slice(0, 12);
-  if (!insights.length) return null;
-  return (
-    <section className="panel" aria-label="AI insight feed">
-      {insights.map((ins: any, i: number) => (
-        <div key={i} className={`ai-insight sev-${(ins.severity ?? "INFO").toLowerCase()}`}>
-          <span className="mono dim">{String(ins.generated_at ?? "").slice(11, 19)}</span>
-          <span>{ins.answer}</span>
-          {(ins.evidence ?? []).length > 0 && (
-            <span className="dim ev-ids">
-              {(ins.evidence as any[]).map(e => `[${e.id}]`).join(" ")}
-            </span>
-          )}
+      {/* Insight feed */}
+      {insights.length > 0 && (
+        <div style={{ borderTop: "1px solid var(--border)", marginTop: "var(--sp-2)", paddingTop: "var(--sp-1)" }}>
+          {insights.slice(-3).map((ins, i) => (
+            <div key={i} className="ai-insight">
+              <span className="dim mono text-xs">{fmtTime(ins.ts ?? ins.timestamp)}</span>
+              <span>{ins.description ?? ins.message ?? ""}</span>
+            </div>
+          ))}
         </div>
-      ))}
-    </section>
+      )}
+    </Panel>
   );
 }
