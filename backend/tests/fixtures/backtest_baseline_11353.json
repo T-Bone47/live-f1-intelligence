@@ -1,0 +1,122 @@
+{
+  "bench": {
+    "elapsed_s": 720.8,
+    "events_per_sec": 1480.6,
+    "events_processed": 1067193,
+    "latency_ms_p50": 0.2153,
+    "latency_ms_p95": 0.4403,
+    "peak_memory_mb": 99.8
+  },
+  "summary": {
+    "calc_version": "analysis-2.0.0",
+    "current_lap": 72,
+    "degradation_sample": {
+      "1": {
+        "base_pace_s": 74.901,
+        "confidence": "MEDIUM",
+        "estimated_degradation_s_per_lap": 0.0183,
+        "excluded": 5,
+        "label": "ESTIMATED DEGRADATION",
+        "r_squared": 0.0518,
+        "samples": 20
+      },
+      "10": {
+        "base_pace_s": 76.4422,
+        "confidence": "MEDIUM",
+        "estimated_degradation_s_per_lap": 0.0423,
+        "excluded": 6,
+        "label": "ESTIMATED DEGRADATION",
+        "r_squared": 0.3703,
+        "samples": 19
+      },
+      "5": {
+        "base_pace_s": 75.6098,
+        "confidence": "HIGH",
+        "estimated_degradation_s_per_lap": 0.1317,
+        "excluded": 4,
+        "label": "ESTIMATED DEGRADATION",
+        "r_squared": 0.5972,
+        "samples": 14
+      }
+    },
+    "event_counts": {
+      "BATTLE_ESCALATED": 21,
+      "FASTEST_LAP_CHANGE": 14,
+      "PACE_CHANGE": 155,
+      "PACE_DROP": 111,
+      "PACE_GAIN": 142,
+      "PACE_LOSS": 82,
+      "PERSONAL_BEST": 617,
+      "PERSONAL_BEST_LAP": 193,
+      "PIT_STOP": 65,
+      "POSITION_CHANGE": 302,
+      "PURPLE_SECTOR": 47,
+      "SESSION_STATE_CHANGE": 8,
+      "VSC": 2,
+      "WEATHER_CHANGE": 10
+    },
+    "fastest_lap": {
+      "at_lap": 60,
+      "driver": 16,
+      "duration_s": 74.23
+    },
+    "leaderboard_top5": [
+      {
+        "compound": "HARD",
+        "driver": 1,
+        "pb": 74.321,
+        "pos": 1,
+        "rolling5": 75.25519999999999,
+        "tyre_age": 24
+      },
+      {
+        "compound": "SOFT",
+        "driver": 12,
+        "pb": 74.571,
+        "pos": 2,
+        "rolling5": 75.38579999999999,
+        "tyre_age": 15
+      },
+      {
+        "compound": "HARD",
+        "driver": 63,
+        "pb": 75.393,
+        "pos": 3,
+        "rolling5": 76.1644,
+        "tyre_age": 31
+      },
+      {
+        "compound": "SOFT",
+        "driver": 44,
+        "pb": 74.566,
+        "pos": 4,
+        "rolling5": 76.3218,
+        "tyre_age": 16
+      },
+      {
+        "compound": "SOFT",
+        "driver": 16,
+        "pb": 74.23,
+        "pos": 5,
+        "rolling5": 75.681,
+        "tyre_age": 16
+      }
+    ],
+    "phase": "CHEQUERED",
+    "sector_leaders": {
+      "S1": {
+        "driver": 81,
+        "time_s": 25.23
+      },
+      "S2": {
+        "driver": 16,
+        "time_s": 26.439
+      },
+      "S3": {
+        "driver": 16,
+        "time_s": 22.29
+      }
+    },
+    "track_flag": "CLEAR"
+  }
+}

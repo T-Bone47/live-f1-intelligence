@@ -1,0 +1,42 @@
+[
+    {
+        "date":  "2026-08-23T13:03:35.084000+00:00",
+        "session_key":  11353,
+        "gap_to_leader":  0.388,
+        "interval":  0.388,
+        "driver_number":  63,
+        "meeting_key":  1292
+    },
+    {
+        "date":  "2026-08-23T13:03:37.818000+00:00",
+        "session_key":  11353,
+        "gap_to_leader":  0.554,
+        "interval":  0.221,
+        "driver_number":  63,
+        "meeting_key":  1292
+    },
+    {
+        "date":  "2026-08-23T13:03:43.325000+00:00",
+        "session_key":  11353,
+        "gap_to_leader":  0.638,
+        "interval":  0.386,
+        "driver_number":  63,
+        "meeting_key":  1292
+    },
+    {
+        "date":  "2026-08-23T13:03:46.042000+00:00",
+        "session_key":  11353,
+        "gap_to_leader":  0.718,
+        "interval":  0.498,
+        "driver_number":  63,
+        "meeting_key":  1292
+    },
+    {
+        "date":  "2026-08-23T13:03:49.482000+00:00",
+        "session_key":  11353,
+        "gap_to_leader":  0.876,
+        "interval":  0.576,
+        "driver_number":  63,
+        "meeting_key":  1292
+    }
+]

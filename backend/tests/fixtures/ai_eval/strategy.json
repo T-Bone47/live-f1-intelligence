@@ -1,0 +1,46 @@
+{
+  "session_id": "openf1:x",
+  "question": "Explain the current strategy candidates.",
+  "pack": {
+    "pack": "race_v1",
+    "session_id": "openf1:x",
+    "facts": [
+      {
+        "id": "lb1",
+        "class": "C",
+        "statement": "P1 #1 lap 40 best 74.321 rolling5 75.25 tyre HARD/24"
+      },
+      {
+        "id": "deg1",
+        "class": "D",
+        "statement": "#1 stint 4 estimated degradation 0.02 s/lap",
+        "values": {
+          "rate": 0.02
+        },
+        "confidence": "MEDIUM"
+      },
+      {
+        "id": "battle3",
+        "class": "C",
+        "statement": "Battle #12 vs #1 ACTIVE_BATTLE last gap 0.45"
+      },
+      {
+        "id": "strat1",
+        "class": "D",
+        "statement": "ONE_STOP rank 1 estimated total 906.45s stops 1"
+      },
+      {
+        "id": "wx1",
+        "class": "A",
+        "statement": "air 19.1C track 32.8C rain false"
+      }
+    ]
+  },
+  "allowed_evidence": [
+    "strat1"
+  ],
+  "forbidden_numbers": [
+    777
+  ],
+  "seq": 6
+}

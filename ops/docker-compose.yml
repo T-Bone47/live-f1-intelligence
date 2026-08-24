@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: f1intel-postgres
+    environment:
+      POSTGRES_USER: f1intel
+      POSTGRES_PASSWORD: f1intel_dev
+      POSTGRES_DB: f1intel
+    ports:
+      - "5433:5432"
+    volumes:
+      - f1intel_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U f1intel -d f1intel"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  f1intel_pgdata:

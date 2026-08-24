@@ -1,0 +1,20 @@
+{
+  "session_id": "openf1:x",
+  "question": "Who will win the 1998 championship?",
+  "pack": {
+    "pack": "race_v1",
+    "session_id": "openf1:x",
+    "facts": [
+      {
+        "id": "none1",
+        "class": "C",
+        "statement": "no data yet"
+      }
+    ]
+  },
+  "allowed_evidence": [
+    "none1"
+  ],
+  "expect_insufficient": true,
+  "seq": 8
+}

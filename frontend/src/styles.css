@@ -1,0 +1,120 @@
+/* LIVE F1 INTELLIGENCE - dark motorsport telemetry aesthetic */
+
+:root {
+  --bg: #0b0d10;
+  --panel: #12151a;
+  --panel-edge: #1e232b;
+  --text: #d8dde4;
+  --dim: #7c8593;
+  --accent: #e10600;          /* f1 red - used sparingly for LIVE */
+  --compare: #2f81f7;
+  --purple: #b26bff;          /* session-best sector ONLY */
+  --green: #2ecc71;           /* personal-best sector ONLY */
+  --yellow: #f1c40f;          /* slower sector ONLY */
+  --blue: #4a90d9;
+  --red: #ff453a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.45 "Segoe UI", Inter, Roboto, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 14px; border-bottom: 1px solid var(--panel-edge);
+}
+.mode-badge {
+  border: 1px solid; padding: 2px 10px; border-radius: 3px;
+  font-weight: 600; letter-spacing: .08em; font-size: 12px;
+}
+.title strong { letter-spacing: .12em; margin-right: 10px; }
+.topbar .right { margin-left: auto; display: flex; gap: 14px; }
+.dim { color: var(--dim); }
+
+.grid {
+  display: grid; gap: 10px; padding: 10px;
+  grid-template-columns: minmax(320px, 1.1fr) 2fr 1fr;
+  flex: 1;
+}
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  padding: 10px 12px; border-radius: 4px;
+}
+.panel h2 {
+  margin: 0 0 8px; font-size: 11px; letter-spacing: .18em;
+  color: var(--dim); font-weight: 600;
+}
+
+.table-scroll { overflow-x: auto; }
+table.timing { width: 100%; border-collapse: collapse; }
+table.timing th {
+  text-align: left; font-size: 10px; letter-spacing: .1em;
+  color: var(--dim); padding: 2px 6px; border-bottom: 1px solid var(--panel-edge);
+}
+table.timing td { padding: 3px 6px; border-bottom: 1px solid #161a20; }
+table.timing tr.selected { background: #171c23; outline: 1px solid #2a313b; }
+table.timing tr:hover { background: #151a21; cursor: pointer; }
+td.pos { font-weight: 700; }
+td.driver { font-weight: 600; }
+.tyre.medi { color: var(--yellow); } /* compound accent only, not sector meaning */
+.tyre.har { color: #cfcfcf; }
+.tyre.sof { color: var(--red); }
+.tyre.int, . tyre.wet { color: var(--green); }
+.dim + .dim { margin-left: 4px; }
+
+.sector-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.sector-cell {
+  flex: 1; background: #0f1216; border: 1px solid var(--panel-edge);
+  padding: 6px 8px; border-radius: 3px;
+}
+.s-label { font-size: 10px; letter-spacing: .1em; color: var(--dim); }
+.s-tag { font-size: 9px; }
+.s-time { font-size: 17px; font-weight: 700; }
+.s-pb { font-size: 11px; }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; }
+.kv dt { color: var(--dim); }
+.kv dd { margin: 0; text-align: right; font-weight: 600; }
+
+.controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.controls input {
+  width: 64px; background: #0f1216; color: var(--text);
+  border: 1px solid var(--panel-edge); padding: 3px 6px; margin-left: 6px;
+}
+button {
+  background: #1a1f27; color: var(--text); border: 1px solid var(--panel-edge);
+  padding: 3px 9px; cursor: pointer; border-radius: 3px;
+}
+button:hover { background: #222933; }
+
+.trace { width: 100%; height: auto; background: #0d1013; border: 1px solid var(--panel-edge); }
+.svg-label { fill: var(--dim); font-size: 10px; }
+
+.wx { display: flex; gap: 18px; justify-content: space-around; }
+.wx-item { display: flex; flex-direction: column; text-align: center; }
+
+.battle-list, .rc-feed { list-style: none; margin: 0; padding: 0; }
+.rc-feed li { padding: 2px 0; border-bottom: 1px solid #14181e; }
+
+.pos-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.pos-dot {
+  background: #0f1216; border: 1px solid var(--panel-edge);
+  padding: 2px 8px; border-radius: 999px; font-size: 11px;
+}
+
+.footer { padding: 6px 14px; font-size: 11px; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }

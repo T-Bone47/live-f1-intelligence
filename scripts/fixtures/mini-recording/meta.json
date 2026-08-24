@@ -1,0 +1,18 @@
+{
+  "session": {
+    "session": {
+      "session_key": "mini",
+      "session_name": "Mini Race",
+      "year": 2026,
+      "session_type": "RACE"
+    }
+  },
+  "provider": "replay",
+  "recorded_at_epoch": 1787548525.5362577,
+  "frames": 25,
+  "event_types": [
+    "x"
+  ],
+  "format": "f1intel-recording-v1",
+  "capabilities_notes": []
+}
