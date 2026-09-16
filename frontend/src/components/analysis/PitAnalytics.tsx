@@ -1,5 +1,5 @@
 import { useSessionState, useDriverSelection, useEvents } from "../../state/store";
-import { Panel, ProvenanceBadge } from "../shared";
+import { Panel, ConfidenceBadge } from "../shared";
 import { fmtSec, UNAVAILABLE } from "../../logic/format";
 
 export function PitAnalytics() {
@@ -25,7 +25,7 @@ export function PitAnalytics() {
 
   return (
     <Panel title={`Pit Analytics - Driver ${selectedDriver}`}>
-      <ProvenanceBadge level="HIGH" label="F1 SIGNALR" />
+      <ConfidenceBadge level="HIGH" label="F1 SIGNALR" />
       {pitStops.length === 0 ? (
         <div className="empty-state" style={{ padding: "20px", color: "var(--text-dim)" }}>
           No pit stops recorded yet

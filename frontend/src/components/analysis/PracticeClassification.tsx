@@ -1,5 +1,5 @@
 import { useSessionState } from "../../state/store";
-import { Panel, ProvenanceBadge } from "../shared";
+import { Panel, ConfidenceBadge } from "../shared";
 import { compoundLabel, fmtSec, UNAVAILABLE } from "../../logic/format";
 
 export function PracticeClassification() {
@@ -20,7 +20,7 @@ export function PracticeClassification() {
 
   return (
     <Panel title="Practice Session Classification">
-      <ProvenanceBadge level="HIGH" label="F1 SIGNALR" />
+      <ConfidenceBadge level="HIGH" label="F1 SIGNALR" />
       <div style={{ marginTop: "12px", display: "flex", gap: "16px" }}>
         
         <div style={{ flex: 1 }}>

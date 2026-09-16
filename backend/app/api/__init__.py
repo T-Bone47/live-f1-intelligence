@@ -186,10 +186,21 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             raise HTTPException(404, "driver not present in session analysis")
         pb = se.personal_bests(driver_number)
         theo = se.theoretical_lap(driver_number)
+        session_best = se.session_best_holders()
+        # A driver's PB for a sector is, by definition, either the current
+        # session record (PURPLE) or not (GREEN) -- YELLOW only describes a
+        # specific crossing being slower than the PB *at that moment*, which
+        # isn't a meaningful "current status" for a PB summary.
+        classification = {
+            f"S{k}": ("PURPLE" if session_best.get(k, (None, None))[1] == driver_number
+                       else "GREEN")
+            for k in pb
+        }
         return {
             "session_id": session_id, "driver_number": driver_number,
             "personal_best": {f"S{k}": v for k, v in sorted(pb.items())},
             "last": {f"S{k}": v for k, v in sorted(se.drivers[driver_number].last.items())},
+            "classification": classification,
             "theoretical_lap_s": theo,
             "available": bool(pb),
         }

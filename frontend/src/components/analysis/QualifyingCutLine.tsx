@@ -1,5 +1,5 @@
 import { useSessionState } from "../../state/store";
-import { Panel, ProvenanceBadge } from "../shared";
+import { Panel, ConfidenceBadge } from "../shared";
 import { fmtSec, UNAVAILABLE } from "../../logic/format";
 
 export function QualifyingCutLine() {
@@ -27,7 +27,7 @@ export function QualifyingCutLine() {
 
   return (
     <Panel title={`Qualifying Cut Line - ${phase || "Q"}`}>
-      <ProvenanceBadge level="HIGH" label="F1 SIGNALR" />
+      <ConfidenceBadge level="HIGH" label="F1 SIGNALR" />
       <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", color: "var(--text-dim)", fontSize: "0.8rem", paddingBottom: "4px" }}>
           <span>POS</span>

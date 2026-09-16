@@ -93,7 +93,7 @@ export function RacePicture() {
    BATTLE RADAR — enhanced with gap timeline, states, metrics
    ============================================================ */
 
-export function BattleRadar() {
+export function BattleRadar({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const { selectedDriver } = useDriverSelection();
   const snap = st.snapshot as any;
@@ -113,7 +113,7 @@ export function BattleRadar() {
   }, [battles, selectedDriver]);
 
   return (
-    <Panel title="BATTLE RADAR" className="battle-panel">
+    <Panel id={id} title="BATTLE RADAR" className="battle-panel">
       {sorted.length === 0 ? (
         <p className="dim text-sm uppercase">NO ACTIVE BATTLES</p>
       ) : (
@@ -190,7 +190,7 @@ function windArrow(deg: number): string {
    STRATEGY BOARD — narrative format
    ============================================================ */
 
-export function StrategyBoard() {
+export function StrategyBoard({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const { selectedDriver } = useDriverSelection();
   const snap = st.snapshot as any;
@@ -215,7 +215,7 @@ export function StrategyBoard() {
   const currentStrat = candidates[0];
 
   return (
-    <Panel title="STRATEGY & STINTS" className="strategy-panel"
+    <Panel id={id} title="STRATEGY & STINTS" className="strategy-panel"
       actions={<ProvenanceBadge type="DERIVED" />}>
       {!currentStrat ? (
         <p className="dim text-sm uppercase">STRATEGY DATA UNAVAILABLE</p>
@@ -249,10 +249,10 @@ export function StrategyBoard() {
                 <span className="strat-label">ALT</span>
                 <span className="strat-value">{candidates[1].name ?? `${candidates[1].stops}-STOP`}</span>
               </div>
-              {candidates[1].delta_s != null && (
+              {candidates[1].estimated_total_s != null && currentStrat.estimated_total_s != null && (
                 <div className="strat-row">
                   <span className="strat-label">DELTA</span>
-                  <Delta value={candidates[1].delta_s} suffix="s" />
+                  <Delta value={candidates[1].estimated_total_s - currentStrat.estimated_total_s} suffix="s" />
                 </div>
               )}
             </>
@@ -267,14 +267,14 @@ export function StrategyBoard() {
    CIRCUIT MAP (professional fallback)
    ============================================================ */
 
-export function CircuitMap() {
+export function CircuitMap({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const { selectedDriver } = useDriverSelection();
   const snap = st.snapshot as any;
   const board: any[] = snap?.leaderboard ?? [];
 
   return (
-    <Panel title={`TRACK MAP ${snap?.circuit_short_name ? `// ${snap.circuit_short_name.toUpperCase()}` : ""}`}
+    <Panel id={id} title={`TRACK MAP ${snap?.circuit_short_name ? `// ${snap.circuit_short_name.toUpperCase()}` : ""}`}
            className="circuit-panel">
       {board.length === 0 ? (
         <p className="dim text-sm uppercase">WAITING FOR POSITION DATA</p>
@@ -304,7 +304,7 @@ export function CircuitMap() {
    RACE CONTROL FEED — enhanced with all event types
    ============================================================ */
 
-export function RCFeed() {
+export function RCFeed({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const snap = st.snapshot as any;
   const events: any[] = snap?.recent_events ?? [];
@@ -318,15 +318,15 @@ export function RCFeed() {
       const type = e.event_type ?? e.type ?? "";
       if (filter === "RC") return ["RED_FLAG", "SAFETY_CAR", "VSC", "SESSION_STATE_CHANGE"].includes(type);
       if (filter === "TIMING") return ["FASTEST_LAP_CHANGE", "PACE_CHANGE", "PACE_DROP"].includes(type);
-      if (filter === "BATTLE") return ["OVERTAKE", "BATTLE_FORMED", "BATTLE_RESOLVED"].includes(type);
-      if (filter === "TYRE") return ["PIT_STOP", "TYRE_DEGRADATION"].includes(type);
-      if (filter === "STRATEGY") return ["STRATEGY_DEVIATION"].includes(type);
+      if (filter === "BATTLE") return ["OVERTAKE", "BATTLE_STARTED", "BATTLE_ESCALATED", "BATTLE_SEPARATED"].includes(type);
+      if (filter === "TYRE") return ["PIT_STOP", "TYRE_DEGRADATION_CHANGE"].includes(type);
+      if (filter === "STRATEGY") return ["PIT_WINDOW"].includes(type);
       return true;
     });
   }, [events, filter]);
 
   return (
-    <Panel title="RACE CONTROL & EVENTS" className="rc-panel event-rail">
+    <Panel id={id} title="RACE CONTROL & EVENTS" className="rc-panel event-rail">
       <div className="event-filters">
         {filters.map((f) => (
           <button key={f} className={`ev-filter-btn ${filter === f ? "active" : ""}`}
@@ -342,8 +342,10 @@ export function RCFeed() {
           [...filtered].reverse().slice(0, 30).map((ev: any, i: number) => (
             <li key={i} className="event-item">
               <span className="event-icon">{eventIcon(ev.event_type ?? ev.type ?? "")}</span>
-              <span className="event-time">{fmtTime(ev.ts ?? ev.timestamp)}</span>
-              <span className="event-text">{ev.description ?? ev.message ?? ev.event_type ?? ""}</span>
+              <span className="event-time">{fmtTime(ev.timestamp)}</span>
+              <span className="event-text">
+                {ev.evidence?.length ? ev.evidence.join("; ") : (ev.event_type ?? "")}
+              </span>
             </li>
           ))
         )}

@@ -113,10 +113,7 @@ async def build_runtime(args) -> tuple:  # noqa: ANN202
         threading.Thread(target=worker, daemon=True,
                          name="provider-upstream").start()
 
-    app = create_app(registry)
-    config = uvicorn.Config(app, host=args.host, port=args.port, log_level="warning")
-    server = uvicorn.Server(config)
-    return server, upstream, hub
+    return server, upstream, hub, ai_runtime
 
 
 async def amain() -> int:
@@ -129,7 +126,7 @@ async def amain() -> int:
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
 
-    server, upstream, hub = await build_runtime(args)
+    server, upstream, hub, ai_runtime = await build_runtime(args)
     tasks = [asyncio.create_task(upstream()), asyncio.create_task(hub.run())]
     print(f"REALTIME GATEWAY on {args.host}:{args.port} "
           f"(session={hub.session_id})")

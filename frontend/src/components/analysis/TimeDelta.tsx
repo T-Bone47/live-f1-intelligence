@@ -38,16 +38,14 @@ export function TimeDelta() {
   if (!selectedDriver || !comparisonDriver) return null;
   if (!sectorsA?.available || !sectorsB?.available) return null;
 
-  const sa = sectorsA.sectors ?? {};
-  const sb = sectorsB.sectors ?? {};
+  const pbA = sectorsA.personal_best ?? {};
+  const pbB = sectorsB.personal_best ?? {};
 
   const sectorDiffs = [1, 2, 3].map((s) => {
-    const aTime = sa[String(s)]?.personal_best_s ?? null;
-    const bTime = sb[String(s)]?.personal_best_s ?? null;
-    const aCls = sa[String(s)]?.classification;
-    const bCls = sb[String(s)]?.classification;
+    const aTime = pbA[`S${s}`] ?? null;
+    const bTime = pbB[`S${s}`] ?? null;
     const delta = aTime != null && bTime != null ? aTime - bTime : null;
-    return { sector: s, aTime, bTime, aCls, bCls, delta };
+    return { sector: s, aTime, bTime, delta };
   });
 
   const totalDelta = sectorDiffs.reduce((sum, s) => {
@@ -142,8 +140,11 @@ export function TheoreticalLap() {
 
   if (!selectedDriver || !sectors?.available) return null;
 
+  const board: any[] = snap?.leaderboard ?? [];
+  const row = board.find((r) => r.driver_number === selectedDriver);
+
   const theoretical = sectors.theoretical_lap_s;
-  const actual = sectors.personal_best_lap_s;
+  const actual = row?.personal_best_s;
   const gain = theoretical != null && actual != null ? actual - theoretical : null;
 
   return (

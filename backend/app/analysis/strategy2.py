@@ -69,7 +69,8 @@ class StrategyEngine2:
             assumptions_common.append("SC/VSC active: reduced pit loss applies")
         if laps_remaining is None or tyre_age is None or compound is None:
             return {"candidates": [], "note": "insufficient state",
-                    "assumptions": assumptions_common}
+                    "assumptions": assumptions_common,
+                    "pit_loss_estimate_s": pit_loss_s}
 
         eff_laps_remaining = max(laps_remaining, 1)
         loss = pit_loss_s if pit_loss_s is not None else 0.0
@@ -141,7 +142,8 @@ class StrategyEngine2:
                 stops=stops, confidence=conf,
                 assumptions=assumptions_common + aa))
         return {"candidates": [c.as_dict() for c in out],
-                "laps_remaining": eff_laps_remaining}
+                "laps_remaining": eff_laps_remaining,
+                "pit_loss_estimate_s": pit_loss_s}
 
     # ------------------------------------------------------- pit windows ----
 

@@ -20,7 +20,7 @@ interface SectorData {
   };
 }
 
-export function TimingTower() {
+export function TimingTower({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const { selectedDriver, comparisonDriver, selectDriver, selectComparisonDriver } = useDriverSelection();
   const [mode, setMode] = useState<Mode>("expanded");
@@ -43,10 +43,12 @@ export function TimingTower() {
         try {
           const d = await apiGet(`/sessions/${encodeURIComponent(sessionId)}/sectors/${row.driver_number}`);
           if (alive && d?.available) {
+            const pb = d.personal_best ?? {};
+            const cls = d.classification ?? {};
             results[row.driver_number] = {
-              s1: d.sectors?.["1"] ? { time_s: d.sectors["1"].personal_best_s, classification: d.sectors["1"].classification } : undefined,
-              s2: d.sectors?.["2"] ? { time_s: d.sectors["2"].personal_best_s, classification: d.sectors["2"].classification } : undefined,
-              s3: d.sectors?.["3"] ? { time_s: d.sectors["3"].personal_best_s, classification: d.sectors["3"].classification } : undefined,
+              s1: pb.S1 != null ? { time_s: pb.S1, classification: cls.S1 } : undefined,
+              s2: pb.S2 != null ? { time_s: pb.S2, classification: cls.S2 } : undefined,
+              s3: pb.S3 != null ? { time_s: pb.S3, classification: cls.S3 } : undefined,
             };
           }
         } catch { /* graceful degradation */ }
@@ -75,7 +77,7 @@ export function TimingTower() {
   const isExpanded = mode === "expanded";
 
   return (
-    <Panel title="LIVE TIMING" className="timing-tower-panel"
+    <Panel id={id} title="LIVE TIMING" className="timing-tower-panel"
       actions={
         <button className="preset-btn" onClick={toggleMode}
                 title={isExpanded ? "Compact view" : "Expanded view"}>

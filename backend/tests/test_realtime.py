@@ -236,6 +236,20 @@ class TestRestApi:
         assert body["schema"] == "f1intel-snapshot-1"
         assert "leaderboard" in body and "phase" in body
 
+    def test_snapshot_carries_session_type_and_circuit(self):
+        app, hub = self._app_with_hub()
+        hub.engine.process_envelope(make_env("SessionInfo", {
+            "session_id": "openf1:test", "provider": "openf1",
+            "provider_session_key": "9999", "session_type": "Qualifying",
+            "country_code": "ITA", "circuit_short_name": "Monza",
+            "provenance": {"provider": "openf1", "provenance_class": "A"},
+        }))
+        client = TestClient(app)
+        body = client.get("/api/v1/sessions/openf1:test/snapshot").json()
+        assert body["session_type"] == "Qualifying"
+        assert body["country_code"] == "ITA"
+        assert body["circuit_short_name"] == "Monza"
+
     def test_rest_unknown_session_404(self):
         app, _ = self._app_with_hub()
         client = TestClient(app)
@@ -266,6 +280,46 @@ class TestRestApi:
         assert p.status_code == 200 and "rolling_5_s" in p.json()
         t = client.get("/api/v1/sessions/openf1:test/tyres/1")
         assert t.status_code == 200  # available may be False - honest
+
+    def test_sectors_classification_purple_green(self):
+        app, hub = self._app_with_hub()
+        hub.engine.process_envelope(make_env("SectorTime", {
+            "session_id": "openf1:test", "driver_number": 1, "lap_number": 1,
+            "sector_index": 1, "time_s": 26.5, "segment_codes": None,
+            "provenance": {"provider": "openf1", "provenance_class": "A"},
+        }))
+        hub.engine.process_envelope(make_env("SectorTime", {
+            "session_id": "openf1:test", "driver_number": 2, "lap_number": 1,
+            "sector_index": 1, "time_s": 27.1, "segment_codes": None,
+            "provenance": {"provider": "openf1", "provenance_class": "A"},
+        }))
+        hub.engine.flush_deferred()
+        client = TestClient(app)
+
+        fast = client.get("/api/v1/sessions/openf1:test/sectors/1").json()
+        assert fast["classification"]["S1"] == "PURPLE"
+
+        slow = client.get("/api/v1/sessions/openf1:test/sectors/2").json()
+        assert slow["classification"]["S1"] == "GREEN"
+
+    def test_intelligence_tyres2_includes_compound_and_lap_range(self):
+        from app.core.models import TyreStint
+
+        app, hub = self._app_with_hub()
+        for lap, dur in [(1, 82.0), (2, 82.1), (3, 82.4), (4, 82.6)]:
+            hub.engine.stints.note_lap(1, lap, dur)
+        hub.engine.stints.fold_stint_record(TyreStint(
+            session_id="openf1:test", driver_number=1, stint_number=1,
+            compound="SOFT", lap_start=1, lap_end=4, tyre_age_at_start=0,
+            provenance={"provider": "openf1", "provenance_class": "B"},
+        ))
+        client = TestClient(app)
+        r = client.get("/api/v1/sessions/openf1:test/intelligence")
+        stints = r.json()["tyres_2"]["1"]
+        assert len(stints) == 1
+        assert stints[0]["compound"] == "SOFT"
+        assert stints[0]["lap_start"] == 1
+        assert stints[0]["lap_end"] == 4
 
     def test_rate_limiter_blocks_flood(self):
         rl = RateLimiter(per_minute=3)

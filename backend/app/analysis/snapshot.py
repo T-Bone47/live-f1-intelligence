@@ -51,6 +51,9 @@ class SessionSnapshot:
     active_battles: list[dict] = field(default_factory=list)
     weather: dict = field(default_factory=dict)
     recent_events: list[dict] = field(default_factory=list)
+    session_type: str | None = None
+    country_code: str | None = None
+    circuit_short_name: str | None = None
 
 
 class SnapshotBuilder:
@@ -67,7 +70,9 @@ class SnapshotBuilder:
         self.rc = rc
         self.weather = weather
 
-    def build(self, recent_events: list[dict]) -> SessionSnapshot:
+    def build(self, recent_events: list[dict], session_type: str | None = None,
+              country_code: str | None = None,
+              circuit_short_name: str | None = None) -> SessionSnapshot:
         tstate = self.timing.state
         positions = {n: d.position or 0 for n, d in tstate.drivers.items()}
         neighbors = self.gaps.neighbors_by_position(positions)
@@ -129,6 +134,9 @@ class SnapshotBuilder:
             active_battles=battles,
             weather=self.weather.latest(),
             recent_events=recent_events[-25:],
+            session_type=session_type,
+            country_code=country_code,
+            circuit_short_name=circuit_short_name,
         )
 
     def to_dict(self, snap: SessionSnapshot) -> dict:
@@ -144,6 +152,9 @@ class SnapshotBuilder:
             "weather": snap.weather,
             "active_battles": snap.active_battles,
             "recent_events": snap.recent_events,
+            "session_type": snap.session_type,
+            "country_code": snap.country_code,
+            "circuit_short_name": snap.circuit_short_name,
             "leaderboard": [
                 {k: getattr(r, k) for k in r.__dataclass_fields__}
                 for r in snap.leaderboard

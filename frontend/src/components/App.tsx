@@ -48,20 +48,21 @@ export function App() {
   const snap = st.snapshot as any;
 
   // Auto-detect session mode
-  const profile = snap?.profile ?? snap?.session_type ?? "";
+  const sessionTypeRaw = snap?.session_type ?? "";
   const autoPreset: Preset = useMemo(() => {
-    if (profile === "QUALIFYING") return "qualifying";
-    if (profile === "PRACTICE") return "telemetry";
+    if (sessionTypeRaw === "Qualifying") return "qualifying";
+    if (sessionTypeRaw.startsWith("Sprint")) return "qualifying";
+    if (sessionTypeRaw === "Practice") return "telemetry";
     return "race";
-  }, [profile]);
+  }, [sessionTypeRaw]);
 
-  const [preset, setPreset] = useState<Preset>("race");
-  const activePreset = preset;
+  const [preset, setPreset] = useState<Preset | null>(null);
+  const activePreset = preset ?? autoPreset;
 
   // Session info
   const phase = snap?.phase ?? "";
   const circuit = snap?.circuit_short_name ?? "";
-  const sessionType = snap?.session_type ?? snap?.profile ?? "";
+  const sessionType = snap?.session_type ?? "";
   const currentLap = snap?.current_lap;
   const weather = snap?.weather;
   const trackFlag = snap?.track_flag ?? phase;
@@ -70,6 +71,10 @@ export function App() {
   const lastUpdate = st.seq;
 
   const [navActive, setNavActive] = useState("timing");
+  const handleNav = useCallback((id: string) => {
+    setNavActive(id);
+    document.getElementById(`nav-panel-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   return (
     <div className="app">
@@ -141,7 +146,7 @@ export function App() {
       <StatusRibbon phase={trackFlag} status={st.status} />
 
       {/* ── Nav Rail ── */}
-      <NavRail active={navActive} onNav={setNavActive} />
+      <NavRail active={navActive} onNav={handleNav} />
 
       {/* ── Main Content ── */}
       <div className="main-content">
@@ -177,21 +182,21 @@ function RaceLayout({ selectedDriver }: { selectedDriver: number | null }) {
   return (
     <>
       <div className="col-timing">
-        <TimingTower />
+        <TimingTower id="nav-panel-timing" />
         <WeatherStrip />
       </div>
       <div className="col-main">
-        <CircuitMap />
-        <TelemetryLab />
-        <TyreStrategyTimeline />
+        <CircuitMap id="nav-panel-circuit" />
+        <TelemetryLab id="nav-panel-telemetry" />
+        <TyreStrategyTimeline id="nav-panel-tyres" />
       </div>
       <div className="col-intel">
-        <BattleRadar />
-        <AIConsole />
-        <StrategyBoard />
+        <BattleRadar id="nav-panel-battles" />
+        <AIConsole id="nav-panel-ai" />
+        <StrategyBoard id="nav-panel-strategy" />
         <SectorIntel />
         {selectedDriver != null && <PaceComparison />}
-        <RCFeed />
+        <RCFeed id="nav-panel-events" />
       </div>
     </>
   );
@@ -201,19 +206,19 @@ function QualifyingLayout({ selectedDriver }: { selectedDriver: number | null })
   return (
     <>
       <div className="col-timing">
-        <TimingTower />
+        <TimingTower id="nav-panel-timing" />
         <WeatherStrip />
       </div>
       <div className="col-main">
-        <TelemetryLab />
+        <TelemetryLab id="nav-panel-telemetry" />
         <SectorIntel />
         {selectedDriver != null && <TheoreticalLap />}
         <TimeDelta />
       </div>
       <div className="col-intel">
         <QualifyingCutLine />
-        <AIConsole />
-        <RCFeed />
+        <AIConsole id="nav-panel-ai" />
+        <RCFeed id="nav-panel-events" />
       </div>
     </>
   );
@@ -223,18 +228,18 @@ function TelemetryLayout({ selectedDriver }: { selectedDriver: number | null }) 
   return (
     <>
       <div className="col-timing">
-        <TimingTower />
+        <TimingTower id="nav-panel-timing" />
       </div>
       <div className="col-main">
-        <TelemetryLab />
+        <TelemetryLab id="nav-panel-telemetry" />
         <SectorIntel />
         {selectedDriver != null && <DegradationDetail driver={selectedDriver} />}
       </div>
       <div className="col-intel">
         <PracticeClassification />
-        <BattleRadar />
+        <BattleRadar id="nav-panel-battles" />
         <PaceComparison />
-        <RCFeed />
+        <RCFeed id="nav-panel-events" />
       </div>
     </>
   );
@@ -244,18 +249,18 @@ function StrategyLayout({ selectedDriver }: { selectedDriver: number | null }) {
   return (
     <>
       <div className="col-timing">
-        <TimingTower />
+        <TimingTower id="nav-panel-timing" />
         <WeatherStrip />
       </div>
       <div className="col-main">
-        <TyreStrategyTimeline />
+        <TyreStrategyTimeline id="nav-panel-tyres" />
         {selectedDriver != null && <DegradationDetail driver={selectedDriver} />}
-        <CircuitMap />
+        <CircuitMap id="nav-panel-circuit" />
       </div>
       <div className="col-intel">
-        <StrategyBoard />
-        <AIConsole />
-        <RCFeed />
+        <StrategyBoard id="nav-panel-strategy" />
+        <AIConsole id="nav-panel-ai" />
+        <RCFeed id="nav-panel-events" />
       </div>
     </>
   );
@@ -266,7 +271,7 @@ function DriverFocusLayout({ selectedDriver }: { selectedDriver: number | null }
     return (
       <>
         <div className="col-timing">
-          <TimingTower />
+          <TimingTower id="nav-panel-timing" />
         </div>
         <div className="col-main" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <p className="dim text-lg uppercase" style={{ letterSpacing: "var(--ls-widest)" }}>
@@ -274,7 +279,7 @@ function DriverFocusLayout({ selectedDriver }: { selectedDriver: number | null }
           </p>
         </div>
         <div className="col-intel">
-          <RCFeed />
+          <RCFeed id="nav-panel-events" />
         </div>
       </>
     );
@@ -283,10 +288,10 @@ function DriverFocusLayout({ selectedDriver }: { selectedDriver: number | null }
   return (
     <>
       <div className="col-timing">
-        <TimingTower />
+        <TimingTower id="nav-panel-timing" />
       </div>
       <div className="col-main">
-        <TelemetryLab />
+        <TelemetryLab id="nav-panel-telemetry" />
         <LapIntelligence />
         <TimeDelta />
         <TheoreticalLap />
@@ -296,9 +301,9 @@ function DriverFocusLayout({ selectedDriver }: { selectedDriver: number | null }
       <div className="col-intel">
         <PaceComparison />
         <PitAnalytics />
-        <BattleRadar />
-        <StrategyBoard />
-        <AIConsole />
+        <BattleRadar id="nav-panel-battles" />
+        <StrategyBoard id="nav-panel-strategy" />
+        <AIConsole id="nav-panel-ai" />
         <WhatChanged />
       </div>
     </>
@@ -309,7 +314,7 @@ function MinimalLayout() {
   return (
     <>
       <div className="col-timing" style={{ maxWidth: 600 }}>
-        <TimingTower />
+        <TimingTower id="nav-panel-timing" />
       </div>
     </>
   );

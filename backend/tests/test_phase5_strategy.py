@@ -44,6 +44,14 @@ class TestStrategyCandidates:
         for c in r["candidates"]:
             assert c["confidence"] != "HIGH" or c["stops"] == 0
 
+    def test_pit_loss_estimate_echoed_back(self):
+        r = self.base(pit_loss_s=22.0)
+        assert r["pit_loss_estimate_s"] == 22.0
+        insufficient = StrategyEngine2().candidates(
+            compound=None, tyre_age=None, degradation_rate=None,
+            base_pace=None, laps_remaining=None, pit_loss_s=22.0)
+        assert insufficient["pit_loss_estimate_s"] == 22.0
+
 
 class TestPitWindow:
     def test_window_structure(self):

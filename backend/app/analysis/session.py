@@ -47,6 +47,8 @@ MEANINGFUL = {
 class SessionContext:
     session_id: str
     session_type: SessionType = SessionType.UNKNOWN
+    country_code: str | None = None
+    circuit_short_name: str | None = None
 
     @property
     def profile(self) -> Profile | None:

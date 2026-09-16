@@ -13,7 +13,7 @@ const COMPOUND_COLOR: Record<string, string> = {
 };
 
 /** Gantt-style stint timeline for all drivers. */
-export function TyreStrategyTimeline() {
+export function TyreStrategyTimeline({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const { selectedDriver } = useDriverSelection();
   const intel = (st.snapshot as any)?.intelligence as any;
@@ -34,7 +34,7 @@ export function TyreStrategyTimeline() {
   }, [maxEnd]);
 
   return (
-    <Panel title="TYRE STRATEGY TIMELINE" className="tyre-timeline"
+    <Panel id={id} title="TYRE STRATEGY TIMELINE" className="tyre-timeline"
       actions={<ProvenanceBadge type="DERIVED" />}>
       {entries.length === 0 ? (
         <p className="dim text-sm uppercase">STINT DATA UNAVAILABLE</p>

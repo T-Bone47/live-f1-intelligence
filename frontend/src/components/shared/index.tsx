@@ -59,9 +59,16 @@ export function StatusRibbon({ phase, status }: { phase: string; status: string 
 }
 
 /* ── Confidence Badge ── */
-export function ConfidenceBadge({ level }: { level: string | null | undefined }) {
+export function ConfidenceBadge(
+  { level, label }: { level: string | null | undefined; label?: string }
+) {
   const l = (level ?? "NONE").toUpperCase();
-  return <span className={`conf-badge conf-${l}`}>{l}</span>;
+  return (
+    <span className={`conf-badge conf-${l}`}>
+      {l}
+      {label && <span className="dim text-xs"> · {label}</span>}
+    </span>
+  );
 }
 
 /* ── Provenance Badge ── */
@@ -104,8 +111,8 @@ export function TimingValue(
 }
 
 /* ── Evidence Chip ── */
-export function EvidenceChip({ id }: { id: string }) {
-  return <span className="evidence-chip" title={id}>{id}</span>;
+export function EvidenceChip({ id, statement }: { id: string; statement?: string }) {
+  return <span className="evidence-chip" title={id}>{statement ?? id}</span>;
 }
 
 /* ── Metric ── */

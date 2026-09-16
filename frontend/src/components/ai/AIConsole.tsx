@@ -3,7 +3,7 @@
  * trust indicators, insight feed, and terminal-style appearance
  */
 
-import { FormEvent, useState, useRef, useEffect } from "react";
+import { FormEvent, useState, useRef } from "react";
 import { useSessionState, askAI, apiGet } from "../../state/store";
 import { Panel, ConfidenceBadge, EvidenceChip, ProvenanceBadge, DataFreshness } from "../shared";
 import { fmtTime } from "../../logic/format";
@@ -19,29 +19,15 @@ const SUGGESTED_QUERIES = [
   "Explain the current battle",
 ];
 
-export function AIConsole() {
+export function AIConsole({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const snap = st.snapshot as any;
   const sessionId = snap?.session_id;
-  const aiStatus = (snap as any)?.ai_status;
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [insights, setInsights] = useState<any[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch AI insights from WebSocket events
-  useEffect(() => {
-    const evts = snap?.recent_events ?? [];
-    const aiEvts = evts.filter((e: any) =>
-      (e.event_type ?? e.type ?? "").includes("AI") ||
-      (e.source ?? "").includes("ai")
-    );
-    if (aiEvts.length > 0) {
-      setInsights((prev) => [...prev, ...aiEvts].slice(-10));
-    }
-  }, [snap?.recent_events]);
 
   const handleAsk = async (q: string) => {
     if (!sessionId || !q.trim()) return;
@@ -51,7 +37,7 @@ export function AIConsole() {
       const result = await askAI(sessionId, q);
       setAnswer(result);
     } catch {
-      setAnswer({ status: "FAILED", answer: "AI request failed. Deterministic intelligence remains active." });
+      setAnswer({ status: "FAILED", response: { answer: "AI request failed. Deterministic intelligence remains active." } });
     } finally {
       setLoading(false);
     }
@@ -67,7 +53,7 @@ export function AIConsole() {
     isReady ? "READY" : "DISCONNECTED";
 
   return (
-    <Panel title="AI ENGINEER" className="ai-console"
+    <Panel id={id} title="AI ENGINEER" className="ai-console"
       actions={
         <span className={`ai-ready ${loading ? "analyzing" : ""}`}
               style={{ color: loading ? "var(--warning)" : isReady ? "var(--success)" : "var(--text-muted)" }}>
@@ -78,24 +64,24 @@ export function AIConsole() {
       <div className="ai-answer-block">
         {answer ? (
           <>
-            <p className="ai-text">{answer.answer ?? answer.response ?? "No response."}</p>
+            <p className="ai-text">{answer.response?.answer ?? "No response."}</p>
 
             {/* Evidence */}
-            {answer.evidence_ids?.length > 0 && (
+            {answer.response?.evidence?.length > 0 && (
               <div className="evidence-row">
                 <span className="ev-label dim">EVIDENCE</span>
-                {answer.evidence_ids.map((id: string) => (
-                  <EvidenceChip key={id} id={id} />
+                {answer.response.evidence.map((e: any) => (
+                  <EvidenceChip key={e.id} id={e.id} statement={e.statement} />
                 ))}
               </div>
             )}
 
             {/* Meta row */}
             <div className="ai-meta-row">
-              {answer.confidence && <ConfidenceBadge level={answer.confidence} />}
+              {answer.response?.confidence && <ConfidenceBadge level={answer.response.confidence} />}
               <ProvenanceBadge type="AI" />
-              {answer.timestamp && (
-                <span className="dim text-xs mono">{fmtTime(answer.timestamp)}</span>
+              {answer.response?.generated_at && (
+                <span className="dim text-xs mono">{fmtTime(answer.response.generated_at)}</span>
               )}
               {answer.status === "FALLBACK" && (
                 <span className="insufficient-tag">DETERMINISTIC FALLBACK</span>
@@ -137,17 +123,6 @@ export function AIConsole() {
         </button>
       </form>
 
-      {/* Insight feed */}
-      {insights.length > 0 && (
-        <div style={{ borderTop: "1px solid var(--border)", marginTop: "var(--sp-2)", paddingTop: "var(--sp-1)" }}>
-          {insights.slice(-3).map((ins, i) => (
-            <div key={i} className="ai-insight">
-              <span className="dim mono text-xs">{fmtTime(ins.ts ?? ins.timestamp)}</span>
-              <span>{ins.description ?? ins.message ?? ""}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </Panel>
   );
 }

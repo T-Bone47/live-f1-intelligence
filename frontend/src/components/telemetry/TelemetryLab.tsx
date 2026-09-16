@@ -12,9 +12,9 @@ import { UNAVAILABLE } from "../../logic/format";
 type TraceType = "SPEED" | "THROTTLE" | "BRAKE" | "GEAR";
 const ALL_TRACES: TraceType[] = ["SPEED", "THROTTLE", "BRAKE", "GEAR"];
 
-interface TraceSample { distance_m?: number; time_s?: number; value: number; }
+interface TraceSample { ts?: string; value: number; }
 
-export function TelemetryLab() {
+export function TelemetryLab({ id }: { id?: string } = {}) {
   const st = useSessionState();
   const { selectedDriver, comparisonDriver } = useDriverSelection();
   const snap = st.snapshot as any;
@@ -57,10 +57,11 @@ export function TelemetryLab() {
     });
   }, []);
 
-  const hasData = dataA?.available !== false;
+  const hasData = !!dataA?.series &&
+    Object.values(dataA.series).some((s: any) => Array.isArray(s) && s.length > 0);
 
   return (
-    <Panel title="TELEMETRY LAB" className="telemetry-lab"
+    <Panel id={id} title="TELEMETRY LAB" className="telemetry-lab"
       actions={
         <div className="legend-row">
           {driverA && (
@@ -97,22 +98,22 @@ export function TelemetryLab() {
         onMouseLeave={() => setCursorX(null)}>
           {activeTraces.has("SPEED") && (
             <TraceChart label="SPEED" unit="km/h"
-              samplesA={dataA?.samples?.speed} samplesB={dataB?.samples?.speed}
+              samplesA={dataA?.series?.speed} samplesB={dataB?.series?.speed}
               yMin={0} yMax={360} height={120} cursorX={cursorX} />
           )}
           {activeTraces.has("THROTTLE") && (
             <TraceChart label="THROTTLE" unit="%"
-              samplesA={dataA?.samples?.throttle} samplesB={dataB?.samples?.throttle}
+              samplesA={dataA?.series?.throttle} samplesB={dataB?.series?.throttle}
               yMin={0} yMax={100} height={60} cursorX={cursorX} />
           )}
           {activeTraces.has("BRAKE") && (
             <TraceChart label="BRAKE" unit="%"
-              samplesA={dataA?.samples?.brake} samplesB={dataB?.samples?.brake}
+              samplesA={dataA?.series?.brake} samplesB={dataB?.series?.brake}
               yMin={0} yMax={100} height={60} cursorX={cursorX} />
           )}
           {activeTraces.has("GEAR") && (
             <TraceChart label="GEAR" unit=""
-              samplesA={dataA?.samples?.gear} samplesB={dataB?.samples?.gear}
+              samplesA={dataA?.series?.gear} samplesB={dataB?.series?.gear}
               yMin={0} yMax={8} height={40} cursorX={cursorX} step />
           )}
         </div>

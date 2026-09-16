@@ -156,6 +156,8 @@ class AnalysisEngine:
 
     def on_session(self, s, envelope):  # noqa: ANN001
         self.ctx.session_type = s.session_type
+        self.ctx.country_code = s.country_code
+        self.ctx.circuit_short_name = s.circuit_short_name
         return []
 
     def on_driver(self, d, envelope):  # noqa: ANN001 Driver
@@ -477,6 +479,9 @@ class AnalysisEngine:
                            compound=stint.compound.value, laps=laps)
             d = r.as_dict()
             d["stint_number"] = sn
+            d["compound"] = stint.compound.value if stint.compound else None
+            d["lap_start"] = stint.lap_start
+            d["lap_end"] = stint.lap_end
             out.append(d)
         return out
 
@@ -516,7 +521,10 @@ class AnalysisEngine:
     # ------------------------------------------------------------- output ----
 
     def snapshot(self) -> SessionSnapshot:
-        return self.builder.build([e.as_dict() for e in self.sig.events[-25:]])
+        return self.builder.build([e.as_dict() for e in self.sig.events[-25:]],
+                                   session_type=self.ctx.session_type.value,
+                                   country_code=self.ctx.country_code,
+                                   circuit_short_name=self.ctx.circuit_short_name)
 
     def snapshot_dict(self) -> dict:
         snap = self.snapshot()

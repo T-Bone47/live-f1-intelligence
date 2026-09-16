@@ -185,7 +185,7 @@ class TestRealGeminiAPI:
 
         key, model = self._key_and_model()
         if not key or key == "your_key_here":
-            self.skipTest("GEMINI_API_KEY not set - real-API validation skipped")
+            pytest.skip("GEMINI_API_KEY not set - real-API validation skipped")
         prov = GeminiProvider(api_key=key, model=model)
 
         async def go():
