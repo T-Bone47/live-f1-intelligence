@@ -149,14 +149,16 @@ export function Delta(
 }
 
 /* ── Data Freshness ── */
-export function DataFreshness({ ageMs }: { ageMs: number | null }) {
+export function DataFreshness({ ageMs, mode }: { ageMs: number | null; mode?: string }) {
   if (ageMs == null) return <span className="freshness disconnected"><span className="freshness-dot" /> —</span>;
   const s = Math.round(ageMs / 1000);
-  const cls = s < 3 ? "live" : s < 10 ? "delayed" : "stale";
+  const fresh = s < 3;
+  const isLive = fresh && mode === "LIVE";
+  const cls = isLive ? "live" : fresh ? "delayed" : s < 10 ? "delayed" : "stale";
   return (
     <span className={`freshness ${cls}`}>
       <span className="freshness-dot" />
-      {s < 3 ? "LIVE" : `${s}s`}
+      {isLive ? "LIVE" : `${s}s`}
     </span>
   );
 }

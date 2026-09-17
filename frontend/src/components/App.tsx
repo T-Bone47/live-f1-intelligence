@@ -133,7 +133,10 @@ export function App() {
             </span>
           )}
 
-          <DataFreshness ageMs={st.status === "LIVE" || st.status === "REPLAY" ? 1000 : st.status === "DEGRADED" ? 5000 : null} />
+          <DataFreshness
+            ageMs={st.status === "LIVE" || st.status === "REPLAY" ? 1000 : st.status === "DEGRADED" ? 5000 : null}
+            mode={st.status}
+          />
 
           <span className="hdr-item">
             <span className="hdr-label">SEQ</span>
