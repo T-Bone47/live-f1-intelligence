@@ -5,10 +5,10 @@
  * fastest lap highlight, compact/expanded modes
  */
 
-import { memo, useCallback, useState, useEffect, useMemo } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { useSessionState, useDriverSelection, apiGet } from "../../state/store";
-import { Panel, TyreChip, ConfidenceBadge, TimingValue } from "../shared";
-import { fmtSec, fmtGap, fmtInterval, fmtLap, compoundLabel, sectorStyle, teamAbbr, trendArrow, UNAVAILABLE } from "../../logic/format";
+import { Panel, TyreChip } from "../shared";
+import { fmtSec, fmtGap, fmtInterval, fmtLap, sectorStyle, teamAbbr, trendArrow, UNAVAILABLE } from "../../logic/format";
 
 type Mode = "expanded" | "compact";
 
@@ -197,7 +197,7 @@ const TimingRow = memo(function TimingRow({
 });
 
 /* ── Position delta indicator ── */
-function PositionDelta({ position, driver }: { position: number | null; driver: number }) {
+function PositionDelta({ position: _position, driver: _driver }: { position: number | null; driver: number }) {
   // Static display — actual deltas require tracking previous positions
   // which the WebSocket protocol handles via snapshot diffs.
   // For now, render a stable dash. Position deltas from the backend

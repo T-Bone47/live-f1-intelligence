@@ -4,8 +4,8 @@
  */
 
 import { FormEvent, useState, useRef } from "react";
-import { useSessionState, askAI, apiGet } from "../../state/store";
-import { Panel, ConfidenceBadge, EvidenceChip, ProvenanceBadge, DataFreshness } from "../shared";
+import { useSessionState, askAI } from "../../state/store";
+import { Panel, ConfidenceBadge, EvidenceChip, ProvenanceBadge } from "../shared";
 import { fmtTime } from "../../logic/format";
 
 const SUGGESTED_QUERIES = [

@@ -4,12 +4,12 @@
  */
 
 import { memo, useState, useEffect, useMemo } from "react";
-import { useSessionState, useDriverSelection, apiGet, useIntelligence } from "../../state/store";
+import { useSessionState, useDriverSelection, apiGet } from "../../state/store";
 import {
-  Panel, TyreChip, ConfidenceBadge, Metric, Delta,
-  BattleStateBadge, DataFreshness, ProvenanceBadge,
+  Panel, TyreChip, ConfidenceBadge, Delta,
+  BattleStateBadge, ProvenanceBadge,
 } from "../shared";
-import { fmtSec, fmtGap, fmtTime, UNAVAILABLE, trendArrow, eventIcon, fmtLap } from "../../logic/format";
+import { fmtSec, fmtTime, UNAVAILABLE, eventIcon, fmtLap } from "../../logic/format";
 
 /* ============================================================
    RACE PICTURE — summary bar at the top
@@ -190,7 +190,7 @@ function windArrow(deg: number): string {
 
 export function StrategyBoard({ id }: { id?: string } = {}) {
   const st = useSessionState();
-  const { selectedDriver } = useDriverSelection();
+  useDriverSelection();
   const snap = st.snapshot as any;
   const sessionId = snap?.session_id;
   const [strat, setStrat] = useState<any>(null);

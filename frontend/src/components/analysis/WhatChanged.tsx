@@ -10,7 +10,6 @@ export function WhatChanged() {
   const st = useSessionState();
   const snap = st.snapshot as any;
   const events: any[] = snap?.recent_events ?? [];
-  const currentLap = snap?.current_lap ?? 0;
 
   // Filter events from the last 5 laps
   // Assuming events have a lap property, or just take the last N significant events

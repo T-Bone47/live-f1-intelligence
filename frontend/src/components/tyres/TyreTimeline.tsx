@@ -3,9 +3,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, useSessionState, useDriverSelection, useIntelligence } from "../../state/store";
-import { Panel, TyreChip, ConfidenceBadge, Metric, ProvenanceBadge } from "../shared";
-import { UNAVAILABLE, fmtSec, degradationText } from "../../logic/format";
+import { apiGet, useSessionState, useDriverSelection } from "../../state/store";
+import { Panel, ConfidenceBadge, Metric, ProvenanceBadge } from "../shared";
+import { UNAVAILABLE, fmtSec } from "../../logic/format";
 
 const COMPOUND_COLOR: Record<string, string> = {
   SOFT: "var(--tyre-soft)", MEDIUM: "var(--tyre-medium)",

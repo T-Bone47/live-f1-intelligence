@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useMemo, useCallback, useState, useEffect } from "react";
+import { useSyncExternalStore, useState, useEffect } from "react";
 import { SessionSocket, SessionState } from "../ws/socket";
 
 let socket: SessionSocket | null = null;
@@ -29,7 +29,7 @@ export function useSessionState(): SessionState {
 
 /* ── Driver selection state (app-level) ── */
 let _driverState = { selected: null as number | null, comparison: null as number | null };
-let _driverListeners: Set<() => void> = new Set();
+const _driverListeners: Set<() => void> = new Set();
 
 function notifyDriverListeners() {
   _driverListeners.forEach((fn) => fn());
@@ -73,7 +73,6 @@ export function useIntelligence(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) { setIntel(null); return; }
     let alive = true;
-    let timer: ReturnType<typeof setInterval>;
 
     const fetch_ = () => {
       setLoading(true);
@@ -85,7 +84,7 @@ export function useIntelligence(sessionId: string | undefined) {
 
     fetch_();
     // Refresh every 5 seconds
-    timer = setInterval(fetch_, 5000);
+    const timer = setInterval(fetch_, 5000);
 
     return () => { alive = false; clearInterval(timer); };
   }, [sessionId]);

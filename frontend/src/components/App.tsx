@@ -44,7 +44,7 @@ const PRESETS: { id: Preset; label: string }[] = [
 
 export function App() {
   const st = useSessionState();
-  const { selectedDriver, comparisonDriver } = useDriverSelection();
+  const { selectedDriver } = useDriverSelection();
   const snap = st.snapshot as any;
 
   // Auto-detect session mode

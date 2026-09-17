@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { useSessionState, useDriverSelection, apiGet } from "../../state/store";
 import { Panel, Delta, ProvenanceBadge } from "../shared";
-import { fmtSec, UNAVAILABLE, sectorStyle } from "../../logic/format";
+import { fmtSec } from "../../logic/format";
 
 export function TimeDelta() {
   const st = useSessionState();

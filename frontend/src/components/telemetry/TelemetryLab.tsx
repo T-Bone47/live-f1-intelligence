@@ -4,10 +4,9 @@
  * synchronized crosshair, sector boundary markers, dark grid background
  */
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { useSessionState, useDriverSelection, apiGet } from "../../state/store";
-import { Panel, TyreChip } from "../shared";
-import { UNAVAILABLE } from "../../logic/format";
+import { Panel } from "../shared";
 
 type TraceType = "SPEED" | "THROTTLE" | "BRAKE" | "GEAR";
 const ALL_TRACES: TraceType[] = ["SPEED", "THROTTLE", "BRAKE", "GEAR"];
@@ -139,7 +138,7 @@ const TraceChart = memo(function TraceChart({
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
 
-  const buildPath = useCallback((samples: TraceSample[] | undefined, color: string): string | null => {
+  const buildPath = useCallback((samples: TraceSample[] | undefined, _color: string): string | null => {
     if (!samples || samples.length === 0) return null;
     const pts = samples.map((s, i) => {
       const x = pad.left + (i / (samples.length - 1)) * plotW;
