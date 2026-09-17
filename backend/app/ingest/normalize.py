@@ -231,7 +231,7 @@ def normalize(item: RawItem, session_id: str, ingestion_ts) -> list[Envelope]:
             model = quali_row_to_result(row, session_id)
             event_type = "result.quali_loaded"
         else:
-            raise NormalizationError(f"unknown results kind {kind!r}")
+            raise om.NormalizationError(f"unknown results kind {kind!r}")
         out.append(
             make_envelope(
                 event_type=event_type,
@@ -259,7 +259,7 @@ def normalize(item: RawItem, session_id: str, ingestion_ts) -> list[Envelope]:
         )
     else:
         # Unknown channels are logged upstream; nothing fabricated here.
-        raise NormalizationError(f"unhandled channel {item.channel!r}")
+        raise om.NormalizationError(f"unhandled channel {item.channel!r}")
 
     for env in out:
         env.ingestion_timestamp = ingestion_ts

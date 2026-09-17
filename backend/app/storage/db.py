@@ -510,7 +510,7 @@ class Repository:
             env.session_id, env.driver_number, env.origin, env.source,
             _ts(env.source_timestamp), _ts(env.ingestion_timestamp),
             env.provenance_class.value, env.dedupe_key,
-            _json.dumps(json.loads(env.model_dump_json())["payload"]),
+            _json.dumps(_json.loads(env.model_dump_json())["payload"]),
         )
 
     async def save_quality_report(self, session_id: str, mode: str, report: dict) -> None:
