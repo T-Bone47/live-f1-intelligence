@@ -80,9 +80,7 @@ export function RacePicture() {
           {snap?.weather?.track_temp_c != null
             ? `TRK ${snap.weather.track_temp_c.toFixed(0)}°C`
             : ""}
-          {snap?.weather?.rain_pct != null && snap.weather.rain_pct > 0
-            ? ` · RAIN ${snap.weather.rain_pct}%`
-            : ""}
+          {snap?.weather?.rainfall ? " · RAIN" : ""}
         </span>
       </div>
     </div>
@@ -167,14 +165,14 @@ export const WeatherStrip = memo(function WeatherStrip() {
       <div className="wx-item">
         <span className="dim">WIND</span>
         <span className="mono">
-          {w.wind_speed_kph != null ? `${w.wind_speed_kph.toFixed(0)} km/h` : UNAVAILABLE}
+          {w.wind_speed_mps != null ? `${w.wind_speed_mps.toFixed(1)} m/s` : UNAVAILABLE}
           {w.wind_direction_deg != null && <span className="dim"> {windArrow(w.wind_direction_deg)}</span>}
         </span>
       </div>
-      {w.rain_pct != null && w.rain_pct > 0 && (
+      {w.rainfall && (
         <div className="wx-item">
           <span className="dim">RAIN</span>
-          <span className="mono" style={{ color: "var(--info)" }}>{w.rain_pct}%</span>
+          <span className="mono" style={{ color: "var(--info)" }}>YES</span>
         </div>
       )}
     </div>

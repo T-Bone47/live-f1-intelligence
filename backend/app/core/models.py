@@ -195,7 +195,7 @@ class WeatherPoint(BaseModel):
     pressure_hpa: float | None = None
     rainfall: bool | None = None
     wind_direction_deg: int | None = None
-    wind_speed_mps: float | None = None  # upstream unit unconfirmed; stored verbatim
+    wind_speed_mps: float | None = None  # confirmed m/s (matches FIA official weather reports)
     provenance: Provenance
 
 

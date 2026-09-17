@@ -119,9 +119,11 @@ class WeatherEngine:
         s = self.state
         out: dict = {}
         for name, series in (("air_temp_c", s.air_temp), ("track_temp_c", s.track_temp),
-                             ("humidity_pct", s.humidity), ("wind_speed", s.wind_speed)):
+                             ("humidity_pct", s.humidity), ("wind_speed_mps", s.wind_speed)):
             if series:
                 out[name] = series[-1]
+        if s.wind_dir:
+            out["wind_direction_deg"] = s.wind_dir[-1]
         if s.rainfall is not None:
             out["rainfall"] = s.rainfall
         return out
