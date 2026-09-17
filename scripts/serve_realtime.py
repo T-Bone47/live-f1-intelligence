@@ -35,10 +35,12 @@ async def build_runtime(args) -> tuple:  # noqa: ANN202
 
     from app.api import HubRegistry, create_app
     from app.config import get_settings
+    from app.ingest.persistence import PersistenceSubscriber
     from app.providers.openf1.client import OpenF1Client
     from app.providers.openf1.provider import OpenF1Provider
     from app.providers.replay import ReplayProvider
     from app.realtime.hub import SessionHub
+    from app.storage.db import Repository, apply_migrations, connect
 
     settings = get_settings()
     if args.mode == "replay":
@@ -58,6 +60,20 @@ async def build_runtime(args) -> tuple:  # noqa: ANN202
     hub.metrics.provider_status = "CONNECTING"
     registry = HubRegistry()
     registry.register(hub)
+
+    app = create_app(registry)
+    config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
+    server = uvicorn.Server(config)
+
+    # Phase 10.1A: PersistenceSubscriber is fully built (app/ingest/persistence.py)
+    # but was never attached to the envelope stream - see
+    # docs/PHASE_10_TELEMETRY_REPLAY_ARCHITECTURE.md section 4. This is the one
+    # wiring connection; no schema/subscriber changes, live and replay both feed
+    # the same pipeline bus.
+    pool = await connect(settings.database_url)
+    await apply_migrations(pool)
+    persistence = PersistenceSubscriber(Repository(pool))
+    hub.pipeline.bus.subscribe("persistence", persistence)
 
     # Phase 6: grounded AI runtime (mock provider by default - no key needed)
     from app.ai.gateway import LLMGateway
@@ -113,7 +129,7 @@ async def build_runtime(args) -> tuple:  # noqa: ANN202
         threading.Thread(target=worker, daemon=True,
                          name="provider-upstream").start()
 
-    return server, upstream, hub, ai_runtime
+    return server, upstream, hub, ai_runtime, persistence, pool
 
 
 async def amain() -> int:
@@ -126,7 +142,7 @@ async def amain() -> int:
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
 
-    server, upstream, hub, ai_runtime = await build_runtime(args)
+    server, upstream, hub, ai_runtime, persistence, pool = await build_runtime(args)
     tasks = [asyncio.create_task(upstream()), asyncio.create_task(hub.run())]
     print(f"REALTIME GATEWAY on {args.host}:{args.port} "
           f"(session={hub.session_id})")
@@ -145,6 +161,8 @@ async def amain() -> int:
         raise serve_task.exception()  # type: ignore[arg-type]
     hub.stop()
     await ai_runtime.stop()
+    await persistence.flush()
+    await pool.close()
     for t in tasks:
         t.cancel()
     return 0
