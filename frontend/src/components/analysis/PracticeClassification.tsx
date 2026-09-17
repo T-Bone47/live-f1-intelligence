@@ -7,7 +7,7 @@ export function PracticeClassification() {
   const snap = st.snapshot as any;
   const board: any[] = snap?.leaderboard ?? [];
 
-  if (snap?.profile !== "PRACTICE") {
+  if (snap?.session_type !== "Practice") {
     return null; // Only show in practice sessions
   }
 

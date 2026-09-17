@@ -8,7 +8,7 @@ export function QualifyingCutLine() {
   const board: any[] = snap?.leaderboard ?? [];
   const phase = snap?.phase?.toUpperCase() || "";
 
-  if (snap?.profile !== "QUALIFYING") {
+  if (snap?.session_type !== "Qualifying") {
     return null; // Only show in qualifying sessions
   }
 
