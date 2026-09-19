@@ -290,12 +290,13 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
                     raise HTTPException(422, "RAW windows are capped at 20 minutes")
 
             rows = await pool.fetch(
-                """SELECT ts, rpm, speed_kph, gear, throttle_pct, brake_pct, drs
+                """SELECT ts, rpm, speed_kph, gear, throttle_pct, brake_pct, drs,
+                   provenance_class
                    FROM telemetry_car WHERE session_id=$1 AND driver_number=$2
                    AND ts BETWEEN $3 AND $4 ORDER BY ts""",
                 session_id, driver_number, start_dt, end_dt)
             loc_rows = await pool.fetch(
-                """SELECT ts, x, y, z FROM telemetry_location
+                """SELECT ts, x, y, z, provenance_class FROM telemetry_location
                    WHERE session_id=$1 AND driver_number=$2
                    AND ts BETWEEN $3 AND $4 ORDER BY ts""",
                 session_id, driver_number, start_dt, end_dt)
@@ -335,12 +336,13 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
         for k in keys:
             series_out[k] = gps_series() if k == "gps" else numeric_series(k)
 
-        live = hub_active(session_id)
+        prov_source = rows or loc_rows
+        prov_class = prov_source[-1]["provenance_class"] if prov_source else None
         return JSONResponse({
             "session_id": session_id, "driver_number": driver_number,
             "frequency": freq, "lap": lap,
             "window": {"start": start_dt.isoformat(), "end": end_dt.isoformat()},
-            "provenance": {"class": "A" if live else "B",
+            "provenance": {"class": prov_class,
                            "kind": "stored canonical telemetry"},
             "series": series_out,
         })
@@ -571,11 +573,6 @@ def _get_settings():
 
 
 _UTC = timezone.utc
-
-
-def hub_active(session_id: str) -> bool:
-    reg = get_registry()
-    return reg is not None and reg.get(session_id) is not None
 
 
 get_settings = _get_settings
