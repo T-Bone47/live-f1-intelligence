@@ -69,6 +69,37 @@ def _ts(value: Any) -> Any:
     return value
 
 
+def _bulk_insert_returning_sql(
+    table: str, columns: list[str], n_rows: int, casts: dict[int, str] | None = None,
+) -> str:
+    """Build a single multi-row INSERT ... ON CONFLICT DO NOTHING RETURNING 1.
+
+    asyncpg's executemany() cannot RETURNING, so it can never tell a real
+    insert apart from a row the UNIQUE constraint silently absorbed - every
+    call site using it was reporting the attempted batch size as "written"
+    regardless of how many rows actually landed. A single multi-row INSERT
+    plus fetch() gives an exact count instead. Parameter count stays well
+    under Postgres's 65535 limit at this project's batch sizes (n_rows is
+    the persistence layer's own _BATCH_SIZE, currently 1000).
+
+    `casts` maps a 0-based column index to a Postgres type name, rendered
+    as `$N::type` for that column in every row (e.g. the jsonb payload
+    column in `events`)."""
+    casts = casts or {}
+    n_cols = len(columns)
+    values_sql = ",".join(
+        "(" + ",".join(
+            f"${i * n_cols + j + 1}" + (f"::{casts[j]}" if j in casts else "")
+            for j in range(n_cols)
+        ) + ")"
+        for i in range(n_rows)
+    )
+    return (
+        f"INSERT INTO {table}({','.join(columns)}) VALUES {values_sql} "
+        f"ON CONFLICT DO NOTHING RETURNING 1"
+    )
+
+
 class Repository:
     """Idempotent persistence of canonical models + envelopes."""
 
@@ -176,35 +207,30 @@ class Repository:
         return status.endswith("1")
 
     async def insert_car_samples_bulk(self, rows: list[tuple]) -> int:
-        """Batched telemetry insert. Row tuple order matches SQL below."""
+        """Batched telemetry insert. Row tuple order matches SQL below.
+        Returns the number of rows actually inserted (duplicates absorbed
+        by ON CONFLICT DO NOTHING are not counted)."""
         if not rows:
             return 0
-        await self.pool.executemany(
-            """
-            INSERT INTO telemetry_car(session_id, driver_number, ts, rpm,
-                speed_kph, gear, throttle_pct, brake_pct, drs, provenance_class)
-            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-            ON CONFLICT DO NOTHING
-            """,
-            rows,
-        )
-        return len(rows)
+        cols = ["session_id", "driver_number", "ts", "rpm", "speed_kph",
+                "gear", "throttle_pct", "brake_pct", "drs", "provenance_class"]
+        sql = _bulk_insert_returning_sql("telemetry_car", cols, len(rows))
+        result = await self.pool.fetch(sql, *(v for row in rows for v in row))
+        return len(result)
 
     async def insert_location_samples_bulk(self, rows: list[tuple]) -> int:
+        """Returns the number of rows actually inserted (duplicates absorbed
+        by ON CONFLICT DO NOTHING are not counted)."""
         if not rows:
             return 0
-        await self.pool.executemany(
-            """
-            INSERT INTO telemetry_location(session_id, driver_number, ts, x, y, z,
-                provenance_class)
-            VALUES($1,$2,$3,$4,$5,$6,$7)
-            ON CONFLICT DO NOTHING
-            """,
-            rows,
-        )
-        return len(rows)
+        cols = ["session_id", "driver_number", "ts", "x", "y", "z", "provenance_class"]
+        sql = _bulk_insert_returning_sql("telemetry_location", cols, len(rows))
+        result = await self.pool.fetch(sql, *(v for row in rows for v in row))
+        return len(result)
 
     async def insert_events_bulk(self, payloads: list[tuple]) -> int:
+        """Returns the number of rows actually inserted (duplicates absorbed
+        by ON CONFLICT DO NOTHING are not counted)."""
         import json as _json
         import uuid as _uuid
 
@@ -220,17 +246,12 @@ class Repository:
             )
             for p in payloads
         ]
-        await self.pool.executemany(
-            """
-            INSERT INTO events(event_id, seq, event_type, category, session_id,
-                driver_number, origin, source, source_timestamp,
-                ingestion_timestamp, provenance_class, dedupe_key, payload)
-            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb)
-            ON CONFLICT DO NOTHING
-            """,
-            rows,
-        )
-        return len(rows)
+        cols = ["event_id", "seq", "event_type", "category", "session_id",
+                "driver_number", "origin", "source", "source_timestamp",
+                "ingestion_timestamp", "provenance_class", "dedupe_key", "payload"]
+        sql = _bulk_insert_returning_sql("events", cols, len(rows), casts={12: "jsonb"})
+        result = await self.pool.fetch(sql, *(v for row in rows for v in row))
+        return len(result)
 
     async def insert_car_sample(self, m) -> bool:  # noqa: ANN001 TelemetryCarSample
         status = await self.pool.execute(

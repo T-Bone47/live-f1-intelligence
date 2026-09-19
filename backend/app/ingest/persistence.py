@@ -61,6 +61,7 @@ class PersistenceSubscriber:
         self.repo = repo
         self.written = 0
         self.conflicts = 0
+        self.errors = 0
         self._warned_types: set[str] = set()
         self._car_buf: list[tuple] = []
         self._loc_buf: list[tuple] = []
@@ -163,17 +164,22 @@ class PersistenceSubscriber:
         car, loc, evt = self._car_buf, self._loc_buf, self._evt_buf
         self._car_buf, self._loc_buf, self._evt_buf = [], [], []
         if car:
-            await self.repo.insert_car_samples_bulk(car)
-            self.written += len(car)
+            n = await self.repo.insert_car_samples_bulk(car)
+            self.written += n
+            self.conflicts += len(car) - n
         if loc:
-            await self.repo.insert_location_samples_bulk(loc)
-            self.written += len(loc)
+            n = await self.repo.insert_location_samples_bulk(loc)
+            self.written += n
+            self.conflicts += len(loc) - n
         if evt:
             try:
-                await self.repo.insert_events_bulk(evt)
+                n = await self.repo.insert_events_bulk(evt)
             except Exception as exc:  # noqa: BLE001 - audit log must not kill ingestion
                 log.debug("event-log batch skipped (%s)", type(exc).__name__)
-            self.written += len(evt)
+                self.errors += len(evt)
+            else:
+                self.written += n
+                self.conflicts += len(evt) - n
 
     def _count(self, inserted: bool) -> None:
         if inserted:
