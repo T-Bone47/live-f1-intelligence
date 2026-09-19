@@ -219,6 +219,46 @@ class TestHubFanoutAndBackpressure:
         assert "FASTEST_LAP_CHANGE" in got_types
 
 
+class TestReplayPauseControl:
+    """POST /replay/{id}/control action=pause sets hub._paused - this proves
+    something actually reads it. Before this, the endpoint returned 200 OK
+    and set the attribute, but nothing in the feed loop ever checked it, so
+    pause had no observable effect on a running replay."""
+
+    async def test_wait_while_paused_blocks_while_set(self):
+        hub = SessionHub("s")
+        hub._paused = True
+        task = asyncio.create_task(hub.wait_while_paused(poll_interval=0.02))
+
+        await asyncio.sleep(0.1)
+        assert not task.done()  # still blocked after several poll intervals
+
+        hub._paused = False
+        await asyncio.wait_for(task, timeout=1.0)  # resolves promptly once cleared
+
+    async def test_wait_while_paused_returns_immediately_when_not_paused(self):
+        hub = SessionHub("s")
+        assert hub._paused is False
+        await asyncio.wait_for(hub.wait_while_paused(), timeout=0.05)
+
+    def test_control_endpoint_pause_resume_flip_the_attribute_wait_while_paused_reads(self):
+        hub = SessionHub("openf1:pause-e2e")
+        registry = HubRegistry()
+        registry.register(hub)
+        client = TestClient(create_app(registry))
+
+        assert hub._paused is False
+        r = client.post("/api/v1/replay/openf1:pause-e2e/control",
+                        json={"action": "pause"})
+        assert r.status_code == 200 and r.json()["ok"] is True
+        assert hub._paused is True
+
+        r = client.post("/api/v1/replay/openf1:pause-e2e/control",
+                        json={"action": "resume"})
+        assert r.status_code == 200 and r.json()["ok"] is True
+        assert hub._paused is False
+
+
 class TestRestApi:
     def _app_with_hub(self):
         registry = HubRegistry()

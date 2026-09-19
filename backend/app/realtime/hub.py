@@ -76,6 +76,7 @@ class SessionHub:
         self._last_publish = time.monotonic()
         self._pending_events: list[dict] = []
         self._running = False
+        self._paused = False
         # wire analysis into the same bus so live and replay share one path;
         # intelligence events notify via engine listener (works for
         # deferred/flush-time emissions too)
@@ -170,6 +171,15 @@ class SessionHub:
         self.metrics.clients_connected = len(self.clients)
 
     # ------------------------------------------------------------- intake ---
+
+    async def wait_while_paused(self, poll_interval: float = 0.1) -> None:
+        """Block while self._paused is set (see the replay control endpoint,
+        POST /api/v1/replay/{id}/control action=pause/resume). Call this
+        before feeding each item in an upstream loop - it was previously
+        set by the control endpoint but never read anywhere, so 'pause'
+        returned 200 OK without actually holding the feed."""
+        while self._paused:
+            await asyncio.sleep(poll_interval)
 
     async def feed(self, item) -> int:   # noqa: ANN001 RawItem
         t0 = time.perf_counter()

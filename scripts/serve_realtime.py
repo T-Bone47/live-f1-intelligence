@@ -115,6 +115,7 @@ async def build_runtime(args) -> tuple:  # noqa: ANN202
                 log.info("upstream started (%s)", args.mode)
                 n = 0
                 async for item in provider.run(session):
+                    await hub.wait_while_paused()
                     fut = asyncio.run_coroutine_threadsafe(
                         hub.feed(item), main_loop)
                     fut.result()
