@@ -12,7 +12,7 @@ relabeled. Fixed to read provenance_class from the rows actually returned.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -49,7 +49,7 @@ async def test_telemetry_provenance_reflects_stored_data_not_hub_activity(
     from app.config import get_settings
     get_settings.cache_clear()
 
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
     await _insert_car_sample(pg_pool, session_sid, 44, ts, "B")
 
     registry = HubRegistry()
@@ -74,7 +74,7 @@ async def test_telemetry_provenance_reports_a_for_class_a_data(
     from app.config import get_settings
     get_settings.cache_clear()
 
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
     await _insert_car_sample(pg_pool, session_sid, 44, ts, "A")
 
     app = create_app(HubRegistry())  # no hub registered at all this time

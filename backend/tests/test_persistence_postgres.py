@@ -19,11 +19,11 @@ long-lived local Postgres instance.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from app.core.enums import ProviderName, ProvenanceClass
+from app.core.enums import ProvenanceClass, ProviderName
 from app.core.events import make_envelope
 from app.core.models import Provenance, TelemetryCarSample, TelemetryLocationSample
 from app.ingest.persistence import PersistenceSubscriber
@@ -61,7 +61,7 @@ def _loc_envelope(session_id: str, driver: int, ts: datetime):
 @pytest.mark.asyncio
 async def test_flush_batches_rather_than_writing_immediately(pg_pool, session_sid):
     sub = PersistenceSubscriber(Repository(pg_pool))
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
 
     await sub(_car_envelope(session_sid, 1, ts))
     row = await pg_pool.fetchrow(
@@ -81,7 +81,7 @@ async def test_flush_batches_rather_than_writing_immediately(pg_pool, session_si
 @pytest.mark.asyncio
 async def test_flush_counts_duplicates_as_conflicts_not_written(pg_pool, session_sid):
     sub = PersistenceSubscriber(Repository(pg_pool))
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
 
     await sub(_car_envelope(session_sid, 1, ts))
     await sub(_car_envelope(session_sid, 1, ts))  # identical (session, driver, ts) key
@@ -104,7 +104,7 @@ async def test_auto_flush_triggers_at_batch_size(pg_pool, session_sid, monkeypat
     monkeypatch.setattr(persistence_mod, "_BATCH_SIZE", 3)
 
     sub = PersistenceSubscriber(Repository(pg_pool))
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
 
     for i in range(3):
         await sub(_car_envelope(session_sid, i, ts))  # 3rd call crosses the patched threshold
@@ -117,7 +117,7 @@ async def test_auto_flush_triggers_at_batch_size(pg_pool, session_sid, monkeypat
 @pytest.mark.asyncio
 async def test_location_samples_also_flush_and_count_correctly(pg_pool, session_sid):
     sub = PersistenceSubscriber(Repository(pg_pool))
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
 
     await sub(_loc_envelope(session_sid, 1, ts))
     await sub.flush()
@@ -135,7 +135,7 @@ async def test_event_log_failure_is_not_counted_as_written(pg_pool, session_sid,
     genuine event-log insert failure still got counted as written."""
     repo = Repository(pg_pool)
     sub = PersistenceSubscriber(repo)
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(UTC)
 
     async def boom(payloads):
         raise RuntimeError("simulated database failure")
