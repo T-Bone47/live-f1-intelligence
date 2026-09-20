@@ -1,0 +1,19 @@
+{
+  "session": {
+    "session_id": "openf1:9159",
+    "provider_session_key": "9159",
+    "provider_meeting_key": "1219"
+  },
+  "provider": "openf1-historical",
+  "recorded_at_epoch": 1789845461.7174597,
+  "frames": 40,
+  "event_types": [
+    "SESSION_INFO",
+    "TELEMETRY_CAR"
+  ],
+  "format": "f1intel-recording-v1",
+  "capabilities_notes": [
+    "Real OpenF1 car_data, session_key=9159, driver 55, 2023-09-15 (historical, no auth needed). Not synthetic.",
+    "SessionInfo intentionally leaves session_type/circuit/etc. as UNKNOWN/None - not fetched for real, not guessed."
+  ]
+}
