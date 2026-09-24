@@ -213,3 +213,29 @@ def test_grid_points_beyond_trace_coverage_are_none_not_clamped():
         assert series.continuous["speed_kph"][i] is None
         assert series.discrete["gear"][i] is None
         assert series.confidence[i] == Confidence.NONE
+
+
+def test_float_rounding_short_of_1_still_covers_the_finish_but_real_shortfall_does_not():
+    """_GRID_TOL (1e-9): a trace landing at 0.9999999999 through float
+    division genuinely reached the line; one 1e-6 short did not."""
+    lap = _lap(duration_s=10.0)
+    samples = [_sample(t, 360.0) for t in range(11)]  # exactly 1000m
+    rounding = normalize_lap(build_lap_distance_trace(lap, samples, LapClass.REPRESENTATIVE),
+                              lap_length_m=1000.0 * (1 + 1e-10))
+    short = normalize_lap(build_lap_distance_trace(lap, samples, LapClass.REPRESENTATIVE),
+                           lap_length_m=1000.0 * (1 + 1e-6))
+    assert resample_common_grid(rounding, step=0.5).elapsed_s[-1] == pytest.approx(10.0)
+    assert resample_common_grid(short, step=0.5).elapsed_s[-1] is None
+
+
+def test_both_drivers_incomplete_gives_no_finish_delta():
+    from app.analysis.lap_distance import delta_t
+    lap_a, lap_b = _lap(driver=1, duration_s=6.0), _lap(driver=2, duration_s=8.0)
+    trace_a = normalize_lap(build_lap_distance_trace(
+        lap_a, [_sample(t, 360.0, driver=1) for t in range(7)], LapClass.REPRESENTATIVE), 1000.0)
+    trace_b = normalize_lap(build_lap_distance_trace(
+        lap_b, [_sample(t, 360.0, driver=2) for t in range(9)], LapClass.REPRESENTATIVE), 1000.0)
+    sync = synchronize_drivers(trace_a, trace_b, step=0.1)
+    assert delta_t(sync, 0.5) == pytest.approx(0.0, abs=1e-6)  # both covered: 600m, 800m
+    assert delta_t(sync, 0.7) is None                           # beyond A's 600m
+    assert delta_t(sync, 1.0) is None                           # beyond both
