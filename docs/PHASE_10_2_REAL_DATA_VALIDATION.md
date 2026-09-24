@@ -150,6 +150,24 @@ Both are fixed.
   is future work.
 - There is no noise-calibrated STABLE threshold (needs real pairs).
 
+## First local run (Windows) — acquisition bug found and fixed
+
+The first real run reached OpenF1 successfully (no 401): the session and
+laps resolved, and driver 55's lap 19 was selected. The car_data query then
+returned **empty**. Root cause, confirmed by running OpenF1's own parser
+(`br-g/openf1` `query_api/query_params.py`) on the exact bytes httpx sends:
+the server rebuilds each filter as `f"{key}={value}"`. So the script's key
+`date>=` arrived as `date>==<ts>`, which parsed as `>=` with the string
+value `"=<ts>"` and matched nothing. The key `date>` arrives as
+`date>=<ts>`, a correctly typed **inclusive** filter. That is the convention
+`OpenF1Client._bounds` already used.
+
+The script now uses `date>`/`date<`, and an empty window reports the exact
+query it sent. The plumbing test had asserted the broken keys (a stub can
+only check what the author believes the server wants). It now encodes
+OpenF1's real behaviour, and it was proven red before the fix and green
+after.
+
 ## How to close the gate (run locally, outside a live F1 session)
 
 ```bash

@@ -62,8 +62,15 @@ async def test_happy_path_returns_both_drivers_and_records_queries():
     assert [q["endpoint"] for q in res["queries"]] == \
         ["/v1/sessions", "/v1/laps", "/v1/car_data", "/v1/laps", "/v1/car_data"]
     car_q = res["queries"][2]["params"]
-    assert car_q["date>="] == "2024-01-01T12:00:00+00:00"
-    assert car_q["date<="] == "2024-01-01T12:01:30+00:00"  # start + lap_duration
+    # OpenF1 rebuilds each filter as f"{key}={value}" before splitting on the
+    # operator (openf1 query_api/query_params.py). A key of "date>=" therefore
+    # becomes "date>==<ts>" -> value "=<ts>", a string that matches nothing.
+    # The key "date>" becomes "date>=<ts>" - an inclusive, correctly typed
+    # filter. Same convention as OpenF1Client._bounds. Verified by running
+    # OpenF1's real parser on what httpx sends.
+    assert "date>=" not in car_q and "date<=" not in car_q
+    assert car_q["date>"] == "2024-01-01T12:00:00+00:00"
+    assert car_q["date<"] == "2024-01-01T12:01:30+00:00"  # start + lap_duration
 
 
 async def test_contaminated_car_data_aborts_instead_of_saving():

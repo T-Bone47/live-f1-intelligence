@@ -76,12 +76,18 @@ async def acquire_pair(client, session_key: int, drivers: list[tuple[int, int | 
 
         start = datetime.fromisoformat(lap["date_start"])
         end = start + timedelta(seconds=float(lap["lap_duration"]))
-        car = await fetch("car_data", {
+        # Keys "date>"/"date<", NOT "date>="/"date<=": OpenF1 rebuilds each
+        # filter as f"{key}={value}", so "date>" arrives as the inclusive
+        # "date>=<ts>" while "date>=" arrives as "date>==<ts>" and silently
+        # matches nothing. Same convention as OpenF1Client._bounds.
+        car_params = {
             "session_key": session_key, "driver_number": driver,
-            "date>=": start.isoformat(), "date<=": end.isoformat(),
-        })
+            "date>": start.isoformat(), "date<": end.isoformat(),
+        }
+        car = await fetch("car_data", car_params)
         if not car:
-            raise OpenF1Error(f"driver {driver} lap {lap['lap_number']}: no car_data in window")
+            raise OpenF1Error(f"driver {driver} lap {lap['lap_number']}: no car_data in window "
+                              f"(query: /v1/car_data {car_params})")
         validate_rows_identity(car, driver_number=driver, session_key=session_key)
         out["drivers"][str(driver)] = {"lap": lap, "car_data": car}
 
