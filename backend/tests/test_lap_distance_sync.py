@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from app.analysis.common.models import LapClass
+from app.analysis.common.models import Confidence, LapClass
 from app.analysis.lap_distance import (
     build_lap_distance_trace,
     delta_t,
@@ -185,3 +185,31 @@ def test_sector_boundary_can_be_located_on_the_distance_axis():
     closest = min(trace.points, key=lambda p: abs((p.ts - t0).total_seconds() - sector1_end_elapsed))
     # constant speed -> sector 1 (4 of 10 seconds) should land at ~40% distance
     assert closest.normalized_distance == pytest.approx(0.4, abs=0.05)
+
+
+# --- Coverage: no fabricated data beyond what a trace actually reached -------
+
+def test_grid_points_beyond_trace_coverage_are_none_not_clamped():
+    """Regression for a bug found in Phase 10.1C: resample_common_grid used
+    to clamp grid points past a trace's last real sample to that sample,
+    which made a lap that only covered 60% of the distance appear to have
+    an elapsed time, speed, and gear at the finish line."""
+    lap = _lap(duration_s=6.0)
+    samples = [_sample(t, 360.0, gear=7) for t in range(7)]  # 600m
+    trace = normalize_lap(build_lap_distance_trace(lap, samples, LapClass.REPRESENTATIVE),
+                           lap_length_m=1000.0)
+    series = resample_common_grid(trace, step=0.1)
+
+    covered = [i for i, x in enumerate(series.grid_x) if x <= 0.6 + 1e-9]
+    beyond = [i for i, x in enumerate(series.grid_x) if x > 0.6 + 1e-9]
+    assert beyond, "test setup: some grid points must lie beyond coverage"
+
+    for i in covered:
+        assert series.elapsed_s[i] is not None
+        assert series.continuous["speed_kph"][i] == pytest.approx(360.0)
+        assert series.discrete["gear"][i] == 7
+    for i in beyond:
+        assert series.elapsed_s[i] is None
+        assert series.continuous["speed_kph"][i] is None
+        assert series.discrete["gear"][i] is None
+        assert series.confidence[i] == Confidence.NONE

@@ -52,6 +52,11 @@ MAX_GAP_S = 2.0
 
 MIN_SAMPLES_FOR_HIGH_CONFIDENCE = 10
 
+# Float tolerance for "does this trace cover grid point x": avoids cutting
+# off a trace that genuinely reaches x=1.0 but lands at 0.9999999999 after
+# division. Far below any meaningful distance (1e-9 of a lap is < 0.01mm).
+_GRID_TOL = 1e-9
+
 # Interpolation semantics per telemetry field. Continuous fields are
 # linearly interpolated on the common distance grid; discrete/categorical
 # fields use step (hold-last-value) semantics instead - Phase 8's explicit
@@ -258,7 +263,7 @@ def build_lap_distance_trace(
     if not points:
         base_confidence = Confidence.NONE
     else:
-        worst_point = min((p.confidence for p in points), key=_confidence_rank)
+        worst_point = min((p.confidence for p in points), key=confidence_rank)
         # A classification/coverage/sample-count issue is a CEILING, not an
         # override: it can only pull confidence down from what the points
         # themselves already show, never mask a worse point-level problem
@@ -269,7 +274,7 @@ def build_lap_distance_trace(
             ceiling = Confidence.LOW
         elif len(points) < MIN_SAMPLES_FOR_HIGH_CONFIDENCE:
             ceiling = Confidence.MEDIUM
-        base_confidence = min((worst_point, ceiling), key=_confidence_rank)
+        base_confidence = min((worst_point, ceiling), key=confidence_rank)
 
     return LapDistanceTrace(
         session_id=session_id, driver_number=driver_number, lap_number=lap.lap_number,
@@ -322,7 +327,9 @@ def normalize_lap(trace: LapDistanceTrace, lap_length_m: float | None) -> LapDis
     return trace
 
 
-def _confidence_rank(c: Confidence) -> int:
+def confidence_rank(c: Confidence) -> int:
+    """Ordering for Confidence: HIGH > MEDIUM > LOW > NONE. Public - reused
+    directly by app.analysis.lap_comparison rather than reimplemented there."""
     return {Confidence.HIGH: 3, Confidence.MEDIUM: 2, Confidence.LOW: 1,
             Confidence.NONE: 0}[c]
 
@@ -399,6 +406,20 @@ def resample_common_grid(trace: LapDistanceTrace, step: float = 0.001) -> Resamp
     continuous_vals = {f: [getattr(p, f) for p in usable] for f in CONTINUOUS_FIELDS}
 
     for x in grid_x:
+        # Outside the distance range this trace actually covers: no data,
+        # not the nearest real sample held flat. Clamping here would claim
+        # a driver "reached" a point on track their telemetry never got to
+        # (e.g. a lap whose integrated distance stops at 0.83 reporting an
+        # elapsed time at the finish line) - found via a Phase 10.1C test.
+        if x < xs[0] - _GRID_TOL or x > xs[-1] + _GRID_TOL:
+            conf_out.append(Confidence.NONE)
+            elapsed_out.append(None)
+            for f in CONTINUOUS_FIELDS:
+                continuous_out[f].append(None)
+            for f in DISCRETE_FIELDS:
+                discrete_out[f].append(None)
+            continue
+
         if x <= xs[0]:
             lo = hi = 0
         elif x >= xs[-1]:
@@ -409,7 +430,7 @@ def resample_common_grid(trace: LapDistanceTrace, step: float = 0.001) -> Resamp
 
         conf_out.append(usable[lo].confidence if lo == hi
                          else min((usable[lo].confidence, usable[hi].confidence),
-                                  key=_confidence_rank))
+                                  key=confidence_rank))
         elapsed_out.append(_lerp(xs, elapsed, lo, hi, x))
         for f in CONTINUOUS_FIELDS:
             continuous_out[f].append(_lerp(xs, continuous_vals[f], lo, hi, x))
@@ -467,7 +488,7 @@ def synchronize_drivers(
         )
     series_a = resample_common_grid(trace_a, step)
     series_b = resample_common_grid(trace_b, step)
-    combined_conf = [min((ca, cb), key=_confidence_rank)
+    combined_conf = [min((ca, cb), key=confidence_rank)
                       for ca, cb in zip(series_a.confidence, series_b.confidence)]
     return SynchronizedComparison(
         session_id=trace_a.session_id, lap_number_a=trace_a.lap_number,
