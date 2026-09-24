@@ -20,10 +20,19 @@ Response:
 
 ## GET /api/v1/sessions/{sid}/telemetry/compare?drivers=16,55[&lap=N]
 
-Returns per-driver series plus an alignment block:
-- mode=normalized_lap_progress, valid=true when ?lap= given
-- mode=timestamp, valid=false otherwise (explicitly flagged: two different
-  laps are NOT claimed comparable without lap alignment).
+Returns per-driver series plus an alignment block. The series are NOT
+distance-aligned in either mode, and the block says so:
+- mode=lap_time_window, valid=false when ?lap= given - each driver's series
+  is narrowed to that driver's own lap time window, nothing more
+- mode=timestamp, valid=false otherwise
+
+Corrected in Phase 10.2 validation: this previously claimed
+mode=normalized_lap_progress, valid=true, but no normalization was ever
+computed - and the route was in fact unreachable (every request 422'd,
+shadowed by /telemetry/{driver_number}; fixed with an :int path
+convertor) and would have crashed if reached (.json() on a server-side
+JSONResponse). The distance-synchronized comparison exists in
+app.analysis.lap_comparison but is not routed yet.
 
 ## Storage
 

@@ -247,7 +247,7 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             "trend_s_per_lap": p.pace_trend(driver_number),
         }
 
-    @app.get("/api/v1/sessions/{session_id}/telemetry/{driver_number}")
+    @app.get("/api/v1/sessions/{session_id}/telemetry/{driver_number:int}")
     async def get_telemetry(session_id: str, driver_number: int,
                             start: str | None = None, end: str | None = None,
                             lap: int | None = None,
@@ -351,8 +351,10 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
     async def compare_telemetry(session_id: str, drivers: str,
                                 lap: int | None = None,
                                 frequency: str = "MEDIUM"):
-        """Driver-vs-driver comparison. Aligned by normalized lap progress when
-        ?lap= is provided; otherwise timestamp alignment only - and we say so."""
+        """Per-driver telemetry side by side. NOT distance-aligned: ?lap= only
+        narrows each driver's series to that driver's own lap time window. The
+        distance-synchronized comparison is app.analysis.lap_comparison, which
+        is not routed yet - the alignment block says exactly this."""
         validate_session_id(session_id)
         nums = [int(d) for d in drivers.split(",")[:3]]
         if len(nums) < 2:
@@ -362,14 +364,15 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             resp = await get_telemetry(session_id, dn, lap=lap,
                                        frequency=frequency,
                                        fields="speed,throttle,brake,gps")
-            series[str(dn)] = resp.json()["series"]
+            series[str(dn)] = json.loads(resp.body)["series"]  # server-side JSONResponse: no .json()
         return {
             "session_id": session_id, "drivers": nums, "lap": lap,
             "alignment": {
-                "mode": "normalized_lap_progress" if lap else "timestamp",
-                "valid": bool(lap),
-                "note": None if lap else
-                        "timestamp alignment only; pass ?lap= for per-lap comparison",
+                "mode": "lap_time_window" if lap else "timestamp",
+                "valid": False,
+                "note": ("per-driver lap time windows; not distance-aligned - "
+                         "distance-synchronized comparison is not routed yet") if lap
+                        else "timestamp alignment only; not distance-aligned",
             },
             "series": series,
         }
