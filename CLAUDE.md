@@ -5,6 +5,7 @@ between sessions: keep "Current state" and "Next steps" true whenever a
 phase lands. Detailed evidence lives in the docs below; read on demand,
 don't re-derive.
 
+@docs/PHASE_10_6_FRONTEND_EVIDENCE_WORKBENCH.md
 @docs/PHASE_10_5_EVIDENCE_API.md
 @docs/RACEWISE_EVIDENCE_CONTRACT.md
 @docs/PHASE_10_4_TIME_LOSS_ATTRIBUTION.md
@@ -38,8 +39,12 @@ docker run -d --rm --name f1intel-test-pg -e POSTGRES_USER=f1intel -e POSTGRES_P
 .\.venv\Scripts\python.exe -m ruff check <changed files>
 ..\scripts\attribution_report.py / evidence_report.py  # regenerate locked evidence (run with the venv python)
 ..\scripts\bench_attribution.py / bench_evidence.py    # performance
+..\scripts\serve_evidence_dev.py   # real pair -> own DB f1intel_evidence_dev, API on :8000
 cd ..\frontend; npm test; npm run build; npm run lint
+npm run dev                         # /evidence = Phase 10.6 Evidence Workbench
 ```
+On this machine the default parallel vitest run can exhaust RAM (tinypool
+"heap out of memory"); `npx vitest run --no-file-parallelism` is reliable.
 DB tests use `TEST_DATABASE_URL` (default
 `postgresql://f1intel:f1intel_dev@localhost:5432/f1intel`). Without
 Postgres they skip cleanly (about 14 tests).
@@ -66,7 +71,7 @@ Both require `driver_a, lap_a, driver_b, lap_b, lap_length_m,
 lap_length_source`. There is no circuit geometry, so a lap length is never
 invented.
 
-## Current state (2026-09-25)
+## Current state (2026-09-26)
 - **10.2: REAL-DATA VALIDATED** on the real pair (session 9161, 2023
   Singapore Q). #55 lap 19 (90.984 s) vs #63 lap 16 (91.056 s). Fixture:
   `scripts/fixtures/real-openf1-pair/`.
@@ -97,6 +102,16 @@ invented.
   - Locked goldens: `docs/evidence/evidence_v1_singapore.json` and
     `evidence_v1.schema.json`.
   - 14/14 source mutations killed.
+- **10.6 COMPLETE** (Evidence Workbench, `/evidence`, frontend only):
+  - Consumes `evidence_v1` only (`frontend/src/evidence/`); no analysis in
+    the browser. Δt is drawn at segment boundaries only (chords labelled
+    "not a measured curve"), each segment with its `inherited_gap ± band`.
+  - Telemetry drill-down only on click, RAW, via `telemetry_references`,
+    labelled not distance-aligned.
+  - Design system: `design-system/live-f1-intelligence/MASTER.md`.
+  - 114 new tests on the real golden; 11/11 mutations killed; verified at
+    375/768/1024/1440/1920 against the real API.
+  - RaceWise seam present but disabled (`VITE_RACEWISE_ENABLED`).
 - **Additional sources** (docs/DATA_SOURCES.md §2.7–2.8):
   - Blacktop, free tier: a challenger for results and standings via
     `app/analysis/source_crosscheck.py` and `scripts/crosscheck_sources.py`.
@@ -107,10 +122,9 @@ invented.
 - **Test baseline:** see "Baseline" at the end of this file.
 
 ## Next steps
-1. **Phase 10.6** (telemetry comparison UI): consume `evidence_v1` only;
-   never re-derive 10.4 values. The handoff table is in
-   docs/PHASE_10_5_EVIDENCE_API.md. Show `uncertainty_s` as an error band,
-   RECOVERING distinctly, and "normalized" on every metre label.
+1. **Stored sessions/laps listing route** (backend, read-only) so the
+   workbench can offer pickers instead of typed ids. Then the RaceWise
+   integration contract, which unlocks the disabled hand-off button.
 2. **Calibrate D and E**, which needs more real pairs
    (`scripts/fetch_real_driver_pair.py`, run outside live sessions).
 3. **Investigate the 10.3 S2 failure.** Do not tune it away. Start with #63's
@@ -188,7 +202,7 @@ invented.
    convention).
 
 ## Roadmap
-10.6 telemetry comparison UI → 11.x strategy / battles / tyres / predictive
+~~10.6 evidence workbench~~ → 11.x strategy / battles / tyres / predictive
 intelligence → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
 
@@ -198,6 +212,6 @@ explorer → session state machine → production hardening.
     fixture; with those files present, the S2 check FAILS as documented.
   - The other 5: 2 need a Gemini key, 2 need replay/recording setup, and
     1 is the finish NO_DATA check.
-- **Frontend:** 51 passed, build OK, ESLint 0 errors (109 pre-existing
-  warnings).
+- **Frontend (2026-09-26, after 10.6):** 165 passed (51 + 114 evidence),
+  build OK, tsc OK, ESLint 0 errors (109 pre-existing warnings).
 - **Every commit** of Phases 10.4 and 10.5 was verified green on its own.

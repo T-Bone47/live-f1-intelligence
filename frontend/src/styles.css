@@ -231,6 +231,8 @@ body {
   gap: var(--sp-px);
 }
 
+a.preset-btn { text-decoration: none; display: inline-flex; align-items: center; } /* EVIDENCE link (10.6) */
+
 .preset-btn {
   padding: 2px 10px;
   border: 1px solid var(--border);
