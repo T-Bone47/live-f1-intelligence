@@ -93,6 +93,47 @@ def validate_session_id(session_id: str) -> str:
     return session_id
 
 
+async def _load_lap_telemetry(pool, session_id: str, driver: int, lap_number: int):
+    """One stored lap + its car telemetry as canonical models (Phase 10.4)."""
+    from datetime import timedelta
+
+    from app.core.enums import ProvenanceClass, ProviderName
+    from app.core.models import Lap, Provenance, TelemetryCarSample
+
+    row = await pool.fetchrow(
+        """SELECT l.*, s.provider FROM laps l JOIN sessions s USING (session_id)
+           WHERE l.session_id=$1 AND l.driver_number=$2 AND l.lap_number=$3""",
+        session_id, driver, lap_number)
+    if not row:
+        raise HTTPException(404, f"lap {lap_number} unknown for driver {driver}")
+    if row["duration_s"] is None:
+        raise HTTPException(422, f"driver {driver} lap {lap_number} has no duration: "
+                                 "attribution needs a completed lap")
+    provider = ProviderName(row["provider"])
+    lap = Lap(session_id=session_id, driver_number=driver, lap_number=lap_number,
+              started_at=row["started_at"], duration_s=row["duration_s"],
+              sector1_s=row["sector1_s"], sector2_s=row["sector2_s"],
+              sector3_s=row["sector3_s"], is_pit_out_lap=row["is_pit_out_lap"],
+              provenance=Provenance(provider=provider,
+                                    provenance_class=ProvenanceClass(row["provenance_class"])))
+    rows = await pool.fetch(
+        """SELECT ts, rpm, speed_kph, gear, throttle_pct, brake_pct, drs, provenance_class
+           FROM telemetry_car WHERE session_id=$1 AND driver_number=$2
+           AND ts BETWEEN $3 AND $4 ORDER BY ts""",
+        session_id, driver, row["started_at"],
+        row["started_at"] + timedelta(seconds=row["duration_s"]))
+    if not rows:
+        raise HTTPException(422, f"no stored telemetry for driver {driver} lap {lap_number}")
+    samples = [TelemetryCarSample(
+        session_id=session_id, driver_number=driver, ts=r["ts"], rpm=r["rpm"],
+        speed_kph=r["speed_kph"], gear=r["gear"], throttle_pct=r["throttle_pct"],
+        brake_pct=r["brake_pct"], drs=r["drs"],
+        provenance=Provenance(provider=provider,
+                              provenance_class=ProvenanceClass(r["provenance_class"])))
+        for r in rows]
+    return lap, samples
+
+
 # ----------------------------------------------------------------- REST -----
 
 def create_app(registry: HubRegistry | None = None) -> FastAPI:
@@ -375,6 +416,54 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
                         else "timestamp alignment only; not distance-aligned",
             },
             "series": series,
+        }
+
+    @app.get("/api/v1/sessions/{session_id}/attribution")
+    async def get_attribution(session_id: str, driver_a: int, lap_a: int,
+                              driver_b: int, lap_b: int, lap_length_m: float,
+                              lap_length_source: str,
+                              _: None = Depends(rate_limit_dependency)):
+        """Phase 10.4 deterministic time-loss attribution between two stored laps.
+
+        Runs 10.1B -> 10.1C -> 10.2 -> 10.4 on persisted canonical telemetry.
+        lap_length_m must be supplied WITH its citation (lap_length_source):
+        there is no circuit geometry to derive it from, and it is never
+        invented. A lap without a duration is refused - no window is guessed.
+        """
+        from app.analysis.attribution import (
+            attribute_comparison,
+            attribution_facts,
+            report_to_dict,
+        )
+        from app.analysis.delta_analysis import analyze_delta
+        from app.analysis.lap_comparison import compare_driver_laps
+        from app.storage.db import connect as db_connect
+
+        validate_session_id(session_id)
+        if lap_length_m <= 0 or not lap_length_source.strip():
+            raise HTTPException(422, "lap_length_m > 0 and a lap_length_source are required")
+        pool = await db_connect(get_settings().database_url)
+        try:
+            loaded = [await _load_lap_telemetry(pool, session_id, d, n)
+                      for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
+        finally:
+            await pool.close()
+        (lap_obj_a, samples_a), (lap_obj_b, samples_b) = loaded
+        comparison = compare_driver_laps(lap_obj_a, samples_a, None, lap_obj_b, samples_b,
+                                         None, lap_length_m=lap_length_m)
+        report = attribute_comparison(analyze_delta(comparison), lap_obj_a, lap_obj_b)
+        return {
+            "session_id": session_id,
+            "drivers": {"a": {"driver_number": driver_a, "lap_number": lap_a},
+                        "b": {"driver_number": driver_b, "lap_number": lap_b}},
+            "lap_length": {"m": lap_length_m, "source": lap_length_source},
+            "alignment": {
+                "mode": report.alignment_mode.value, "valid": True,
+                "note": ("distance-synchronized on 10.1B normalized integrated distance; "
+                         "positions are not physical track coordinates"),
+            },
+            "attribution": report_to_dict(report),
+            "context_pack": attribution_facts(report),
         }
 
     @app.get("/api/v1/sessions/{session_id}/intelligence")
