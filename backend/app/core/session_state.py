@@ -136,7 +136,24 @@ class SessionStateProjection:
             self._transition(SessionPhase.LIVE, ts, f"rcm(vsc ending):{message}")
             return
 
-        # 3) flags
+        # 2b) session status by message text: OpenF1's 'SessionStatus' category
+        #     is not in RCMCategory, so canonical rows carry UNKNOWN (verified,
+        #     2026 Dutch GP: the race resumed after its red flag on SESSION STARTED)
+        if re.fullmatch(r"\s*SESSION (STARTED|RESUMED)\s*", message or "", re.IGNORECASE):
+            if self.phase is SessionPhase.RED_FLAG:
+                # no flag message has been seen since the restart
+                self.track_flag = TrackFlag.UNKNOWN
+            if self.phase in (SessionPhase.RED_FLAG, SessionPhase.SUSPENDED,
+                              SessionPhase.UNKNOWN, SessionPhase.SCHEDULED,
+                              SessionPhase.FORMATION):
+                self._transition(SessionPhase.LIVE, ts, f"rcm(status):{message}")
+            return
+
+        # 3) flags. During a red flag, sector/track flags (clears, yellows, even
+        #    a pit-exit green) neither end it nor replace the red (verified,
+        #    2026 Dutch GP): only a session status resumes the session.
+        if self.phase is SessionPhase.RED_FLAG and flag_u:
+            return
         if flag_u == "GREEN":
             self.track_flag = TrackFlag.GREEN
             if self.phase in (SessionPhase.UNKNOWN, SessionPhase.SCHEDULED,
@@ -145,8 +162,6 @@ class SessionStateProjection:
             return
         if flag_u == "CLEAR":
             self.track_flag = TrackFlag.CLEAR
-            if self.phase in (SessionPhase.RED_FLAG,):
-                self._transition(SessionPhase.LIVE, ts, f"rcm:{message}")
             return
         if flag_u == "YELLOW":
             self.track_flag = TrackFlag.YELLOW
