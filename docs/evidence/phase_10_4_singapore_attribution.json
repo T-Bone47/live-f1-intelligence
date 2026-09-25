@@ -1,0 +1,3200 @@
+{
+ "attribution": {
+  "accounting": {
+   "actual_change_s": -0.096613,
+   "attributed_change_s": 0.0,
+   "below_significance_change_s": -0.096613,
+   "change_by_status": {
+    "NOT_SIGNIFICANT": -0.096613
+   },
+   "no_data_spans": [
+    [
+     0.981,
+     1.0
+    ]
+   ],
+   "unaccounted_s": -0.096613,
+   "unattributed_significant_change_s": 0.0
+  },
+  "alignment_mode": "NORMALIZED_DISTANCE",
+  "calc_version": "attribution-1.0.0",
+  "comparison_confidence": "HIGH",
+  "driver_a": 55,
+  "driver_b": 63,
+  "engine_delta_last_covered_s": -0.096613,
+  "lap_a": 19,
+  "lap_b": 16,
+  "lap_length_m": 4940.0,
+  "last_covered_x": 0.981,
+  "limitations": [
+   "NORMALIZED_DISTANCE: positions are 10.1B integrated distance divided by the cited lap length, not physical track coordinates",
+   "misalignment bound measured at 2 official sector lines only; it can be exceeded between them, so a significant segment is one not explained by the MEASURED misalignment",
+   "PROVISIONAL: within-segment misalignment change is bounded by the misalignment bound itself (D = E); not yet calibrated on more real pairs",
+   "NO_DATA spans have no delta; nothing is attributed there",
+   "intra-segment splits (braking before/during/after, per-phase accumulation) end at changing speed and carry larger alignment uncertainty than the straight-to-straight segment total",
+   "typical full-throttle value differs per car (A 99.0, B 100.0): mean throttle differences include calibration, not only driver input",
+   "DRS codes are compared for equality only; their open/closed meaning is not verified in this repository",
+   "associations are temporal, never causal"
+  ],
+  "official_lap_delta_s": -0.072,
+  "sectors": [
+   {
+    "engine_change_s": -0.098561,
+    "engine_minus_official_s": -0.030561,
+    "line_misalignment_m": 4.30764,
+    "line_x_a": 0.325542,
+    "line_x_b": 0.32467,
+    "official_a_s": 26.717,
+    "official_b_s": 26.785,
+    "official_delta_s": -0.068,
+    "sector": 1,
+    "segment_ids": [
+     "R01",
+     "R02",
+     "R03",
+     "R04"
+    ]
+   },
+   {
+    "engine_change_s": 0.116908,
+    "engine_minus_official_s": 0.023908,
+    "line_misalignment_m": 2.036129,
+    "line_x_a": 0.688074,
+    "line_x_b": 0.687662,
+    "official_a_s": 38.499,
+    "official_b_s": 38.406,
+    "official_delta_s": 0.093,
+    "sector": 2,
+    "segment_ids": [
+     "R04",
+     "R05",
+     "R06",
+     "R07",
+     "R08",
+     "R09"
+    ]
+   },
+   {
+    "engine_change_s": null,
+    "engine_minus_official_s": null,
+    "line_misalignment_m": null,
+    "line_x_a": null,
+    "line_x_b": null,
+    "official_a_s": 25.768,
+    "official_b_s": 25.865,
+    "official_delta_s": -0.097,
+    "sector": 3,
+    "segment_ids": [
+     "R09",
+     "R10",
+     "R11",
+     "R12"
+    ]
+   }
+  ],
+  "segments": [
+   {
+    "accumulated_change_s": -0.059992,
+    "accumulation_midpoint_x": 0.046,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.126299,
+     "band_before_s": 0.067214,
+     "band_during_s": 0.178662,
+     "delta_after_s": -0.005949,
+     "delta_before_s": -0.042702,
+     "delta_during_s": -0.011341,
+     "onset_offset_m": 6.783889,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.059901,
+     "onset_x_b": 0.058528,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": -1.049444,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.07904,
+     "release_x_b": 0.079252,
+     "speed_at_onset_a_kph": 300,
+     "speed_at_onset_b_kph": 298,
+     "zone_end_x": 0.08,
+     "zone_start_x": 0.059
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.059992,
+    "distance_end_m": 434.72,
+    "distance_start_m": 0.0,
+    "dominant_phase_a": "FULL_THROTTLE",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.011236,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.059,
+       "x_start": 0.059
+      }
+     ],
+     "values_a": [
+      8,
+      12
+     ],
+     "values_b": [
+      8,
+      12
+     ]
+    },
+    "end_index": 88,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.157303,
+     "first_resolvable_x": null,
+     "min_a": 4,
+     "min_b": 4,
+     "runs": [
+      {
+       "length_m": 49.4,
+       "resolvable": false,
+       "x_end": 0.031,
+       "x_start": 0.021
+      },
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.076,
+       "x_start": 0.074
+      }
+     ],
+     "values_a": [
+      4,
+      7,
+      8
+     ],
+     "values_b": [
+      4,
+      6,
+      7,
+      8
+     ]
+    },
+    "inherited_gap_s": 0.0,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 0.0,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.0
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.006744,
+     "EXIT": -0.005464,
+     "FULL_THROTTLE": -0.047299,
+     "TRANSITION": -0.000485
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.011341,
+     "EXIT": -0.005163,
+     "FULL_THROTTLE": -0.042702,
+     "TRANSITION": -0.000786
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      0,
+      88
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      0,
+      23
+     ],
+     "sample_indices_b": [
+      0,
+      22
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:26:40.247000+00:00",
+      "2023-09-16T14:26:46.567000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:27:25.687000+00:00",
+      "2023-09-16T14:27:31.967000+00:00"
+     ]
+    },
+    "region_id": "R01",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.685393,
+     "divergence_onset_x": 0.0,
+     "end_speed_a_kph": 151.279967,
+     "end_speed_b_kph": 151.519707,
+     "max_difference_kph": 10.327837,
+     "mean_difference_kph": 2.614509,
+     "min_difference_kph": -10.202952,
+     "min_speed_a_kph": 137,
+     "min_speed_b_kph": 135,
+     "min_speed_difference_kph": 2,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.080614,
+     "min_speed_x_b": 0.081121
+    },
+    "start_index": 0,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": -2.505,
+     "application_resolvable": false,
+     "application_x_a": 0.080614,
+     "application_x_b": 0.081121,
+     "delta_after_application_s": -0.005163,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": null,
+     "full_resolvable": false,
+     "full_x_a": null,
+     "full_x_b": null,
+     "lift_offset_m": 6.783889,
+     "lift_resolvable": false,
+     "lift_x_a": 0.059901,
+     "lift_x_b": 0.058528,
+     "mean_throttle_difference_pct": 4.508943,
+     "minimum_a_pct": 2.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.160868,
+    "x_end": 0.088,
+    "x_start": 0.0
+   },
+   {
+    "accumulated_change_s": -0.017297,
+    "accumulation_midpoint_x": 0.1,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.298393,
+     "band_before_s": 0.112792,
+     "band_during_s": 0.255591,
+     "delta_after_s": -0.036263,
+     "delta_before_s": -0.000474,
+     "delta_during_s": 0.01944,
+     "onset_offset_m": -29.610556,
+     "onset_offset_resolvable": true,
+     "onset_x_a": 0.090397,
+     "onset_x_b": 0.096391,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 8.550694,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.106844,
+     "release_x_b": 0.105113,
+     "speed_at_onset_a_kph": 160,
+     "speed_at_onset_b_kph": 160,
+     "zone_end_x": 0.107,
+     "zone_start_x": 0.091
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.077289,
+    "distance_end_m": 834.86,
+    "distance_start_m": 434.72,
+    "dominant_phase_a": "FULL_THROTTLE",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.0,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [
+      8
+     ],
+     "values_b": [
+      8
+     ]
+    },
+    "end_index": 169,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.109756,
+     "first_resolvable_x": null,
+     "min_a": 3,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.103,
+       "x_start": 0.103
+      },
+      {
+       "length_m": 14.82,
+       "resolvable": false,
+       "x_end": 0.135,
+       "x_start": 0.132
+      },
+      {
+       "length_m": 14.82,
+       "resolvable": false,
+       "x_end": 0.147,
+       "x_start": 0.144
+      }
+     ],
+     "values_a": [
+      3,
+      4,
+      5,
+      6
+     ],
+     "values_b": [
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    "inherited_gap_s": -0.059992,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 446.562917,
+      "family": "brake",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "brake_onset",
+      "x": 0.090397
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 446.562917,
+      "family": "throttle",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "throttle_lift",
+      "x": 0.090397
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 484.12,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.098
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": 0.01944,
+     "EXIT": -0.016711,
+     "FULL_THROTTLE": -0.025215,
+     "TRANSITION": 0.005189
+    },
+    "phase_accumulation_b": {
+     "BRAKING": 0.009464,
+     "EXIT": -0.023868,
+     "FULL_THROTTLE": -0.019331,
+     "TRANSITION": 0.016438
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      88,
+      169
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      24,
+      59
+     ],
+     "sample_indices_b": [
+      23,
+      51
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:26:46.807000+00:00",
+      "2023-09-16T14:26:55.247000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:27:32.207000+00:00",
+      "2023-09-16T14:27:40.528000+00:00"
+     ]
+    },
+    "region_id": "R02",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.231707,
+     "divergence_onset_x": 0.098,
+     "end_speed_a_kph": 255.0,
+     "end_speed_b_kph": 250.851472,
+     "max_difference_kph": 9.02065,
+     "mean_difference_kph": 0.834061,
+     "min_difference_kph": -4.459751,
+     "min_speed_a_kph": 87,
+     "min_speed_b_kph": 87,
+     "min_speed_difference_kph": 0,
+     "min_speed_resolvable": false,
+     "min_speed_x_a": 0.108237,
+     "min_speed_x_b": 0.109475
+    },
+    "start_index": 88,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": -6.115972,
+     "application_resolvable": false,
+     "application_x_a": 0.108237,
+     "application_x_b": 0.109475,
+     "delta_after_application_s": -0.042628,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 6.859444,
+     "full_resolvable": false,
+     "full_x_a": 0.119864,
+     "full_x_b": 0.118476,
+     "lift_offset_m": -29.610556,
+     "lift_resolvable": true,
+     "lift_x_a": 0.090397,
+     "lift_x_b": 0.096391,
+     "mean_throttle_difference_pct": 0.10961,
+     "minimum_a_pct": 0.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.157736,
+    "x_end": 0.169,
+    "x_start": 0.088
+   },
+   {
+    "accumulated_change_s": -0.021196,
+    "accumulation_midpoint_x": 0.174,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.162977,
+     "band_before_s": 0.070388,
+     "band_during_s": 0.139822,
+     "delta_after_s": 0.037875,
+     "delta_before_s": -0.008344,
+     "delta_during_s": -0.050726,
+     "onset_offset_m": 8.331806,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.173913,
+     "onset_x_b": 0.172226,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": -2.853333,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.187226,
+     "release_x_b": 0.187804,
+     "speed_at_onset_a_kph": 246,
+     "speed_at_onset_b_kph": 243,
+     "zone_end_x": 0.188,
+     "zone_start_x": 0.173
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.098484,
+    "distance_end_m": 1605.5,
+    "distance_start_m": 834.86,
+    "dominant_phase_a": "BRAKING",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.025478,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [
+      {
+       "length_m": 4.94,
+       "resolvable": false,
+       "x_end": 0.212,
+       "x_start": 0.211
+      },
+      {
+       "length_m": 4.94,
+       "resolvable": false,
+       "x_end": 0.217,
+       "x_start": 0.216
+      }
+     ],
+     "values_a": [
+      8,
+      12,
+      14
+     ],
+     "values_b": [
+      8,
+      12,
+      14
+     ]
+    },
+    "end_index": 325,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.178344,
+     "first_resolvable_x": 0.26,
+     "min_a": 4,
+     "min_b": 4,
+     "runs": [
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.181,
+       "x_start": 0.179
+      },
+      {
+       "length_m": 24.7,
+       "resolvable": false,
+       "x_end": 0.21,
+       "x_start": 0.205
+      },
+      {
+       "length_m": 4.94,
+       "resolvable": false,
+       "x_end": 0.217,
+       "x_start": 0.216
+      },
+      {
+       "length_m": 4.94,
+       "resolvable": false,
+       "x_end": 0.237,
+       "x_start": 0.236
+      },
+      {
+       "length_m": 69.16,
+       "resolvable": true,
+       "x_end": 0.274,
+       "x_start": 0.26
+      }
+     ],
+     "values_a": [
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "values_b": [
+      4,
+      5,
+      6,
+      7,
+      8
+     ]
+    },
+    "inherited_gap_s": -0.077289,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 834.86,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.169
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 1284.4,
+      "family": "gear",
+      "relation_to_midpoint": "AFTER",
+      "signal": "gear",
+      "x": 0.26
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.044963,
+     "EXIT": 0.017938,
+     "FULL_THROTTLE": 0.021221,
+     "LIFT": -0.012893,
+     "TRANSITION": -0.002498
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.050726,
+     "EXIT": 0.010962,
+     "FULL_THROTTLE": 0.024975,
+     "TRANSITION": -0.006406
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      169,
+      325
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      60,
+      101
+     ],
+     "sample_indices_b": [
+      52,
+      94
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:26:55.487000+00:00",
+      "2023-09-16T14:27:06.527000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:27:41.008000+00:00",
+      "2023-09-16T14:27:52.167000+00:00"
+     ]
+    },
+    "region_id": "R03",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.624204,
+     "divergence_onset_x": 0.169,
+     "end_speed_a_kph": 315.0,
+     "end_speed_b_kph": 311.0,
+     "max_difference_kph": 20.033334,
+     "mean_difference_kph": 0.889276,
+     "min_difference_kph": -11.683835,
+     "min_speed_a_kph": 158,
+     "min_speed_b_kph": 154,
+     "min_speed_difference_kph": 4,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.188666,
+     "min_speed_x_b": 0.187804
+    },
+    "start_index": 169,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": -11.342222,
+     "application_resolvable": false,
+     "application_x_a": 0.188666,
+     "application_x_b": 0.190962,
+     "delta_after_application_s": 0.044281,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 10.118889,
+     "full_resolvable": false,
+     "full_x_a": 0.198627,
+     "full_x_b": 0.196579,
+     "lift_offset_m": -11.151528,
+     "lift_resolvable": false,
+     "lift_x_a": 0.169969,
+     "lift_x_b": 0.172226,
+     "mean_throttle_difference_pct": -1.523942,
+     "minimum_a_pct": 34.0,
+     "minimum_b_pct": 48.0
+    },
+    "uncertainty_s": 0.083541,
+    "x_end": 0.325,
+    "x_start": 0.169
+   },
+   {
+    "accumulated_change_s": 0.021708,
+    "accumulation_midpoint_x": 0.374,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.193129,
+     "band_before_s": 0.054888,
+     "band_during_s": 0.220303,
+     "delta_after_s": 0.137682,
+     "delta_before_s": -0.008056,
+     "delta_during_s": -0.107918,
+     "onset_offset_m": -4.395417,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.332936,
+     "onset_x_b": 0.333826,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 13.77,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.356212,
+     "release_x_b": 0.353425,
+     "speed_at_onset_a_kph": 312,
+     "speed_at_onset_b_kph": 297,
+     "zone_end_x": 0.357,
+     "zone_start_x": 0.333
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.076777,
+    "distance_end_m": 1872.26,
+    "distance_start_m": 1605.5,
+    "dominant_phase_a": "EXIT",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.109091,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [
+      {
+       "length_m": 24.7,
+       "resolvable": false,
+       "x_end": 0.339,
+       "x_start": 0.334
+      }
+     ],
+     "values_a": [
+      8,
+      12
+     ],
+     "values_b": [
+      8,
+      12
+     ]
+    },
+    "end_index": 379,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.4,
+     "first_resolvable_x": 0.354,
+     "min_a": 4,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 24.7,
+       "resolvable": false,
+       "x_end": 0.351,
+       "x_start": 0.346
+      },
+      {
+       "length_m": 74.1,
+       "resolvable": true,
+       "x_end": 0.369,
+       "x_start": 0.354
+      }
+     ],
+     "values_a": [
+      4,
+      7,
+      8
+     ],
+     "values_b": [
+      3,
+      4,
+      6,
+      7,
+      8
+     ]
+    },
+    "inherited_gap_s": -0.098484,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 1605.5,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.325
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 1748.76,
+      "family": "gear",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "gear",
+      "x": 0.354
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.107918,
+     "EXIT": 0.076002,
+     "FULL_THROTTLE": 0.054558,
+     "TRANSITION": -0.000934
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.097944,
+     "EXIT": 0.045812,
+     "FULL_THROTTLE": 0.089041,
+     "TRANSITION": -0.015202
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      325,
+      379
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      102,
+      122
+     ],
+     "sample_indices_b": [
+      95,
+      113
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:06.767000+00:00",
+      "2023-09-16T14:27:11.967000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:27:52.447000+00:00",
+      "2023-09-16T14:27:57.407000+00:00"
+     ]
+    },
+    "region_id": "R04",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.8,
+     "divergence_onset_x": 0.325,
+     "end_speed_a_kph": 197.193257,
+     "end_speed_b_kph": 202.564825,
+     "max_difference_kph": 16.44774,
+     "mean_difference_kph": -0.231915,
+     "min_difference_kph": -21.857525,
+     "min_speed_a_kph": 118,
+     "min_speed_b_kph": 117,
+     "min_speed_difference_kph": 1,
+     "min_speed_resolvable": false,
+     "min_speed_x_a": 0.357838,
+     "min_speed_x_b": 0.356934
+    },
+    "start_index": 325,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 4.464444,
+     "application_resolvable": false,
+     "application_x_a": 0.357838,
+     "application_x_b": 0.356934,
+     "delta_after_application_s": 0.138616,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 6.376944,
+     "full_resolvable": false,
+     "full_x_a": 0.36521,
+     "full_x_b": 0.363919,
+     "lift_offset_m": -4.395417,
+     "lift_resolvable": false,
+     "lift_x_a": 0.332936,
+     "lift_x_b": 0.333826,
+     "mean_throttle_difference_pct": -2.476259,
+     "minimum_a_pct": 4.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.114421,
+    "x_end": 0.379,
+    "x_start": 0.325
+   },
+   {
+    "accumulated_change_s": -0.005981,
+    "accumulation_midpoint_x": 0.385,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.318669,
+     "band_before_s": 0.083456,
+     "band_during_s": 0.329253,
+     "delta_after_s": 0.167343,
+     "delta_before_s": 0.002706,
+     "delta_during_s": -0.176031,
+     "onset_offset_m": 1.904722,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.383214,
+     "onset_x_b": 0.382828,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 4.647778,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.397739,
+     "release_x_b": 0.396798,
+     "speed_at_onset_a_kph": 208,
+     "speed_at_onset_b_kph": 207,
+     "zone_end_x": 0.398,
+     "zone_start_x": 0.383
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.082758,
+    "distance_end_m": 2064.92,
+    "distance_start_m": 1872.26,
+    "dominant_phase_a": "BRAKING",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.0,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [
+      8
+     ],
+     "values_b": [
+      8
+     ]
+    },
+    "end_index": 418,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.3,
+     "first_resolvable_x": 0.38,
+     "min_a": 3,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 24.7,
+       "resolvable": true,
+       "x_end": 0.385,
+       "x_start": 0.38
+      },
+      {
+       "length_m": 19.76,
+       "resolvable": true,
+       "x_end": 0.395,
+       "x_start": 0.391
+      },
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.417,
+       "x_start": 0.417
+      }
+     ],
+     "values_a": [
+      3,
+      4,
+      5
+     ],
+     "values_b": [
+      3,
+      4,
+      5
+     ]
+    },
+    "inherited_gap_s": -0.076777,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 1872.26,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.379
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 1877.2,
+      "family": "gear",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "gear",
+      "x": 0.38
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.171901,
+     "EXIT": 0.123124,
+     "FULL_THROTTLE": 0.051087,
+     "TRANSITION": -0.00829
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.167912,
+     "EXIT": 0.136622,
+     "FULL_THROTTLE": 0.041717,
+     "TRANSITION": -0.016408
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      379,
+      418
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      123,
+      145
+     ],
+     "sample_indices_b": [
+      114,
+      135
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:12.287000+00:00",
+      "2023-09-16T14:27:17.567000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:27:57.607000+00:00",
+      "2023-09-16T14:28:03.207000+00:00"
+     ]
+    },
+    "region_id": "R05",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.675,
+     "divergence_onset_x": 0.379,
+     "end_speed_a_kph": 171.349163,
+     "end_speed_b_kph": 180.010523,
+     "max_difference_kph": 18.915459,
+     "mean_difference_kph": 0.308997,
+     "min_difference_kph": -16.183525,
+     "min_speed_a_kph": 77,
+     "min_speed_b_kph": 76,
+     "min_speed_difference_kph": 1,
+     "min_speed_resolvable": false,
+     "min_speed_x_a": 0.39917,
+     "min_speed_x_b": 0.399262
+    },
+    "start_index": 379,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": -0.457778,
+     "application_resolvable": false,
+     "application_x_a": 0.39917,
+     "application_x_b": 0.399262,
+     "delta_after_application_s": 0.175633,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": -3.99125,
+     "full_resolvable": false,
+     "full_x_a": 0.410348,
+     "full_x_b": 0.411156,
+     "lift_offset_m": 1.904722,
+     "lift_resolvable": false,
+     "lift_x_a": 0.383214,
+     "lift_x_b": 0.382828,
+     "mean_throttle_difference_pct": -4.591551,
+     "minimum_a_pct": 0.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.10884,
+    "x_end": 0.418,
+    "x_start": 0.379
+   },
+   {
+    "accumulated_change_s": 0.083143,
+    "accumulation_midpoint_x": 0.458,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.183556,
+     "band_before_s": 0.097704,
+     "band_during_s": 0.154283,
+     "delta_after_s": 0.127764,
+     "delta_before_s": 0.009857,
+     "delta_during_s": -0.054477,
+     "onset_offset_m": 7.825417,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.423991,
+     "onset_x_b": 0.422407,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 3.203194,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.434883,
+     "release_x_b": 0.434234,
+     "speed_at_onset_a_kph": 190,
+     "speed_at_onset_b_kph": 190,
+     "zone_end_x": 0.435,
+     "zone_start_x": 0.423
+    },
+    "confidence": "HIGH",
+    "delta_end_s": 0.000385,
+    "distance_end_m": 2479.88,
+    "distance_start_m": 2064.92,
+    "dominant_phase_a": "FULL_THROTTLE",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.0,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [
+      8
+     ],
+     "values_b": [
+      8
+     ]
+    },
+    "end_index": 502,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.235294,
+     "first_resolvable_x": 0.488,
+     "min_a": 4,
+     "min_b": 4,
+     "runs": [
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.46,
+       "x_start": 0.458
+      },
+      {
+       "length_m": 24.7,
+       "resolvable": false,
+       "x_end": 0.473,
+       "x_start": 0.468
+      },
+      {
+       "length_m": 49.4,
+       "resolvable": true,
+       "x_end": 0.498,
+       "x_start": 0.488
+      }
+     ],
+     "values_a": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "values_b": [
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    "inherited_gap_s": -0.082758,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2064.92,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.418
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2410.72,
+      "family": "gear",
+      "relation_to_midpoint": "AFTER",
+      "signal": "gear",
+      "x": 0.488
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.053438,
+     "EXIT": 0.048766,
+     "FULL_THROTTLE": 0.097366,
+     "TRANSITION": -0.00955
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.054477,
+     "EXIT": 0.033662,
+     "FULL_THROTTLE": 0.107211,
+     "TRANSITION": -0.003253
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      418,
+      502
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      146,
+      173
+     ],
+     "sample_indices_b": [
+      136,
+      166
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:17.847000+00:00",
+      "2023-09-16T14:27:25.287000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:03.407000+00:00",
+      "2023-09-16T14:28:10.727000+00:00"
+     ]
+    },
+    "region_id": "R06",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.658824,
+     "divergence_onset_x": 0.418,
+     "end_speed_a_kph": 265.264085,
+     "end_speed_b_kph": 263.577697,
+     "max_difference_kph": 13.491484,
+     "mean_difference_kph": -2.267225,
+     "min_difference_kph": -13.663988,
+     "min_speed_a_kph": 133,
+     "min_speed_b_kph": 131,
+     "min_speed_difference_kph": 2,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.437626,
+     "min_speed_x_b": 0.437499
+    },
+    "start_index": 418,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 9.392083,
+     "application_resolvable": false,
+     "application_x_a": 0.437626,
+     "application_x_b": 0.435725,
+     "delta_after_application_s": 0.137314,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 2.665972,
+     "full_resolvable": false,
+     "full_x_a": 0.448131,
+     "full_x_b": 0.447591,
+     "lift_offset_m": 7.825417,
+     "lift_resolvable": false,
+     "lift_x_a": 0.423991,
+     "lift_x_b": 0.422407,
+     "mean_throttle_difference_pct": -1.943919,
+     "minimum_a_pct": 4.0,
+     "minimum_b_pct": 24.0
+    },
+    "uncertainty_s": 0.129384,
+    "x_end": 0.502,
+    "x_start": 0.418
+   },
+   {
+    "accumulated_change_s": 0.067703,
+    "accumulation_midpoint_x": 0.535,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.133962,
+     "band_before_s": 0.064899,
+     "band_during_s": 0.164247,
+     "delta_after_s": 0.113094,
+     "delta_before_s": -0.01413,
+     "delta_during_s": -0.03126,
+     "onset_offset_m": -7.563056,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.50779,
+     "onset_x_b": 0.509321,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 10.332083,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.526042,
+     "release_x_b": 0.52395,
+     "speed_at_onset_a_kph": 267,
+     "speed_at_onset_b_kph": 247,
+     "zone_end_x": 0.527,
+     "zone_start_x": 0.508
+    },
+    "confidence": "HIGH",
+    "delta_end_s": 0.068089,
+    "distance_end_m": 2667.6,
+    "distance_start_m": 2479.88,
+    "dominant_phase_a": "EXIT",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.0,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [
+      8
+     ],
+     "values_b": [
+      8
+     ]
+    },
+    "end_index": 540,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.179487,
+     "first_resolvable_x": 0.518,
+     "min_a": 4,
+     "min_b": 4,
+     "runs": [
+      {
+       "length_m": 29.64,
+       "resolvable": true,
+       "x_end": 0.524,
+       "x_start": 0.518
+      }
+     ],
+     "values_a": [
+      4,
+      6,
+      7
+     ],
+     "values_b": [
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    "inherited_gap_s": 0.000385,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2479.88,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.502
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2558.92,
+      "family": "gear",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "gear",
+      "x": 0.518
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.03126,
+     "EXIT": 0.103311,
+     "FULL_THROTTLE": -0.01413,
+     "TRANSITION": 0.009783
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.038864,
+     "EXIT": 0.11986,
+     "FULL_THROTTLE": -0.020013,
+     "TRANSITION": 0.00672
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      502,
+      540
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      174,
+      187
+     ],
+     "sample_indices_b": [
+      167,
+      181
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:25.687000+00:00",
+      "2023-09-16T14:27:29.247000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:11.047000+00:00",
+      "2023-09-16T14:28:14.568000+00:00"
+     ]
+    },
+    "region_id": "R07",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.846154,
+     "divergence_onset_x": 0.502,
+     "end_speed_a_kph": 169.35696,
+     "end_speed_b_kph": 176.161071,
+     "max_difference_kph": 15.588518,
+     "mean_difference_kph": -0.011622,
+     "min_difference_kph": -14.988667,
+     "min_speed_a_kph": 137,
+     "min_speed_b_kph": 146,
+     "min_speed_difference_kph": -9,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.527297,
+     "min_speed_x_b": 0.525282
+    },
+    "start_index": 502,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 9.954306,
+     "application_resolvable": false,
+     "application_x_a": 0.527297,
+     "application_x_b": 0.525282,
+     "delta_after_application_s": 0.103311,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": null,
+     "full_resolvable": false,
+     "full_x_a": 0.539261,
+     "full_x_b": null,
+     "lift_offset_m": -7.563056,
+     "lift_resolvable": false,
+     "lift_x_a": 0.50779,
+     "lift_x_b": 0.509321,
+     "mean_throttle_difference_pct": 2.836184,
+     "minimum_a_pct": 1.0,
+     "minimum_b_pct": 16.0
+    },
+    "uncertainty_s": 0.129761,
+    "x_end": 0.54,
+    "x_start": 0.502
+   },
+   {
+    "accumulated_change_s": 0.015989,
+    "accumulation_midpoint_x": 0.575,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.211037,
+     "band_before_s": 0.096761,
+     "band_during_s": 0.192979,
+     "delta_after_s": 0.122903,
+     "delta_before_s": 0.006057,
+     "delta_during_s": -0.112971,
+     "onset_offset_m": 18.606944,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.547264,
+     "onset_x_b": 0.543497,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 11.190833,
+     "release_offset_resolvable": true,
+     "release_x_a": 0.554368,
+     "release_x_b": 0.552102,
+     "speed_at_onset_a_kph": 150,
+     "speed_at_onset_b_kph": 175,
+     "zone_end_x": 0.555,
+     "zone_start_x": 0.544
+    },
+    "confidence": "HIGH",
+    "delta_end_s": 0.084078,
+    "distance_end_m": 2875.08,
+    "distance_start_m": 2667.6,
+    "dominant_phase_a": "EXIT",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.0,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [
+      8
+     ],
+     "values_b": [
+      8
+     ]
+    },
+    "end_index": 582,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.162791,
+     "first_resolvable_x": null,
+     "min_a": 3,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.551,
+       "x_start": 0.549
+      },
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.57,
+       "x_start": 0.57
+      },
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.579,
+       "x_start": 0.577
+      }
+     ],
+     "values_a": [
+      3,
+      4,
+      5
+     ],
+     "values_b": [
+      3,
+      4,
+      5
+     ]
+    },
+    "inherited_gap_s": 0.068089,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2667.6,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.54
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2727.38625,
+      "family": "brake",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "brake_release",
+      "x": 0.552102
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.062393,
+     "EXIT": 0.060406,
+     "FULL_THROTTLE": 0.045743,
+     "LIFT": -0.035466,
+     "TRANSITION": 0.007699
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.109177,
+     "EXIT": 0.074915,
+     "FULL_THROTTLE": 0.047116,
+     "LIFT": 0.007683,
+     "TRANSITION": -0.004548
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      540,
+      582
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      188,
+      203
+     ],
+     "sample_indices_b": [
+      182,
+      199
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:29.607000+00:00",
+      "2023-09-16T14:27:34.008000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:14.728000+00:00",
+      "2023-09-16T14:28:19.407000+00:00"
+     ]
+    },
+    "region_id": "R08",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.837209,
+     "divergence_onset_x": 0.54,
+     "end_speed_a_kph": 206.277168,
+     "end_speed_b_kph": 206.819905,
+     "max_difference_kph": 16.671226,
+     "mean_difference_kph": -1.106731,
+     "min_difference_kph": -13.453036,
+     "min_speed_a_kph": 111,
+     "min_speed_b_kph": 111,
+     "min_speed_difference_kph": 0,
+     "min_speed_resolvable": false,
+     "min_speed_x_a": 0.555873,
+     "min_speed_x_b": 0.553858
+    },
+    "start_index": 540,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 9.951944,
+     "application_resolvable": false,
+     "application_x_a": 0.555873,
+     "application_x_b": 0.553858,
+     "delta_after_application_s": 0.115204,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 0.490833,
+     "full_resolvable": false,
+     "full_x_a": 0.561852,
+     "full_x_b": 0.561753,
+     "lift_offset_m": -3.526389,
+     "lift_resolvable": false,
+     "lift_x_a": 0.542783,
+     "lift_x_b": 0.543497,
+     "mean_throttle_difference_pct": 1.697766,
+     "minimum_a_pct": 1.0,
+     "minimum_b_pct": 7.0
+    },
+    "uncertainty_s": 0.114299,
+    "x_end": 0.582,
+    "x_start": 0.54
+   },
+   {
+    "accumulated_change_s": -0.06586,
+    "accumulation_midpoint_x": 0.595,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.424069,
+     "band_before_s": 0.082455,
+     "band_during_s": 0.394801,
+     "delta_after_s": -0.038709,
+     "delta_before_s": 0.001859,
+     "delta_during_s": -0.029011,
+     "onset_offset_m": 31.818333,
+     "onset_offset_resolvable": true,
+     "onset_x_a": 0.593419,
+     "onset_x_b": 0.586978,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 1.603194,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.607224,
+     "release_x_b": 0.606899,
+     "speed_at_onset_a_kph": 193,
+     "speed_at_onset_b_kph": 217,
+     "zone_end_x": 0.608,
+     "zone_start_x": 0.587
+    },
+    "confidence": "HIGH",
+    "delta_end_s": 0.018217,
+    "distance_end_m": 3398.72,
+    "distance_start_m": 2875.08,
+    "dominant_phase_a": "FULL_THROTTLE",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.037383,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [
+      {
+       "length_m": 14.82,
+       "resolvable": false,
+       "x_end": 0.632,
+       "x_start": 0.629
+      }
+     ],
+     "values_a": [
+      8,
+      12
+     ],
+     "values_b": [
+      8,
+      12,
+      14
+     ]
+    },
+    "end_index": 688,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.299065,
+     "first_resolvable_x": 0.598,
+     "min_a": 2,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 88.92,
+       "resolvable": true,
+       "x_end": 0.616,
+       "x_start": 0.598
+      },
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.632,
+       "x_start": 0.632
+      },
+      {
+       "length_m": 39.52,
+       "resolvable": true,
+       "x_end": 0.65,
+       "x_start": 0.642
+      },
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.666,
+       "x_start": 0.664
+      }
+     ],
+     "values_a": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "values_b": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    "inherited_gap_s": 0.084078,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2899.67125,
+      "family": "brake",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "brake_onset",
+      "x": 0.586978
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2899.78,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.587
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 2954.12,
+      "family": "gear",
+      "relation_to_midpoint": "AFTER",
+      "signal": "gear",
+      "x": 0.598
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 3056.018889,
+      "family": "throttle",
+      "relation_to_midpoint": "AFTER",
+      "signal": "full_throttle",
+      "x": 0.618627
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": 0.002719,
+     "EXIT": 0.003111,
+     "FULL_THROTTLE": -0.088543,
+     "TRANSITION": 0.016852
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.045756,
+     "EXIT": -0.021517,
+     "FULL_THROTTLE": -0.032184,
+     "TRANSITION": 0.033596
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      582,
+      688
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      204,
+      242
+     ],
+     "sample_indices_b": [
+      200,
+      238
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:34.368000+00:00",
+      "2023-09-16T14:27:45.087000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:19.608000+00:00",
+      "2023-09-16T14:28:30.327000+00:00"
+     ]
+    },
+    "region_id": "R09",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.46729,
+     "divergence_onset_x": 0.587,
+     "end_speed_a_kph": 287.636965,
+     "end_speed_b_kph": 285.034667,
+     "max_difference_kph": 17.823142,
+     "mean_difference_kph": 2.614683,
+     "min_difference_kph": -7.342505,
+     "min_speed_a_kph": 66,
+     "min_speed_b_kph": 69,
+     "min_speed_difference_kph": -3,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.608128,
+     "min_speed_x_b": 0.609637
+    },
+    "start_index": 582,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": -1.185694,
+     "application_resolvable": false,
+     "application_x_a": 0.608128,
+     "application_x_b": 0.608368,
+     "delta_after_application_s": -0.05556,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": -26.824583,
+     "full_resolvable": true,
+     "full_x_a": 0.618627,
+     "full_x_b": 0.624057,
+     "lift_offset_m": 17.818333,
+     "lift_resolvable": false,
+     "lift_x_a": 0.593419,
+     "lift_x_b": 0.589812,
+     "mean_throttle_difference_pct": 3.496154,
+     "minimum_a_pct": 0.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.108352,
+    "x_end": 0.688,
+    "x_start": 0.582
+   },
+   {
+    "accumulated_change_s": -0.05074,
+    "accumulation_midpoint_x": 0.794,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.32104,
+     "band_before_s": 0.058763,
+     "band_during_s": 0.306543,
+     "delta_after_s": -0.149932,
+     "delta_before_s": 0.00098,
+     "delta_during_s": 0.098213,
+     "onset_offset_m": 4.803194,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.695112,
+     "onset_x_b": 0.69414,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": -0.008472,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.715105,
+     "release_x_b": 0.715107,
+     "speed_at_onset_a_kph": 278,
+     "speed_at_onset_b_kph": 287,
+     "zone_end_x": 0.716,
+     "zone_start_x": 0.695
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.032523,
+    "distance_end_m": 4149.6,
+    "distance_start_m": 3398.72,
+    "dominant_phase_a": "FULL_THROTTLE",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.006536,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.695,
+       "x_start": 0.695
+      }
+     ],
+     "values_a": [
+      8,
+      12
+     ],
+     "values_b": [
+      8,
+      12
+     ]
+    },
+    "end_index": 840,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.202614,
+     "first_resolvable_x": 0.768,
+     "min_a": 3,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 14.82,
+       "resolvable": false,
+       "x_end": 0.711,
+       "x_start": 0.708
+      },
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.737,
+       "x_start": 0.735
+      },
+      {
+       "length_m": 19.76,
+       "resolvable": false,
+       "x_end": 0.745,
+       "x_start": 0.741
+      },
+      {
+       "length_m": 19.76,
+       "resolvable": false,
+       "x_end": 0.754,
+       "x_start": 0.75
+      },
+      {
+       "length_m": 64.22,
+       "resolvable": true,
+       "x_end": 0.781,
+       "x_start": 0.768
+      }
+     ],
+     "values_a": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "values_b": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    "inherited_gap_s": 0.018217,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 3398.72,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.688
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 3793.92,
+      "family": "gear",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "gear",
+      "x": 0.768
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": 0.091769,
+     "EXIT": -0.044169,
+     "FULL_THROTTLE": -0.088733,
+     "TRANSITION": -0.009608
+    },
+    "phase_accumulation_b": {
+     "BRAKING": 0.098213,
+     "EXIT": -0.055459,
+     "FULL_THROTTLE": -0.083887,
+     "TRANSITION": -0.009608
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      688,
+      840
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      243,
+      289
+     ],
+     "sample_indices_b": [
+      239,
+      287
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:45.327000+00:00",
+      "2023-09-16T14:27:57.927000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:30.647000+00:00",
+      "2023-09-16T14:28:43.367000+00:00"
+     ]
+    },
+    "region_id": "R10",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.54902,
+     "divergence_onset_x": 0.688,
+     "end_speed_a_kph": 291.720334,
+     "end_speed_b_kph": 287.369323,
+     "max_difference_kph": 12.639407,
+     "mean_difference_kph": 0.864482,
+     "min_difference_kph": -19.275249,
+     "min_speed_a_kph": 90,
+     "min_speed_b_kph": 86,
+     "min_speed_difference_kph": 4,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.715105,
+     "min_speed_x_b": 0.716113
+    },
+    "start_index": 688,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 4.119306,
+     "application_resolvable": false,
+     "application_x_a": 0.716947,
+     "application_x_b": 0.716113,
+     "delta_after_application_s": -0.140325,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": -11.851389,
+     "full_resolvable": false,
+     "full_x_a": 0.726109,
+     "full_x_b": 0.728508,
+     "lift_offset_m": 4.803194,
+     "lift_resolvable": false,
+     "lift_x_a": 0.695112,
+     "lift_x_b": 0.69414,
+     "mean_throttle_difference_pct": 0.642358,
+     "minimum_a_pct": 0.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.064266,
+    "x_end": 0.84,
+    "x_start": 0.688
+   },
+   {
+    "accumulated_change_s": -0.009289,
+    "accumulation_midpoint_x": 0.847,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.229343,
+     "band_before_s": 0.059579,
+     "band_during_s": 0.232226,
+     "delta_after_s": -0.024039,
+     "delta_before_s": -0.004532,
+     "delta_during_s": 0.019282,
+     "onset_offset_m": -0.229444,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.845498,
+     "onset_x_b": 0.845545,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 8.379583,
+     "release_offset_resolvable": false,
+     "release_x_a": 0.865353,
+     "release_x_b": 0.863657,
+     "speed_at_onset_a_kph": 290,
+     "speed_at_onset_b_kph": 287,
+     "zone_end_x": 0.866,
+     "zone_start_x": 0.846
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.041812,
+    "distance_end_m": 4554.68,
+    "distance_start_m": 4149.6,
+    "dominant_phase_a": "EXIT",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.0,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [
+      8
+     ],
+     "values_b": [
+      8
+     ]
+    },
+    "end_index": 922,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.409639,
+     "first_resolvable_x": 0.863,
+     "min_a": 4,
+     "min_b": 3,
+     "runs": [
+      {
+       "length_m": 4.94,
+       "resolvable": false,
+       "x_end": 0.861,
+       "x_start": 0.86
+      },
+      {
+       "length_m": 123.5,
+       "resolvable": true,
+       "x_end": 0.888,
+       "x_start": 0.863
+      },
+      {
+       "length_m": 14.82,
+       "resolvable": false,
+       "x_end": 0.899,
+       "x_start": 0.896
+      },
+      {
+       "length_m": 4.94,
+       "resolvable": false,
+       "x_end": 0.908,
+       "x_start": 0.907
+      }
+     ],
+     "values_a": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "values_b": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    "inherited_gap_s": -0.032523,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4149.6,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.84
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4263.22,
+      "family": "gear",
+      "relation_to_midpoint": "AFTER",
+      "signal": "gear",
+      "x": 0.863
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4364.746389,
+      "family": "throttle",
+      "relation_to_midpoint": "AFTER",
+      "signal": "full_throttle",
+      "x": 0.883552
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": 0.019282,
+     "EXIT": -0.017129,
+     "FULL_THROTTLE": -0.010011,
+     "TRANSITION": -0.001431
+    },
+    "phase_accumulation_b": {
+     "BRAKING": 0.02174,
+     "EXIT": -0.025593,
+     "FULL_THROTTLE": -0.002977,
+     "TRANSITION": -0.002458
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      840,
+      922
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      290,
+      322
+     ],
+     "sample_indices_b": [
+      288,
+      319
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:27:58.127000+00:00",
+      "2023-09-16T14:28:06.247000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:43.647000+00:00",
+      "2023-09-16T14:28:51.527000+00:00"
+     ]
+    },
+    "region_id": "R11",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.180723,
+     "divergence_onset_x": 0.84,
+     "end_speed_a_kph": 249.045582,
+     "end_speed_b_kph": 243.49393,
+     "max_difference_kph": 5.551652,
+     "mean_difference_kph": 0.225873,
+     "min_difference_kph": -9.643969,
+     "min_speed_a_kph": 111,
+     "min_speed_b_kph": 109,
+     "min_speed_difference_kph": 2,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.866361,
+     "min_speed_x_b": 0.867495
+    },
+    "start_index": 840,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 4.263889,
+     "application_resolvable": false,
+     "application_x_a": 0.866361,
+     "application_x_b": 0.865497,
+     "delta_after_application_s": -0.022609,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 19.880556,
+     "full_resolvable": true,
+     "full_x_a": 0.887576,
+     "full_x_b": 0.883552,
+     "lift_offset_m": 27.881667,
+     "lift_resolvable": false,
+     "lift_x_a": 0.851189,
+     "lift_x_b": 0.845545,
+     "mean_throttle_difference_pct": 5.803822,
+     "minimum_a_pct": 3.0,
+     "minimum_b_pct": 0.0
+    },
+    "uncertainty_s": 0.081004,
+    "x_end": 0.922,
+    "x_start": 0.84
+   },
+   {
+    "accumulated_change_s": -0.054801,
+    "accumulation_midpoint_x": 0.932,
+    "braking": {
+     "applications_a": 1,
+     "applications_b": 1,
+     "band_after_s": 0.091642,
+     "band_before_s": 0.066836,
+     "band_during_s": 0.08463,
+     "delta_after_s": -0.001506,
+     "delta_before_s": -0.008663,
+     "delta_during_s": -0.044633,
+     "onset_offset_m": 14.556111,
+     "onset_offset_resolvable": false,
+     "onset_x_a": 0.928636,
+     "onset_x_b": 0.92569,
+     "paired": true,
+     "peak_pct_a": 100.0,
+     "peak_pct_b": 100.0,
+     "release_offset_m": 27.198194,
+     "release_offset_resolvable": true,
+     "release_x_a": 0.936947,
+     "release_x_b": 0.931441,
+     "speed_at_onset_a_kph": 248,
+     "speed_at_onset_b_kph": 240,
+     "zone_end_x": 0.937,
+     "zone_start_x": 0.926
+    },
+    "confidence": "HIGH",
+    "delta_end_s": -0.096613,
+    "distance_end_m": 4846.14,
+    "distance_start_m": 4554.68,
+    "dominant_phase_a": "BRAKING",
+    "drs": {
+     "available": true,
+     "difference_fraction": 0.016667,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.977,
+       "x_start": 0.977
+      }
+     ],
+     "values_a": [
+      8,
+      12,
+      14
+     ],
+     "values_b": [
+      8,
+      12,
+      14
+     ]
+    },
+    "end_index": 981,
+    "gear": {
+     "available": true,
+     "difference_fraction": 0.25,
+     "first_resolvable_x": 0.971,
+     "min_a": 5,
+     "min_b": 5,
+     "runs": [
+      {
+       "length_m": 0.0,
+       "resolvable": false,
+       "x_end": 0.934,
+       "x_start": 0.934
+      },
+      {
+       "length_m": 9.88,
+       "resolvable": false,
+       "x_end": 0.951,
+       "x_start": 0.949
+      },
+      {
+       "length_m": 49.4,
+       "resolvable": true,
+       "x_end": 0.981,
+       "x_start": 0.971
+      }
+     ],
+     "values_a": [
+      5,
+      6
+     ],
+     "values_b": [
+      5,
+      6,
+      7
+     ]
+    },
+    "inherited_gap_s": -0.041812,
+    "kind": "STABLE",
+    "onset_order": [
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4554.68,
+      "family": "speed",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "speed",
+      "x": 0.922
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4601.320278,
+      "family": "brake",
+      "relation_to_midpoint": "BEFORE",
+      "signal": "brake_release",
+      "x": 0.931441
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4618.159167,
+      "family": "throttle",
+      "relation_to_midpoint": "AFTER",
+      "signal": "throttle_application",
+      "x": 0.93485
+     },
+     {
+      "association": "TEMPORAL_ASSOCIATION",
+      "distance_m": 4796.74,
+      "family": "gear",
+      "relation_to_midpoint": "AFTER",
+      "signal": "gear",
+      "x": 0.971
+     }
+    ],
+    "phase_accumulation_a": {
+     "BRAKING": -0.032356,
+     "EXIT": 0.002284,
+     "FULL_THROTTLE": -0.024251,
+     "TRANSITION": -0.000478
+    },
+    "phase_accumulation_b": {
+     "BRAKING": -0.023535,
+     "EXIT": -0.007029,
+     "FULL_THROTTLE": -0.010101,
+     "TRANSITION": -0.014137
+    },
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      922,
+      981
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      323,
+      339
+     ],
+     "sample_indices_b": [
+      320,
+      338
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:28:06.408000+00:00",
+      "2023-09-16T14:28:10.407000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:51.807000+00:00",
+      "2023-09-16T14:28:55.968000+00:00"
+     ]
+    },
+    "region_id": "R12",
+    "significant": false,
+    "speed": {
+     "divergence_fraction": 0.4,
+     "divergence_onset_x": 0.922,
+     "end_speed_a_kph": 263.533063,
+     "end_speed_b_kph": 264.82537,
+     "max_difference_kph": 15.268184,
+     "mean_difference_kph": 2.896947,
+     "min_difference_kph": -2.625321,
+     "min_speed_a_kph": 210,
+     "min_speed_b_kph": 212,
+     "min_speed_difference_kph": -2,
+     "min_speed_resolvable": true,
+     "min_speed_x_a": 0.940316,
+     "min_speed_x_b": 0.93485
+    },
+    "start_index": 922,
+    "status": "NOT_SIGNIFICANT",
+    "supporting_signals": [],
+    "throttle": {
+     "application_offset_m": 27.00375,
+     "application_resolvable": true,
+     "application_x_a": 0.940316,
+     "application_x_b": 0.93485,
+     "delta_after_application_s": -0.001028,
+     "full_level_a_pct": 100.0,
+     "full_level_b_pct": 100.0,
+     "full_modal_a_pct": 99.0,
+     "full_modal_b_pct": 100.0,
+     "full_offset_m": 15.048194,
+     "full_resolvable": false,
+     "full_x_a": 0.944131,
+     "full_x_b": 0.941085,
+     "lift_offset_m": 14.556111,
+     "lift_resolvable": false,
+     "lift_x_a": 0.928636,
+     "lift_x_b": 0.92569,
+     "mean_throttle_difference_pct": 0.044717,
+     "minimum_a_pct": 56.0,
+     "minimum_b_pct": 30.0
+    },
+    "uncertainty_s": 0.073792,
+    "x_end": 0.981,
+    "x_start": 0.922
+   },
+   {
+    "accumulated_change_s": null,
+    "accumulation_midpoint_x": null,
+    "braking": null,
+    "confidence": "NONE",
+    "delta_end_s": null,
+    "distance_end_m": 4940.0,
+    "distance_start_m": 4846.14,
+    "dominant_phase_a": null,
+    "drs": {
+     "available": false,
+     "difference_fraction": null,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [],
+     "values_b": []
+    },
+    "end_index": 1000,
+    "gear": {
+     "available": false,
+     "difference_fraction": null,
+     "first_resolvable_x": null,
+     "min_a": null,
+     "min_b": null,
+     "runs": [],
+     "values_a": [],
+     "values_b": []
+    },
+    "inherited_gap_s": -0.096613,
+    "kind": "NO_DATA",
+    "onset_order": [],
+    "phase_accumulation_a": {},
+    "phase_accumulation_b": {},
+    "primary_signal": null,
+    "provenance": {
+     "calc_version": "attribution-1.0.0",
+     "driver_a": 55,
+     "driver_b": 63,
+     "grid_indices": [
+      981,
+      1000
+     ],
+     "lap_a": 19,
+     "lap_b": 16,
+     "sample_indices_a": [
+      340,
+      340
+     ],
+     "sample_indices_b": [
+      339,
+      339
+     ],
+     "session_id": "openf1:9161",
+     "source_provider": "openf1",
+     "ts_range_a": [
+      "2023-09-16T14:28:10.727000+00:00",
+      "2023-09-16T14:28:10.727000+00:00"
+     ],
+     "ts_range_b": [
+      "2023-09-16T14:28:56.367000+00:00",
+      "2023-09-16T14:28:56.367000+00:00"
+     ]
+    },
+    "region_id": "R13",
+    "significant": false,
+    "speed": null,
+    "start_index": 981,
+    "status": "NO_DATA",
+    "supporting_signals": [],
+    "throttle": null,
+    "uncertainty_s": null,
+    "x_end": 1.0,
+    "x_start": 0.981
+   }
+  ],
+  "session_id": "openf1:9161",
+  "sign_convention": "delta_t = elapsed_A - elapsed_B; negative means A is ahead",
+  "source_provider": "openf1",
+  "uncertainty": {
+   "anchors": [
+    {
+     "distance_a_m": 1608.175968,
+     "distance_b_m": 1603.868328,
+     "misalignment_m": 4.30764,
+     "sector": "S1"
+    },
+    {
+     "distance_a_m": 3399.085146,
+     "distance_b_m": 3397.049017,
+     "misalignment_m": 2.036129,
+     "sector": "S2"
+    }
+   ],
+   "change_bound_m": 4.30764,
+   "misalignment_bound_m": 4.30764,
+   "source": "SECTOR_LINE_ANCHORS"
+  }
+ },
+ "context_pack": {
+  "calc_version": "attribution-1.0.0",
+  "facts": [
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "attr_summary",
+    "statement": "#55 lap 19 vs #63 lap 16: official lap delta -0.072 s (A-B); engine delta at the last covered position x=0.981 is -0.097 s; alignment NORMALIZED_DISTANCE, misalignment bound 4.31 m (SECTOR_LINE_ANCHORS)",
+    "values": {
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "engine_delta_last_covered_s": -0.09661302634827962,
+     "misalignment_bound_m": 4.307640288355742,
+     "official_lap_delta_s": -0.07200000000000273,
+     "sign_convention": "delta_t = elapsed_A - elapsed_B; negative means A is ahead",
+     "uncertainty_source": "SECTOR_LINE_ANCHORS"
+    }
+   },
+   {
+    "class": "C",
+    "id": "attr_accounting",
+    "statement": "delta change over covered distance -0.097 s: +0.000 s in segments with resolvable control-input differences, +0.000 s significant without one, -0.097 s within uncertainty",
+    "values": {
+     "actual_change_s": -0.09661302634827962,
+     "attributed_change_s": 0.0,
+     "below_significance_change_s": -0.09661302634827962,
+     "unaccounted_s": -0.09661302634827962,
+     "unattributed_significant_change_s": 0.0
+    }
+   },
+   {
+    "class": "C",
+    "id": "attr_sector1",
+    "statement": "sector 1: official A-B -0.068 s; engine -0.099 s",
+    "values": {
+     "engine_change_s": -0.09856122015357469,
+     "engine_minus_official_s": -0.030561220153573293,
+     "official_delta_s": -0.06800000000000139,
+     "segment_ids": [
+      "R01",
+      "R02",
+      "R03",
+      "R04"
+     ]
+    }
+   },
+   {
+    "class": "C",
+    "id": "attr_sector2",
+    "statement": "sector 2: official A-B +0.093 s; engine +0.117 s",
+    "values": {
+     "engine_change_s": 0.11690783651150823,
+     "engine_minus_official_s": 0.0239078365115047,
+     "official_delta_s": 0.09300000000000352,
+     "segment_ids": [
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+      "R09"
+     ]
+    }
+   },
+   {
+    "class": "B",
+    "id": "attr_sector3",
+    "statement": "sector 3: official A-B -0.097 s; engine n/a",
+    "values": {
+     "engine_change_s": null,
+     "engine_minus_official_s": null,
+     "official_delta_s": -0.09699999999999775,
+     "segment_ids": [
+      "R09",
+      "R10",
+      "R11",
+      "R12"
+     ]
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R01",
+    "statement": "R01 (0-435 m): delta +0.000 s -> -0.060 s, accumulated -0.060 s +/- 0.161 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed",
+    "values": {
+     "accumulated_change_s": -0.059991878467871906,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 6.7838888888888995,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 434.71999999999997,
+     "distance_start_m": 0.0,
+     "drs_difference_fraction": 0.011235955056179775,
+     "gear_difference_fraction": 0.15730337078651685,
+     "inherited_gap_s": 0.0,
+     "min_speed_difference_kph": 2,
+     "onset_order": [
+      "speed"
+     ],
+     "phase": "FULL_THROTTLE",
+     "primary_signal": null,
+     "region_id": "R01",
+     "significant": false,
+     "speed_delta_mean_kph": 2.614508648365885,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": -2.50499999999997,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.16086769900450493,
+     "x_end": 0.088,
+     "x_start": 0.0
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R02",
+    "statement": "R02 (435-835 m): delta -0.060 s -> -0.077 s, accumulated -0.017 s +/- 0.158 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: brake_onset, throttle_lift, speed",
+    "values": {
+     "accumulated_change_s": -0.01729706129965347,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": -29.610555555555546,
+     "brake_onset_resolvable": true,
+     "direction": "STABLE",
+     "distance_end_m": 834.86,
+     "distance_start_m": 434.71999999999997,
+     "drs_difference_fraction": 0.0,
+     "gear_difference_fraction": 0.10975609756097561,
+     "inherited_gap_s": -0.059991878467871906,
+     "min_speed_difference_kph": 0,
+     "onset_order": [
+      "brake_onset",
+      "throttle_lift",
+      "speed"
+     ],
+     "phase": "FULL_THROTTLE",
+     "primary_signal": null,
+     "region_id": "R02",
+     "significant": false,
+     "speed_delta_mean_kph": 0.8340605071752811,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": -6.115972222222127,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.1577363302427421,
+     "x_end": 0.169,
+     "x_start": 0.088
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R03",
+    "statement": "R03 (835-1606 m): delta -0.077 s -> -0.098 s, accumulated -0.021 s +/- 0.084 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear",
+    "values": {
+     "accumulated_change_s": -0.021195529175455974,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 8.331805555555842,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 1605.5,
+     "distance_start_m": 834.86,
+     "drs_difference_fraction": 0.025477707006369428,
+     "gear_difference_fraction": 0.17834394904458598,
+     "inherited_gap_s": -0.07728893976752538,
+     "min_speed_difference_kph": 4,
+     "onset_order": [
+      "speed",
+      "gear"
+     ],
+     "phase": "BRAKING",
+     "primary_signal": null,
+     "region_id": "R03",
+     "significant": false,
+     "speed_delta_mean_kph": 0.8892764167037543,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": -11.34222222222203,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.08354106394075309,
+     "x_end": 0.325,
+     "x_start": 0.169
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R04",
+    "statement": "R04 (1606-1872 m): delta -0.098 s -> -0.077 s, accumulated +0.022 s +/- 0.114 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear",
+    "values": {
+     "accumulated_change_s": 0.02170752658710029,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": -4.395416666667323,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 1872.26,
+     "distance_start_m": 1605.5,
+     "drs_difference_fraction": 0.10909090909090909,
+     "gear_difference_fraction": 0.4,
+     "inherited_gap_s": -0.09848446894298135,
+     "min_speed_difference_kph": 1,
+     "onset_order": [
+      "speed",
+      "gear"
+     ],
+     "phase": "EXIT",
+     "primary_signal": null,
+     "region_id": "R04",
+     "significant": false,
+     "speed_delta_mean_kph": -0.23191483755900116,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 4.4644444444434495,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.11442117588221787,
+     "x_end": 0.379,
+     "x_start": 0.325
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R05",
+    "statement": "R05 (1872-2065 m): delta -0.077 s -> -0.083 s, accumulated -0.006 s +/- 0.109 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear",
+    "values": {
+     "accumulated_change_s": -0.005981123874246208,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 1.9047222222218396,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 2064.92,
+     "distance_start_m": 1872.26,
+     "drs_difference_fraction": 0.0,
+     "gear_difference_fraction": 0.3,
+     "inherited_gap_s": -0.07677694235588106,
+     "min_speed_difference_kph": 1,
+     "onset_order": [
+      "speed",
+      "gear"
+     ],
+     "phase": "BRAKING",
+     "primary_signal": null,
+     "region_id": "R05",
+     "significant": false,
+     "speed_delta_mean_kph": 0.30899741360510474,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": -0.45777777777811446,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.10884043768522789,
+     "x_end": 0.418,
+     "x_start": 0.379
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R06",
+    "statement": "R06 (2065-2480 m): delta -0.083 s -> +0.000 s, accumulated +0.083 s +/- 0.129 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear",
+    "values": {
+     "accumulated_change_s": 0.08314348842685604,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 7.825416666664994,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 2479.88,
+     "distance_start_m": 2064.92,
+     "drs_difference_fraction": 0.0,
+     "gear_difference_fraction": 0.23529411764705882,
+     "inherited_gap_s": -0.08275806623012727,
+     "min_speed_difference_kph": 2,
+     "onset_order": [
+      "speed",
+      "gear"
+     ],
+     "phase": "FULL_THROTTLE",
+     "primary_signal": null,
+     "region_id": "R06",
+     "significant": false,
+     "speed_delta_mean_kph": -2.2672246433158842,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 9.392083333332335,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.12938384427651176,
+     "x_end": 0.502,
+     "x_start": 0.418
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R07",
+    "statement": "R07 (2480-2668 m): delta +0.000 s -> +0.068 s, accumulated +0.068 s +/- 0.130 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear",
+    "values": {
+     "accumulated_change_s": 0.06770332985583849,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": -7.563055555556966,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 2667.6000000000004,
+     "distance_start_m": 2479.88,
+     "drs_difference_fraction": 0.0,
+     "gear_difference_fraction": 0.1794871794871795,
+     "inherited_gap_s": 0.00038542219672876854,
+     "min_speed_difference_kph": -9,
+     "onset_order": [
+      "speed",
+      "gear"
+     ],
+     "phase": "EXIT",
+     "primary_signal": null,
+     "region_id": "R07",
+     "significant": false,
+     "speed_delta_mean_kph": -0.011622461556252498,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 9.954305555553715,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.12976073971666724,
+     "x_end": 0.54,
+     "x_start": 0.502
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R08",
+    "statement": "R08 (2668-2875 m): delta +0.068 s -> +0.084 s, accumulated +0.016 s +/- 0.114 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, brake_release",
+    "values": {
+     "accumulated_change_s": 0.015988811291030913,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 18.606944444443076,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 2875.08,
+     "distance_start_m": 2667.6000000000004,
+     "drs_difference_fraction": 0.0,
+     "gear_difference_fraction": 0.16279069767441862,
+     "inherited_gap_s": 0.06808875205256726,
+     "min_speed_difference_kph": 0,
+     "onset_order": [
+      "speed",
+      "brake_release"
+     ],
+     "phase": "EXIT",
+     "primary_signal": null,
+     "region_id": "R08",
+     "significant": false,
+     "speed_delta_mean_kph": -1.1067309926349893,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 9.951944444443999,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.1142992973776178,
+     "x_end": 0.582,
+     "x_start": 0.54
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R09",
+    "statement": "R09 (2875-3399 m): delta +0.084 s -> +0.018 s, accumulated -0.066 s +/- 0.108 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: brake_onset, speed, gear, full_throttle",
+    "values": {
+     "accumulated_change_s": -0.0658604943400718,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 31.81833333333349,
+     "brake_onset_resolvable": true,
+     "direction": "STABLE",
+     "distance_end_m": 3398.72,
+     "distance_start_m": 2875.08,
+     "drs_difference_fraction": 0.037383177570093455,
+     "gear_difference_fraction": 0.29906542056074764,
+     "inherited_gap_s": 0.08407756334359817,
+     "min_speed_difference_kph": -3,
+     "onset_order": [
+      "brake_onset",
+      "speed",
+      "gear",
+      "full_throttle"
+     ],
+     "phase": "FULL_THROTTLE",
+     "primary_signal": null,
+     "region_id": "R09",
+     "significant": false,
+     "speed_delta_mean_kph": 2.6146830464079707,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": -1.1856944444440387,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.10835170049057002,
+     "x_end": 0.688,
+     "x_start": 0.582
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R10",
+    "statement": "R10 (3399-4150 m): delta +0.018 s -> -0.033 s, accumulated -0.051 s +/- 0.064 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear",
+    "values": {
+     "accumulated_change_s": -0.050739738852144,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 4.8031944444455625,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 4149.599999999999,
+     "distance_start_m": 3398.72,
+     "drs_difference_fraction": 0.006535947712418301,
+     "gear_difference_fraction": 0.20261437908496732,
+     "inherited_gap_s": 0.018217069003526376,
+     "min_speed_difference_kph": 4,
+     "onset_order": [
+      "speed",
+      "gear"
+     ],
+     "phase": "FULL_THROTTLE",
+     "primary_signal": null,
+     "region_id": "R10",
+     "significant": false,
+     "speed_delta_mean_kph": 0.8644820012725074,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 4.119305555556512,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.06426607518807023,
+     "x_end": 0.84,
+     "x_start": 0.688
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R11",
+    "statement": "R11 (4150-4555 m): delta -0.033 s -> -0.042 s, accumulated -0.009 s +/- 0.081 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, gear, full_throttle",
+    "values": {
+     "accumulated_change_s": -0.00928885855803685,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": -0.2294444444433652,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 4554.68,
+     "distance_start_m": 4149.599999999999,
+     "drs_difference_fraction": 0.0,
+     "gear_difference_fraction": 0.40963855421686746,
+     "inherited_gap_s": -0.032522669848617625,
+     "min_speed_difference_kph": 2,
+     "onset_order": [
+      "speed",
+      "gear",
+      "full_throttle"
+     ],
+     "phase": "EXIT",
+     "primary_signal": null,
+     "region_id": "R11",
+     "significant": false,
+     "speed_delta_mean_kph": 0.22587308889203794,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 4.263888888892655,
+     "throttle_application_resolvable": false,
+     "uncertainty_s": 0.08100393033163229,
+     "x_end": 0.922,
+     "x_start": 0.84
+    }
+   },
+   {
+    "class": "C",
+    "confidence": "HIGH",
+    "id": "seg_R12",
+    "statement": "R12 (4555-4846 m): delta -0.042 s -> -0.097 s, accumulated -0.055 s +/- 0.074 s (STABLE, not significant); evidence NOT_SIGNIFICANT, in order: speed, brake_release, throttle_application, gear",
+    "values": {
+     "accumulated_change_s": -0.054801497941625144,
+     "alignment_mode": "NORMALIZED_DISTANCE",
+     "association": "TEMPORAL_ASSOCIATION",
+     "brake_onset_offset_m": 14.556111111113868,
+     "brake_onset_resolvable": false,
+     "direction": "STABLE",
+     "distance_end_m": 4846.14,
+     "distance_start_m": 4554.68,
+     "drs_difference_fraction": 0.016666666666666666,
+     "gear_difference_fraction": 0.25,
+     "inherited_gap_s": -0.041811528406654475,
+     "min_speed_difference_kph": -2,
+     "onset_order": [
+      "speed",
+      "brake_release",
+      "throttle_application",
+      "gear"
+     ],
+     "phase": "BRAKING",
+     "primary_signal": null,
+     "region_id": "R12",
+     "significant": false,
+     "speed_delta_mean_kph": 2.896947186161289,
+     "status": "NOT_SIGNIFICANT",
+     "supporting_signals": [],
+     "throttle_application_offset_m": 27.003750000003638,
+     "throttle_application_resolvable": true,
+     "uncertainty_s": 0.07379208165240528,
+     "x_end": 0.981,
+     "x_start": 0.922
+    }
+   }
+  ],
+  "limitations": [
+   "NORMALIZED_DISTANCE: positions are 10.1B integrated distance divided by the cited lap length, not physical track coordinates",
+   "misalignment bound measured at 2 official sector lines only; it can be exceeded between them, so a significant segment is one not explained by the MEASURED misalignment",
+   "PROVISIONAL: within-segment misalignment change is bounded by the misalignment bound itself (D = E); not yet calibrated on more real pairs",
+   "NO_DATA spans have no delta; nothing is attributed there",
+   "intra-segment splits (braking before/during/after, per-phase accumulation) end at changing speed and carry larger alignment uncertainty than the straight-to-straight segment total",
+   "typical full-throttle value differs per car (A 99.0, B 100.0): mean throttle differences include calibration, not only driver input",
+   "DRS codes are compared for equality only; their open/closed meaning is not verified in this repository",
+   "associations are temporal, never causal"
+  ],
+  "pack": "lap_attribution_v1",
+  "session_id": "openf1:9161"
+ },
+ "fixture": {
+  "car_data_rows": {
+   "55": 341,
+   "63": 340
+  },
+  "driver_a": 55,
+  "driver_b": 63,
+  "lap_a": 19,
+  "lap_b": 16,
+  "lap_length_m": 4940.0,
+  "lap_length_source": "Wikipedia, 2023 Singapore Grand Prix: course length 4.940 km (Marina Bay 2023-2024 layout)",
+  "path": "scripts/fixtures/real-openf1-pair",
+  "session_key": 9161
+ },
+ "kind": "Phase 10.4 deterministic attribution - REAL OpenF1 data"
+}
