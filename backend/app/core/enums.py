@@ -27,6 +27,8 @@ class ProviderName(str, Enum):
     FASTF1 = "fastf1"
     JOLPICA = "jolpica"
     F1DB = "f1db"
+    BLACKTOP = "blacktop"  # Orange Cat Blacktop REST (reference/history challenger)
+    F1_LIVE_PULSE = "f1_live_pulse"  # RapidAPI F1 Live Pulse (quota-guarded)
 
 
 class SessionType(str, Enum):

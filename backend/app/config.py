@@ -43,6 +43,22 @@ class Settings(BaseSettings):
     llm_min_call_interval_s: float = 0.0
     gemini_api_key: str | None = None
 
+    # --- Additional providers (backend-only keys; never exposed to Vite) ---
+    # Blacktop: free tier verified 2026-09-25 = 7,500 req/month, 60 req/min;
+    # live timing / lap times / telemetry answer 402 (need "hobby").
+    blacktop_api_base_url: str = "https://api.ocblacktop.com/v1"
+    blacktop_api_key: str | None = None
+    blacktop_enabled: bool = False
+    # RapidAPI F1 Live Pulse: free plan verified 2026-09-25 = 20 requests per
+    # billing cycle (~23 days). Every call goes through a quota guard.
+    f1_live_pulse_rapidapi_host: str = "f1-live-pulse.p.rapidapi.com"
+    f1_live_pulse_base_url: str = "https://f1-live-pulse.p.rapidapi.com"
+    f1_live_pulse_rapidapi_key: str | None = None
+    f1_live_pulse_enabled: bool = False
+    f1_live_pulse_reserve_requests: int = 2  # never spend the last N requests
+    rapidapi_timeout_seconds: float = 10.0
+    f1_additional_providers_enabled: bool = False
+
     poll_interval_seconds: float = 6.0
     recordings_dir: Path = BACKEND_ROOT.parent / "recordings"
 
