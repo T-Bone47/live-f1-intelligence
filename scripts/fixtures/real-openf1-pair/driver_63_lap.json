@@ -1,0 +1,44 @@
+{
+ "meeting_key": 1219,
+ "session_key": 9161,
+ "driver_number": 63,
+ "lap_number": 16,
+ "date_start": "2023-09-16T14:27:25.373000+00:00",
+ "duration_sector_1": 26.785,
+ "duration_sector_2": 38.406,
+ "duration_sector_3": 25.865,
+ "i1_speed": 308,
+ "i2_speed": 277,
+ "is_pit_out_lap": false,
+ "lap_duration": 91.056,
+ "segments_sector_1": [
+  2049,
+  2048,
+  2048,
+  2051,
+  2048,
+  2051,
+  2051,
+  2049
+ ],
+ "segments_sector_2": [
+  2048,
+  2049,
+  2051,
+  2049,
+  2051,
+  2049,
+  2049,
+  2049
+ ],
+ "segments_sector_3": [
+  2049,
+  2049,
+  2049,
+  2051,
+  2048,
+  2049,
+  2049
+ ],
+ "st_speed": 300
+}
