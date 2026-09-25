@@ -89,7 +89,9 @@ def result_row_to_race_result(row: dict[str, Any], session_id: str) -> RaceResul
     return RaceResult(
         session_id=session_id,
         driver_ref=str(driver.get("driverId") or "unknown"),
-        driver_number=int(driver["number"]) if str(driver.get("number") or "").isdigit() else None,
+        # Car number raced in THIS session is row["number"]; Driver has only
+        # permanentNumber (current number: Verstappen "3" in a 2023 row).
+        driver_number=int(row["number"]) if str(row.get("number") or "").isdigit() else None,
         family_name=driver.get("familyName"),
         constructor_ref=str(constructor.get("constructorId")) if constructor.get("constructorId") else None,
         position=position,
@@ -114,7 +116,9 @@ def quali_row_to_result(row: dict[str, Any], session_id: str) -> QualifyingResul
     return QualifyingResult(
         session_id=session_id,
         driver_ref=str(driver.get("driverId") or "unknown"),
-        driver_number=int(driver["number"]) if str(driver.get("number") or "").isdigit() else None,
+        # Car number raced in THIS session is row["number"]; Driver has only
+        # permanentNumber (current number: Verstappen "3" in a 2023 row).
+        driver_number=int(row["number"]) if str(row.get("number") or "").isdigit() else None,
         constructor_ref=str(constructor.get("constructorId")) if constructor.get("constructorId") else None,
         position=int(pos_raw) if str(pos_raw or "").isdigit() else None,
         q1_raw=q("Q1"),
