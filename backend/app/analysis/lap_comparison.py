@@ -83,19 +83,28 @@ def compare_driver_laps(
     synchronize_drivers (raises ValueError otherwise), not re-implemented
     here.
     """
-    trace_a = normalize_lap(
-        build_lap_distance_trace(lap_a, samples_a, lap_class_a), lap_length_m)
-    trace_b = normalize_lap(
-        build_lap_distance_trace(lap_b, samples_b, lap_class_b), lap_length_m)
+    return compare_traces(build_lap_distance_trace(lap_a, samples_a, lap_class_a),
+                          build_lap_distance_trace(lap_b, samples_b, lap_class_b),
+                          lap_length_m=lap_length_m, step=step)
 
+
+def compare_traces(trace_a: LapDistanceTrace, trace_b: LapDistanceTrace,
+                   lap_length_m: float, step: float = 0.001) -> DriverLapComparison:
+    """Normalize, synchronize and summarize two already-built traces.
+
+    The seam that lets the distance SOURCE vary - speed integration (10.1B,
+    via compare_driver_laps) or projection onto a reference path (10.3,
+    app.analysis.track_geometry) - while normalization, synchronization,
+    delta_t and everything downstream stay one implementation.
+    """
+    trace_a = normalize_lap(trace_a, lap_length_m)
+    trace_b = normalize_lap(trace_b, lap_length_m)
     sync = synchronize_drivers(trace_a, trace_b, step=step)
-
     overall_confidence = min((trace_a.confidence, trace_b.confidence), key=confidence_rank)
-
     return DriverLapComparison(
-        session_id=lap_a.session_id, driver_a=lap_a.driver_number,
-        lap_number_a=lap_a.lap_number, driver_b=lap_b.driver_number,
-        lap_number_b=lap_b.lap_number, lap_length_m=lap_length_m,
+        session_id=trace_a.session_id, driver_a=trace_a.driver_number,
+        lap_number_a=trace_a.lap_number, driver_b=trace_b.driver_number,
+        lap_number_b=trace_b.lap_number, lap_length_m=lap_length_m,
         trace_a=trace_a, trace_b=trace_b, sync=sync,
         delta_at_start=delta_t(sync, 0.0), delta_at_finish=delta_t(sync, 1.0),
         confidence=overall_confidence,

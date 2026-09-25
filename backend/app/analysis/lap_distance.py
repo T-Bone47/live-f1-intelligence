@@ -115,6 +115,12 @@ class LapDistanceTrace:
     confidence: Confidence = Confidence.NONE
     has_overshoot: bool = False
     provenance: DerivedProvenance | None = None
+    # Where elapsed time is measured from when resampling. None (the 10.1B
+    # default) = this trace's own first sample, matching distance measured
+    # from that sample. Position-aligned traces (Phase 10.3) measure distance
+    # from the physical timing line, so they set this to the official lap
+    # start - otherwise each driver's sampling phase leaks into delta_t.
+    time_origin: datetime | None = None
 
 
 def _to_mps(speed_kph: float) -> float:
@@ -260,21 +266,8 @@ def build_lap_distance_trace(
         end_gap = window_end - points[-1].ts.timestamp()
         is_complete = start_gap <= MAX_GAP_S and end_gap <= MAX_GAP_S
 
-    if not points:
-        base_confidence = Confidence.NONE
-    else:
-        worst_point = min((p.confidence for p in points), key=confidence_rank)
-        # A classification/coverage/sample-count issue is a CEILING, not an
-        # override: it can only pull confidence down from what the points
-        # themselves already show, never mask a worse point-level problem
-        # (e.g. a pit lap that ALSO has missing-speed samples must not be
-        # reported as merely LOW when some of its points are NONE).
-        ceiling = Confidence.HIGH
-        if is_invalid or is_pit_lap or not is_complete:
-            ceiling = Confidence.LOW
-        elif len(points) < MIN_SAMPLES_FOR_HIGH_CONFIDENCE:
-            ceiling = Confidence.MEDIUM
-        base_confidence = min((worst_point, ceiling), key=confidence_rank)
+    base_confidence = rollup_trace_confidence(
+        points, is_invalid=is_invalid, is_pit_lap=is_pit_lap, is_complete=is_complete)
 
     return LapDistanceTrace(
         session_id=session_id, driver_number=driver_number, lap_number=lap.lap_number,
@@ -282,6 +275,28 @@ def build_lap_distance_trace(
         is_complete=is_complete, confidence=base_confidence,
         provenance=_provenance(session_id, base_confidence),
     )
+
+
+def rollup_trace_confidence(points: list[DistancePoint], *, is_invalid: bool,
+                            is_pit_lap: bool, is_complete: bool) -> Confidence:
+    """Whole-trace confidence: the worse of the worst point and a ceiling.
+
+    A classification/coverage/sample-count issue is a CEILING, not an
+    override: it can only pull confidence down from what the points
+    themselves already show, never mask a worse point-level problem (e.g. a
+    pit lap that ALSO has missing-speed samples must not be reported as
+    merely LOW when some of its points are NONE). Shared by the speed-
+    integrated (10.1B) and position-aligned (10.3) trace builders.
+    """
+    if not points:
+        return Confidence.NONE
+    worst_point = min((p.confidence for p in points), key=confidence_rank)
+    ceiling = Confidence.HIGH
+    if is_invalid or is_pit_lap or not is_complete:
+        ceiling = Confidence.LOW
+    elif len(points) < MIN_SAMPLES_FOR_HIGH_CONFIDENCE:
+        ceiling = Confidence.MEDIUM
+    return min((worst_point, ceiling), key=confidence_rank)
 
 
 def normalize_lap(trace: LapDistanceTrace, lap_length_m: float | None) -> LapDistanceTrace:
@@ -395,7 +410,7 @@ def resample_common_grid(trace: LapDistanceTrace, step: float = 0.001) -> Resamp
         )
 
     xs = [p.normalized_distance for p in usable]
-    t0 = usable[0].ts
+    t0 = trace.time_origin or usable[0].ts
     elapsed = [(p.ts - t0).total_seconds() for p in usable]
 
     continuous_out: dict[str, list[float | None]] = {f: [] for f in CONTINUOUS_FIELDS}
