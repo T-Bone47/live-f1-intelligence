@@ -1,7 +1,13 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./components/App";
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import "./styles.css";
+
+// Phase 10.6: /evidence is the Evidence Workbench (historical, REST only — it
+// never opens the live session socket). Loaded lazily as its own chunk.
+const EvidenceWorkbench = lazy(() =>
+  import("./components/evidence/EvidenceWorkbench").then((m) => ({ default: m.EvidenceWorkbench })));
+const isEvidenceRoute = location.pathname.replace(/\/+$/, "") === "/evidence";
 
 class ErrorBoundary extends React.Component<{children: any}, {error: any}> {
   constructor(props: any) { super(props); this.state = { error: null }; }
@@ -20,6 +26,8 @@ class ErrorBoundary extends React.Component<{children: any}, {error: any}> {
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <App />
+    {isEvidenceRoute
+      ? <Suspense fallback={null}><EvidenceWorkbench /></Suspense>
+      : <App />}
   </ErrorBoundary>
 );

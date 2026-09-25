@@ -109,6 +109,9 @@ export function App() {
                 {p.label}
               </button>
             ))}
+            <a className="preset-btn" href="/evidence" title="Phase 10.6 Evidence Workbench — historical lap comparison">
+              EVIDENCE
+            </a>
           </div>
         </div>
 
