@@ -1,0 +1,398 @@
+[
+ {
+  "id": "84334610-8768-47ce-a07f-9923987801e3",
+  "position": 1,
+  "points": "556.00",
+  "firstName": "Max",
+  "lastName": "Verstappen",
+  "code": "VER",
+  "number": 3,
+  "teams": [
+   {
+    "id": "a3f1b5d4-e7f0-4413-96cc-2df67b55e673",
+    "name": "Red Bull Racing",
+    "shortName": "Red Bull Racing",
+    "color": "#3671c6",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "e8ec8fe5-6ed9-438a-8834-0acc34fa755c",
+  "position": 2,
+  "points": "285.00",
+  "firstName": "Sergio",
+  "lastName": "Perez",
+  "code": "PER",
+  "number": 11,
+  "teams": [
+   {
+    "id": "a3f1b5d4-e7f0-4413-96cc-2df67b55e673",
+    "name": "Red Bull Racing",
+    "shortName": "Red Bull Racing",
+    "color": "#3671c6",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "8f2580ac-1b31-45a2-9838-606decae0f5c",
+  "position": 3,
+  "points": "234.00",
+  "firstName": "Lewis",
+  "lastName": "Hamilton",
+  "code": "HAM",
+  "number": 44,
+  "teams": [
+   {
+    "id": "c443f518-bb74-479f-9c71-d0ecd9410299",
+    "name": "Mercedes",
+    "shortName": "Mercedes",
+    "color": "#27f4d2",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "0cab8cad-e2ba-4ba3-944a-604984946915",
+  "position": 4,
+  "points": "206.00",
+  "firstName": "Fernando",
+  "lastName": "Alonso",
+  "code": "ALO",
+  "number": 14,
+  "teams": [
+   {
+    "id": "45c811d4-7b5a-4cb1-87f5-5f58691c6856",
+    "name": "Aston Martin",
+    "shortName": "Aston Martin",
+    "color": "#229971",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "68113195-9d28-43aa-a460-b6b12282d2da",
+  "position": 5,
+  "points": "206.00",
+  "firstName": "Charles",
+  "lastName": "Leclerc",
+  "code": "LEC",
+  "number": 16,
+  "teams": [
+   {
+    "id": "ced24186-02e1-452c-ac42-32fe04ea04f9",
+    "name": "Ferrari",
+    "shortName": "Ferrari",
+    "color": "#e8002d",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "c90b21c7-5f23-48f6-897e-384eca7f9df9",
+  "position": 6,
+  "points": "205.00",
+  "firstName": "Lando",
+  "lastName": "Norris",
+  "code": "NOR",
+  "number": 1,
+  "teams": [
+   {
+    "id": "b0a8938a-51dc-4c6d-ab07-376c842eeb1d",
+    "name": "McLaren",
+    "shortName": "McLaren",
+    "color": "#ff8000",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "d90f3806-6d2f-4e51-a3ec-0dcc5b3dce89",
+  "position": 7,
+  "points": "200.00",
+  "firstName": "Carlos",
+  "lastName": "Sainz",
+  "code": "SAI",
+  "number": 55,
+  "teams": [
+   {
+    "id": "ced24186-02e1-452c-ac42-32fe04ea04f9",
+    "name": "Ferrari",
+    "shortName": "Ferrari",
+    "color": "#e8002d",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "6f8f9f16-11f3-4495-a657-c82951f1eaa1",
+  "position": 8,
+  "points": "175.00",
+  "firstName": "George",
+  "lastName": "Russell",
+  "code": "RUS",
+  "number": 63,
+  "teams": [
+   {
+    "id": "c443f518-bb74-479f-9c71-d0ecd9410299",
+    "name": "Mercedes",
+    "shortName": "Mercedes",
+    "color": "#27f4d2",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "aa101afe-9649-4ada-b6d7-521384dfb402",
+  "position": 9,
+  "points": "97.00",
+  "firstName": "Oscar",
+  "lastName": "Piastri",
+  "code": "PIA",
+  "number": 81,
+  "teams": [
+   {
+    "id": "b0a8938a-51dc-4c6d-ab07-376c842eeb1d",
+    "name": "McLaren",
+    "shortName": "McLaren",
+    "color": "#ff8000",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "e5414ed1-63c2-447b-8549-019975f91a63",
+  "position": 10,
+  "points": "74.00",
+  "firstName": "Lance",
+  "lastName": "Stroll",
+  "code": "STR",
+  "number": 18,
+  "teams": [
+   {
+    "id": "45c811d4-7b5a-4cb1-87f5-5f58691c6856",
+    "name": "Aston Martin",
+    "shortName": "Aston Martin",
+    "color": "#229971",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "fc0c5ead-1810-4ae7-839e-0269cc0abff8",
+  "position": 11,
+  "points": "62.00",
+  "firstName": "Pierre",
+  "lastName": "Gasly",
+  "code": "GAS",
+  "number": 10,
+  "teams": [
+   {
+    "id": "92d57c16-ef98-4e20-9420-2e985b300559",
+    "name": "Alpine",
+    "shortName": "Alpine",
+    "color": "#00a1e8",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "58c0edd2-9d88-44d8-b0aa-27b72633677e",
+  "position": 12,
+  "points": "58.00",
+  "firstName": "Esteban",
+  "lastName": "Ocon",
+  "code": "OCO",
+  "number": 31,
+  "teams": [
+   {
+    "id": "92d57c16-ef98-4e20-9420-2e985b300559",
+    "name": "Alpine",
+    "shortName": "Alpine",
+    "color": "#00a1e8",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "c02dee64-9892-4cc1-b6aa-4236780be792",
+  "position": 13,
+  "points": "27.00",
+  "firstName": "Alexander",
+  "lastName": "Albon",
+  "code": "ALB",
+  "number": 23,
+  "teams": [
+   {
+    "id": "f8ae29a9-3d93-4efd-9d70-ce69286c0a04",
+    "name": "Williams",
+    "shortName": "Williams",
+    "color": "#1868db",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "9907ae36-717f-4e7c-9d0c-3d0fcc358b03",
+  "position": 14,
+  "points": "17.00",
+  "firstName": "Yuki",
+  "lastName": "Tsunoda",
+  "code": "TSU",
+  "number": 22,
+  "teams": [
+   {
+    "id": "df363f62-d52a-4f59-8dcb-d6a6604bcfc0",
+    "name": "AlphaTauri",
+    "shortName": "AlphaTauri",
+    "color": "#5E8FAA",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "39177dda-e110-45ea-a2cd-86a5cd0fda7b",
+  "position": 15,
+  "points": "10.00",
+  "firstName": "Valtteri",
+  "lastName": "Bottas",
+  "code": "BOT",
+  "number": 77,
+  "teams": [
+   {
+    "id": "5e135c4a-f9d8-4505-9782-7fa78150dbe5",
+    "name": "Alfa Romeo F1 Team Stake",
+    "shortName": "Alfa Romeo F1 Team Stake",
+    "color": "#C92D4B",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "d4acbc13-0e0e-4248-aee9-2c08eb2e8225",
+  "position": 16,
+  "points": "9.00",
+  "firstName": "Nico",
+  "lastName": "Hulkenberg",
+  "code": "HUL",
+  "number": 27,
+  "teams": [
+   {
+    "id": "af7690d3-cecd-45fa-b3ea-8876a0f65587",
+    "name": "Haas F1 Team",
+    "shortName": "Haas F1 Team",
+    "color": "#dee1e2",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "5f5e124c-f42b-4dca-a3b1-9655be0bfbdb",
+  "position": 17,
+  "points": "6.00",
+  "firstName": "Guanyu",
+  "lastName": "Zhou",
+  "code": "ZHO",
+  "number": 24,
+  "teams": [
+   {
+    "id": "5e135c4a-f9d8-4505-9782-7fa78150dbe5",
+    "name": "Alfa Romeo F1 Team Stake",
+    "shortName": "Alfa Romeo F1 Team Stake",
+    "color": "#C92D4B",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "01e35794-f167-4783-9292-939c00cc0b34",
+  "position": 18,
+  "points": "6.00",
+  "firstName": "Daniel",
+  "lastName": "Ricciardo",
+  "code": "RIC",
+  "number": 3,
+  "teams": [
+   {
+    "id": "df363f62-d52a-4f59-8dcb-d6a6604bcfc0",
+    "name": "AlphaTauri",
+    "shortName": "AlphaTauri",
+    "color": "#5E8FAA",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "1d716bd4-0e7a-45de-8c2c-d3ce1598020b",
+  "position": 19,
+  "points": "3.00",
+  "firstName": "Kevin",
+  "lastName": "Magnussen",
+  "code": "MAG",
+  "number": 20,
+  "teams": [
+   {
+    "id": "af7690d3-cecd-45fa-b3ea-8876a0f65587",
+    "name": "Haas F1 Team",
+    "shortName": "Haas F1 Team",
+    "color": "#dee1e2",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "14cf64b2-9106-4660-92f9-fcf2099ed9e6",
+  "position": 20,
+  "points": "2.00",
+  "firstName": "Liam",
+  "lastName": "Lawson",
+  "code": "LAW",
+  "number": 30,
+  "teams": [
+   {
+    "id": "df363f62-d52a-4f59-8dcb-d6a6604bcfc0",
+    "name": "AlphaTauri",
+    "shortName": "AlphaTauri",
+    "color": "#5E8FAA",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "45732825-b652-447a-8ca3-3f57417075b3",
+  "position": 21,
+  "points": "1.00",
+  "firstName": "Logan",
+  "lastName": "Sargeant",
+  "code": "SAR",
+  "number": 2,
+  "teams": [
+   {
+    "id": "f8ae29a9-3d93-4efd-9d70-ce69286c0a04",
+    "name": "Williams",
+    "shortName": "Williams",
+    "color": "#1868db",
+    "participationRounds": []
+   }
+  ]
+ },
+ {
+  "id": "090cd214-99cd-4083-8a63-b9d946a53a08",
+  "position": 22,
+  "points": "0.00",
+  "firstName": "Nyck",
+  "lastName": "De Vries",
+  "code": "DEV",
+  "number": 21,
+  "teams": [
+   {
+    "id": "df363f62-d52a-4f59-8dcb-d6a6604bcfc0",
+    "name": "AlphaTauri",
+    "shortName": "AlphaTauri",
+    "color": "#5E8FAA",
+    "participationRounds": []
+   }
+  ]
+ }
+]

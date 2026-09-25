@@ -1,0 +1,42 @@
+{
+ "kind": "REAL provider data - raw Blacktop + Jolpica bodies, unmodified",
+ "retrieved_at_utc": "2026-09-25T10:15:56.953136+00:00",
+ "script": "scripts/record_blacktop_fixtures.py",
+ "year": 2023,
+ "event_name": "Singapore Grand Prix",
+ "blacktop_month_quota_remaining": 7479,
+ "calls": [
+  {
+   "endpoint": "/v1/formula1/events",
+   "params": {
+    "year": 2023
+   },
+   "rows": 24
+  },
+  {
+   "endpoint": "/v1/formula1/events/bf247ed6-cb57-4877-bb5b-9168a4e165a5",
+   "rows": 1
+  },
+  {
+   "endpoint": "/v1/formula1/events/bf247ed6-cb57-4877-bb5b-9168a4e165a5/sessions/37f228a1-12dd-4c9a-90bc-04548aae7200/results",
+   "session_type": "qualifying",
+   "rows": 20
+  },
+  {
+   "endpoint": "/v1/formula1/events/bf247ed6-cb57-4877-bb5b-9168a4e165a5/sessions/cb7ae1d1-a437-4052-8ba1-369d9f88d144/results",
+   "session_type": "race",
+   "rows": 19
+  },
+  {
+   "endpoint": "/v1/formula1/standings/drivers",
+   "params": {
+    "year": 2023
+   },
+   "rows": 22
+  },
+  {
+   "endpoint": "jolpica 2023/15 results+qualifying+driverStandings",
+   "matched_by": "race date 2023-09-17"
+  }
+ ]
+}

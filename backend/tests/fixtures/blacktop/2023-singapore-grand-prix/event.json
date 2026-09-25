@@ -1,0 +1,67 @@
+{
+ "id": "bf247ed6-cb57-4877-bb5b-9168a4e165a5",
+ "name": "Singapore Grand Prix",
+ "dateStart": "2023-09-15",
+ "dateEnd": "2023-09-17",
+ "status": "completed",
+ "location": {
+  "id": "cde038bc-78bf-41e1-a395-b6fd7d7d0d1e",
+  "name": "Marina Bay Street Circuit",
+  "city": "Marina Bay",
+  "country": {
+   "name": "Singapore",
+   "twoCode": "SG",
+   "threeCode": "SGP"
+  }
+ },
+ "sportId": "formula-1",
+ "season": {
+  "id": "74a789de-23c6-4f99-b9d6-02aa0eac909b",
+  "name": "F1 2023 Season",
+  "year": 2023
+ },
+ "previousEventId": "9161cb36-1f2d-443b-99fc-30cfec12d8a3",
+ "nextEventId": "6115bf83-2c57-418c-97bd-dc7c29056597",
+ "schedule": [
+  {
+   "id": "bb26f7f1-306d-4334-9399-101512f20f05",
+   "type": "practice",
+   "name": "FP1",
+   "status": "completed",
+   "startTime": "2023-09-15T09:30:00+00:00",
+   "endTime": "2023-09-15T10:30:00+00:00"
+  },
+  {
+   "id": "7c159cc0-536f-415b-8788-55dede007bc9",
+   "type": "practice",
+   "name": "FP2",
+   "status": "completed",
+   "startTime": "2023-09-15T13:00:00+00:00",
+   "endTime": "2023-09-15T14:00:00+00:00"
+  },
+  {
+   "id": "14177cc7-36c7-4f61-9851-1995f76ae32a",
+   "type": "practice",
+   "name": "FP3",
+   "status": "completed",
+   "startTime": "2023-09-16T09:30:00+00:00",
+   "endTime": "2023-09-16T10:30:00+00:00"
+  },
+  {
+   "id": "37f228a1-12dd-4c9a-90bc-04548aae7200",
+   "type": "qualifying",
+   "name": "Qualifying",
+   "status": "completed",
+   "startTime": "2023-09-16T13:00:00+00:00",
+   "endTime": "2023-09-16T14:00:00+00:00"
+  },
+  {
+   "id": "cb7ae1d1-a437-4052-8ba1-369d9f88d144",
+   "type": "race",
+   "name": "Race",
+   "status": "completed",
+   "startTime": "2023-09-17T12:00:00+00:00",
+   "endTime": "2023-09-17T14:00:00+00:00"
+  }
+ ]
+}
