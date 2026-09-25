@@ -17,27 +17,35 @@ Phase history and evidence (read on demand, don't re-derive):
 - Phase 10.2: **REAL-DATA VALIDATED (pipeline correctness).** Real pair:
   session 9161 (2023 Singapore Q3), driver 55 Sainz lap 19 (90.984 s, pole)
   vs driver 63 Russell lap 16 (91.056 s). Fixture: `scripts/fixtures/real-openf1-pair/`.
-- Phase 10.3: position-based alignment engine built (`app/analysis/track_geometry.py`),
-  proven on exact geometry. **Real-data gate armed and waiting for `/location` data.**
-- Baseline: backend 454 passed / 10 skipped (5 skips = 10.3 gate awaiting
-  data); frontend 51 passed; ESLint 0 errors (109 pre-existing warnings);
-  ruff `app/` 218 pre-existing findings. **Never touch pre-existing lint debt
-  unasked.** Changed files must be ruff-clean.
+- Phase 10.3: position-based alignment engine built (`app/analysis/track_geometry.py`).
+  **Real-data gate RAN 2026-09-25: central claim FAILS at S2.** S1: position
+  2.8 m vs speed 4.3 m ✔. S2: position **3.7 m vs speed 2.0 m** ✘, and the
+  position S2 delta error is +0.046 s vs speed's −0.007 s. Driver 63 has one
+  projection at a 58.7-unit offset (held MEDIUM), and the position-aligned max
+  loss jumps to +0.49 s @ x=0.621 (speed: +0.135 s). 13 passed / 1 failed /
+  1 skipped. The location fixture (`driver_*_location.json` + meta v2) is
+  fetched but **left uncommitted**, because committing it makes HEAD red.
+  car_data files are unchanged.
+- Additional sources (2026-09-25, docs/DATA_SOURCES.md §2.7–2.8): Blacktop
+  (free tier; challenger for results/quali/standings via
+  `app/analysis/source_crosscheck.py`) and RapidAPI F1 Live Pulse (20 req per
+  ~23 days; quota-guarded fixture recorder only). The Postman link is the
+  dead Ergast API, which Jolpica already serves. Both provider flags stay false.
+- Baseline (this Windows box, no Postgres/Gemini): backend 503 passed / 14
+  skipped / 1 failed (the 10.3 S2 finding, only while the location fixture is
+  present; skips: 9 Postgres, 2 Gemini, 2 replay setup, finish NO_DATA).
+  Frontend 51 passed; ESLint 0 errors (109 pre-existing warnings); ruff `app/`
+  pre-existing findings (jolpica/mapping.py keeps its 4). **Never touch
+  pre-existing lint debt unasked.** Changed files must be ruff-clean.
 
 ## Next step
-Run the Phase 10.3 real-data gate (you have network access here; the old
-sandbox didn't):
-```powershell
-cd backend
-.\.venv\Scripts\python.exe ..\scripts\fetch_real_driver_pair.py --session-key 9161 --driver-a 55 --driver-b 63 --lap-length-m 4940 --lap-length-source "Wikipedia, 2023 Singapore Grand Prix: course length 4.940 km (Marina Bay 2023-2024 layout)"
-.\.venv\Scripts\python.exe -m pytest tests\test_real_pair_position_alignment.py tests\test_real_pair_acceptance.py -v
-.\.venv\Scripts\python.exe ..\scripts\audit_real_pair.py
-git diff --stat
-```
-Expected diff: new `driver_*_location.json` + `meta.json` timestamp/version.
-Any change to `driver_*_car_data.json` is itself a finding — investigate.
-The central claim (position places official S1/S2 lines closer than speed's
-4.3 m / 2.0 m) is **falsifiable**: if it fails, report it; do not tune it away.
+1. Investigate the 10.3 S2 failure; do not tune it away. Start with driver 63's
+   58.7-unit outlier near x≈0.62 and whether a single held projection moves
+   the S2 line; then check whether the reference path (driver 55's own lap)
+   cuts a corner that 63 takes wide. Report the finding whatever it is.
+2. Optional: `scripts/crosscheck_sources.py --year 2026` after each race weekend.
+3. During a live session only: `scripts/record_live_pulse.py sessionInfo timingData`
+   to capture real Live Pulse fixtures (each route costs 1 of ~15 left).
 
 ## Non-negotiable rules (learned the hard way on this project)
 1. **Zero fabrication.** Never invent telemetry, lap times, lengths, or

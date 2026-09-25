@@ -109,6 +109,45 @@ general public.
 | Official F1 partner feeds (AWS/Stats Perform class) | Commercial licensing, not publicly accessible |
 | Scraping third-party dashboards (f1-dash etc.) | Adds dependency on another fan project; f1-dash is AGPL-3.0 (code reuse would force AGPL on us) — architecture study only, zero code reuse |
 | Gaming APIs (F1 23/24 UDP) | Wrong domain (sim game telemetry ≠ real sessions) |
+| Ergast Postman collection (documenter.getpostman.com/view/11586746/SztEa7bL) | Documents `ergast.com/api/f1/...`, which is dead (HTTP 404 on 2026-09-25). Its paths work unchanged on Jolpica (§2.3), which is already integrated. |
+
+### 2.7 Orange Cat Blacktop (`api.ocblacktop.com/v1`), added 2026-09-25
+
+Verified with the project's **free-tier** key. Code: `app/providers/blacktop/`.
+
+| Attribute | Finding |
+|---|---|
+| Auth | `x-api-key` header. Every response carries `x-ratelimit-remaining` (per minute) and `x-ratelimit-remaining-month`. |
+| Free tier | 7,500 req/month, 60 req/min. Includes events/schedule, session results, driver standings, and drivers (F1 back to 1950). |
+| Paid only | Live timing, lap times, lap charts and sub-lap telemetry answer **HTTP 402** `{"requiredTier":"hobby","currentTier":"free"}`. Hobby is $9/mo. |
+| Query trap | `/formula1/events?season=2023` is **silently ignored**: it returns all 1,210 events from 1950 to 2027. `year=2023` works. The client refuses `season=`, like OpenF1's `date>=`. |
+| Shape | Events are paginated (`meta.totalPages`). There are no round numbers. 2023 lists 24 events, including Pre-Season Testing and the cancelled Emilia Romagna GP. |
+| Numbers | Results `carNumber` is the number raced that session. The standings `number` is the driver's current number (VER and RIC both "3" in 2023) and is never used as identity. |
+| Semantics | For a retirement, `laps` is **Jolpica + 1** (laps started), so it is not mapped as laps completed. `displayTime` "DNF" is a status, not a time. Quali `sectors` are not from the best lap (SAI s1 38.085 vs the real 26.717), so they are not mapped. |
+| Role | **Challenger** for results, qualifying and standings (`app/analysis/source_crosscheck.py`). It is not wired into ingest: `normalize.py` hard-codes those channels as Jolpica. |
+
+**Cross-check evidence (live runs of `scripts/crosscheck_sources.py`, 2026-09-25):**
+
+| Scope | Driver rows compared | CONFLICT | Notes |
+|---|---:|---:|---|
+| 2023 Singapore (fixture) | 61 | 3 | Standings: **VER 575 (Jolpica) vs 556 (Blacktop)**, plus a 6-point tie ordered differently. Race: Blacktop omits Stroll (withdrew). Quali 20/20 identical. |
+| 2024 season | 941 | 26 | Belgian GP: after Russell's post-race DSQ, Blacktop positions are updated but **every gap is still measured to the DSQ'd car** (18 rows). Other conflicts: São Paulo wet-quali Q2 (3), best laps Singapore #20 and Abu Dhabi #10, and a 12-point tie ordered differently. |
+| 2025 season | 979 | 8 | Best laps at Silverstone and Interlagos (3), Bearman's Imola quali classification (16 vs 19), and 2 tie orders. |
+
+Values are never merged; the primary (Jolpica) keeps its value, and every conflict is surfaced. The same work found and fixed a Jolpica mapper bug: `driver_number` was read from a key Ergast rows do not have, so it was always `None`.
+
+### 2.8 RapidAPI "F1 Live Pulse" (`f1-live-pulse.p.rapidapi.com`), added 2026-09-25
+
+Verified with the project's **free-plan** key. Code: `app/providers/f1_live_pulse/`.
+
+| Attribute | Finding |
+|---|---|
+| Auth | `x-rapidapi-key` + `x-rapidapi-host` |
+| Routes (19) | `sessionInfo calendar event driverList timingData lapTimes timingStats tyreStints teamRadio raceControlMessages weatherData trackLimits driverPositions championshipPrediction trackStatus liveCommentary fiaDocuments driverStandings teamStandings` (from the RapidAPI listing; unknown paths answer 404) |
+| Quota | **20 requests per cycle (~23 days)**, reported in `x-ratelimit-requests-{limit,remaining,reset}` |
+| Plan limits | `/trackStatus` → 401 "disabled for your subscription" |
+| Shapes seen | `/sessionInfo` (sessionKey 11372 = Baku FP3 2026, `sessionStatus`, `trackStatus`); `/driverList` (F1-livetiming casing: `Tla`, `RacingNumber`); `/timingData` (`lines[].Sectors[].Segments[].Status`, the livetiming TimingData shape) |
+| Role | **Not a live feed on this plan**: one race needs thousands of polls. It is used only to record a handful of real fixtures during a live session (`scripts/record_live_pulse.py`). A persisted quota ledger (`backend/.quota/`, gitignored) refuses to spend the reserve, and requests are never retried. |
 
 ## 3. Verified capability matrix
 
