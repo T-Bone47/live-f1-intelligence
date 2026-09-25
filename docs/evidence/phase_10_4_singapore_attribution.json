@@ -17,7 +17,21 @@
    "unattributed_significant_change_s": 0.0
   },
   "alignment_mode": "NORMALIZED_DISTANCE",
-  "calc_version": "attribution-1.0.0",
+  "calc_version": "attribution-1.1.0",
+  "channels": {
+   "a": {
+    "brake": true,
+    "drs": true,
+    "gear": true,
+    "throttle": true
+   },
+   "b": {
+    "brake": true,
+    "drs": true,
+    "gear": true,
+    "throttle": true
+   }
+  },
   "comparison_confidence": "HIGH",
   "driver_a": 55,
   "driver_b": 63,
@@ -26,6 +40,44 @@
   "lap_b": 16,
   "lap_length_m": 4940.0,
   "last_covered_x": 0.981,
+  "limitation_items": [
+   {
+    "code": "ALIGNMENT_NORMALIZED_DISTANCE",
+    "message": "NORMALIZED_DISTANCE: positions are 10.1B integrated distance divided by the cited lap length, not physical track coordinates"
+   },
+   {
+    "code": "UNCERTAINTY_ANCHORS_LOWER_BOUND",
+    "message": "misalignment bound measured at 2 official sector lines only; it can be exceeded between them, so a significant segment is one not explained by the MEASURED misalignment"
+   },
+   {
+    "code": "UNCERTAINTY_WITHIN_SEGMENT_PROVISIONAL",
+    "message": "PROVISIONAL: within-segment misalignment change is bounded by the misalignment bound itself (D = E); not yet calibrated on more real pairs"
+   },
+   {
+    "code": "TELEMETRY_COVERAGE_INCOMPLETE",
+    "message": "NO_DATA spans have no delta; nothing is attributed there"
+   },
+   {
+    "code": "INTRA_SEGMENT_SPLITS_LESS_CERTAIN",
+    "message": "intra-segment splits (braking before/during/after, per-phase accumulation) end at changing speed and carry larger alignment uncertainty than the straight-to-straight segment total"
+   },
+   {
+    "code": "THROTTLE_CALIBRATION_DIFFERS",
+    "message": "typical full-throttle value differs per car (A 99.0, B 100.0): mean throttle differences include calibration, not only driver input"
+   },
+   {
+    "code": "DRS_SEMANTICS_UNVERIFIED",
+    "message": "DRS codes are compared for equality only; their open/closed meaning is not verified in this repository"
+   },
+   {
+    "code": "NO_TRACK_GEOMETRY",
+    "message": "no track geometry: no apex, corner name or corner identity is available"
+   },
+   {
+    "code": "ASSOCIATION_NOT_CAUSATION",
+    "message": "associations are temporal, never causal"
+   }
+  ],
   "limitations": [
    "NORMALIZED_DISTANCE: positions are 10.1B integrated distance divided by the cited lap length, not physical track coordinates",
    "misalignment bound measured at 2 official sector lines only; it can be exceeded between them, so a significant segment is one not explained by the MEASURED misalignment",
@@ -34,6 +86,7 @@
    "intra-segment splits (braking before/during/after, per-phase accumulation) end at changing speed and carry larger alignment uncertainty than the straight-to-straight segment total",
    "typical full-throttle value differs per car (A 99.0, B 100.0): mean throttle differences include calibration, not only driver input",
    "DRS codes are compared for equality only; their open/closed meaning is not verified in this repository",
+   "no track geometry: no apex, corner name or corner identity is available",
    "associations are temporal, never causal"
   ],
   "official_lap_delta_s": -0.072,
@@ -208,7 +261,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -411,7 +464,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -638,7 +691,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -836,7 +889,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -1029,7 +1082,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -1224,7 +1277,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -1406,7 +1459,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -1601,7 +1654,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -1831,7 +1884,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -2049,7 +2102,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -2259,7 +2312,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -2478,7 +2531,7 @@
     },
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -2589,7 +2642,7 @@
     "phase_accumulation_b": {},
     "primary_signal": null,
     "provenance": {
-     "calc_version": "attribution-1.0.0",
+     "calc_version": "attribution-1.1.0",
      "driver_a": 55,
      "driver_b": 63,
      "grid_indices": [
@@ -2653,7 +2706,7 @@
   }
  },
  "context_pack": {
-  "calc_version": "attribution-1.0.0",
+  "calc_version": "attribution-1.1.0",
   "facts": [
    {
     "class": "C",
@@ -3177,6 +3230,7 @@
    "intra-segment splits (braking before/during/after, per-phase accumulation) end at changing speed and carry larger alignment uncertainty than the straight-to-straight segment total",
    "typical full-throttle value differs per car (A 99.0, B 100.0): mean throttle differences include calibration, not only driver input",
    "DRS codes are compared for equality only; their open/closed meaning is not verified in this repository",
+   "no track geometry: no apex, corner name or corner identity is available",
    "associations are temporal, never causal"
   ],
   "pack": "lap_attribution_v1",

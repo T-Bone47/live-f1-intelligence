@@ -309,3 +309,27 @@ def test_official_only_sector_fact_is_historical_class_b():
     assert r.sectors[2].engine_change_s is None
     assert facts["attr_sector3"]["class"] == "B"   # official timing only: observed, historical
     assert facts["attr_sector1"]["class"] == "C"   # includes an engine-derived value
+
+
+@pytest.mark.parametrize("field,code", [
+    ("throttle_pct", "THROTTLE_CHANNEL_MISSING"), ("brake_pct", "BRAKE_CHANNEL_MISSING"),
+    ("gear", "GEAR_CHANNEL_MISSING"), ("drs", "DRS_CHANNEL_MISSING")])
+def test_missing_channels_are_structured_limitations(field, code):
+    lap_a, sa = make_lap(two_corner_profile(), 1)
+    lap_b, sb = make_lap(two_corner_profile(), 2)
+    sa = [s.model_copy(update={field: None}) for s in sa]
+    cmp = compare_driver_laps(lap_a, sa, None, lap_b, sb, None, lap_length_m=L)
+    r = attribute_comparison(analyze_delta(cmp), lap_a, lap_b)
+    assert code in {x.code for x in r.limitation_items}
+    channel = {"throttle_pct": "throttle", "brake_pct": "brake"}.get(field, field)
+    assert r.channels["a"][channel] is False and r.channels["b"][channel] is True
+
+
+def test_limitation_items_are_the_authoritative_structured_form():
+    from app.analysis.attribution import LimitationCode
+    r = _report(two_corner_profile(), two_corner_profile(**LATE_BRAKE_C1))
+    assert [x.message for x in r.limitation_items] == r.limitations
+    assert all(x.code in LimitationCode.__members__ for x in r.limitation_items)
+    codes = {x.code for x in r.limitation_items}
+    assert {"ALIGNMENT_NORMALIZED_DISTANCE", "NO_TRACK_GEOMETRY",
+            "ASSOCIATION_NOT_CAUSATION"} <= codes

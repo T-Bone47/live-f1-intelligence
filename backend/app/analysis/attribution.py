@@ -82,7 +82,11 @@ from app.analysis.delta_analysis import (
 from app.analysis.lap_distance import LapDistanceTrace, confidence_rank
 from app.core.models import Lap
 
-CALC_VERSION = "attribution-1.0.0"
+# 1.1.0: structured limitations (code + message) and per-driver channel
+# availability added to the report. No numeric change: every segment, band,
+# sector and accounting value is identical to 1.0.0 (verified by diffing the
+# regenerated real-pair evidence).
+CALC_VERSION = "attribution-1.1.0"
 
 # PROVISIONAL default, used only when a comparison has no official sector
 # anchors of its own: measured on the ONE real pair in this repository
@@ -98,6 +102,31 @@ class AlignmentMode(str, Enum):
     POSITION_PROJECTED = "POSITION_PROJECTED"     # 10.3 projection (not yet validated)
     CENTERLINE_CALIBRATED = "CENTERLINE_CALIBRATED"
     OTHER = "OTHER"
+
+
+class LimitationCode(str, Enum):
+    ALIGNMENT_NORMALIZED_DISTANCE = "ALIGNMENT_NORMALIZED_DISTANCE"
+    ALIGNMENT_POSITION_PROJECTED_UNVALIDATED = "ALIGNMENT_POSITION_PROJECTED_UNVALIDATED"
+    UNCERTAINTY_DEFAULT_PROVISIONAL = "UNCERTAINTY_DEFAULT_PROVISIONAL"
+    UNCERTAINTY_SINGLE_ANCHOR = "UNCERTAINTY_SINGLE_ANCHOR"
+    UNCERTAINTY_ANCHORS_LOWER_BOUND = "UNCERTAINTY_ANCHORS_LOWER_BOUND"
+    UNCERTAINTY_WITHIN_SEGMENT_PROVISIONAL = "UNCERTAINTY_WITHIN_SEGMENT_PROVISIONAL"
+    BRAKE_CHANNEL_MISSING = "BRAKE_CHANNEL_MISSING"
+    THROTTLE_CHANNEL_MISSING = "THROTTLE_CHANNEL_MISSING"
+    GEAR_CHANNEL_MISSING = "GEAR_CHANNEL_MISSING"
+    DRS_CHANNEL_MISSING = "DRS_CHANNEL_MISSING"
+    TELEMETRY_COVERAGE_INCOMPLETE = "TELEMETRY_COVERAGE_INCOMPLETE"
+    INTRA_SEGMENT_SPLITS_LESS_CERTAIN = "INTRA_SEGMENT_SPLITS_LESS_CERTAIN"
+    THROTTLE_CALIBRATION_DIFFERS = "THROTTLE_CALIBRATION_DIFFERS"
+    DRS_SEMANTICS_UNVERIFIED = "DRS_SEMANTICS_UNVERIFIED"
+    NO_TRACK_GEOMETRY = "NO_TRACK_GEOMETRY"
+    ASSOCIATION_NOT_CAUSATION = "ASSOCIATION_NOT_CAUSATION"
+
+
+@dataclass(frozen=True)
+class Limitation:
+    code: str        # a LimitationCode value - machine-readable
+    message: str     # human-readable; the same text as report.limitations
 
 
 class AttributionStatus(str, Enum):
@@ -392,6 +421,8 @@ class AttributionReport:
     comparison_confidence: Confidence
     source_provider: str | None
     limitations: list[str]
+    limitation_items: list[Limitation] = field(default_factory=list)
+    channels: dict[str, dict[str, bool]] = field(default_factory=dict)
     sign_convention: str = SIGN_CONVENTION
     calc_version: str = CALC_VERSION
 
@@ -941,6 +972,7 @@ def attribute_comparison(analysis: DeltaAnalysis, lap_a: Lap, lap_b: Lap,
     official = (lap_a.duration_s - lap_b.duration_s
                 if lap_a.duration_s is not None and lap_b.duration_s is not None else None)
     mode = alignment_mode or _infer_mode(analysis)
+    items = _limitations(mode, u, sig_a, sig_b, segments)
     return AttributionReport(
         session_id=cmp.session_id, driver_a=cmp.driver_a, lap_a=cmp.lap_number_a,
         driver_b=cmp.driver_b, lap_b=cmp.lap_number_b, lap_length_m=cmp.lap_length_m,
@@ -949,44 +981,76 @@ def attribute_comparison(analysis: DeltaAnalysis, lap_a: Lap, lap_b: Lap,
         engine_delta_last_covered_s=ctx.d[covered[-1]] if covered else None,
         last_covered_x=xs[covered[-1]] if covered else None,
         comparison_confidence=cmp.confidence, source_provider=source,
-        limitations=_limitations(mode, u, sig_a, sig_b, segments))
+        limitations=[x.message for x in items], limitation_items=items,
+        channels={"a": _channels(sig_a), "b": _channels(sig_b)})
 
 
-def _limitations(mode, u, sig_a, sig_b, segments) -> list[str]:
-    out = []
+def _channels(sig: DriverSignals) -> dict[str, bool]:
+    return {"brake": sig.brake_available, "throttle": sig.throttle_available,
+            "gear": sig.gear_available, "drs": sig.drs_available}
+
+
+def _limitations(mode, u, sig_a, sig_b, segments) -> list[Limitation]:
+    out: list[Limitation] = []
+
+    def add(code: LimitationCode, message: str) -> None:
+        out.append(Limitation(code.value, message))
+
     if mode is AlignmentMode.NORMALIZED_DISTANCE:
-        out.append("NORMALIZED_DISTANCE: positions are 10.1B integrated distance divided by "
-                   "the cited lap length, not physical track coordinates")
+        add(LimitationCode.ALIGNMENT_NORMALIZED_DISTANCE,
+            "NORMALIZED_DISTANCE: positions are 10.1B integrated distance divided by "
+            "the cited lap length, not physical track coordinates")
     elif mode is AlignmentMode.POSITION_PROJECTED:
-        out.append("POSITION_PROJECTED: Phase 10.3 projection is not validated on real data "
-                   "(its S2 real-data check failed)")
+        add(LimitationCode.ALIGNMENT_POSITION_PROJECTED_UNVALIDATED,
+            "POSITION_PROJECTED: Phase 10.3 projection is not validated on real data "
+            "(its S2 real-data check failed)")
     if u.source == "PROVISIONAL_DEFAULT":
-        out.append(f"PROVISIONAL: no official sector anchors; misalignment bound defaults to "
-                   f"{DEFAULT_MISALIGNMENT_M} m measured on the Singapore 2023 pair")
+        add(LimitationCode.UNCERTAINTY_DEFAULT_PROVISIONAL,
+            f"PROVISIONAL: no official sector anchors; misalignment bound defaults to "
+            f"{DEFAULT_MISALIGNMENT_M} m measured on the Singapore 2023 pair")
     elif u.source == "PARTIAL_ANCHORS":
-        out.append("PROVISIONAL: one sector anchor only; the misalignment bound rests on a "
-                   "single measurement")
+        add(LimitationCode.UNCERTAINTY_SINGLE_ANCHOR,
+            "PROVISIONAL: one sector anchor only; the misalignment bound rests on a "
+            "single measurement")
     else:
-        out.append(f"misalignment bound measured at {len(u.anchors)} official sector lines "
-                   f"only; it can be exceeded between them, so a significant segment is one "
-                   f"not explained by the MEASURED misalignment")
-    out.append("PROVISIONAL: within-segment misalignment change is bounded by the "
-               "misalignment bound itself (D = E); not yet calibrated on more real pairs")
-    if not (sig_a.brake_available and sig_b.brake_available):
-        out.append("brake channel missing for a driver: no braking zones, no straight-to-"
-                   "straight segmentation")
+        add(LimitationCode.UNCERTAINTY_ANCHORS_LOWER_BOUND,
+            f"misalignment bound measured at {len(u.anchors)} official sector lines "
+            f"only; it can be exceeded between them, so a significant segment is one "
+            f"not explained by the MEASURED misalignment")
+    add(LimitationCode.UNCERTAINTY_WITHIN_SEGMENT_PROVISIONAL,
+        "PROVISIONAL: within-segment misalignment change is bounded by the "
+        "misalignment bound itself (D = E); not yet calibrated on more real pairs")
+    missing = [(LimitationCode.BRAKE_CHANNEL_MISSING, "brake", "brake_available",
+                ("no braking zones, no straight-to-straight segmentation, no braking "
+                 "comparison")),
+               (LimitationCode.THROTTLE_CHANNEL_MISSING, "throttle", "throttle_available",
+                "no throttle lift/application/full comparison"),
+               (LimitationCode.GEAR_CHANNEL_MISSING, "gear", "gear_available",
+                "no gear comparison"),
+               (LimitationCode.DRS_CHANNEL_MISSING, "DRS", "drs_available",
+                "no DRS comparison")]
+    for code, label, attr, effect in missing:
+        absent = [who for who, sig in (("A", sig_a), ("B", sig_b)) if not getattr(sig, attr)]
+        if absent:
+            add(code, f"{label} channel missing for driver {'/'.join(absent)}: {effect}")
     if any(s.kind is SegmentKind.NO_DATA for s in segments):
-        out.append("NO_DATA spans have no delta; nothing is attributed there")
-    out.append("intra-segment splits (braking before/during/after, per-phase accumulation) "
-               "end at changing speed and carry larger alignment uncertainty than the "
-               "straight-to-straight segment total")
+        add(LimitationCode.TELEMETRY_COVERAGE_INCOMPLETE,
+            "NO_DATA spans have no delta; nothing is attributed there")
+    add(LimitationCode.INTRA_SEGMENT_SPLITS_LESS_CERTAIN,
+        "intra-segment splits (braking before/during/after, per-phase accumulation) "
+        "end at changing speed and carry larger alignment uncertainty than the "
+        "straight-to-straight segment total")
     if sig_a.full_throttle_modal_pct != sig_b.full_throttle_modal_pct:
-        out.append(f"typical full-throttle value differs per car (A "
-                   f"{sig_a.full_throttle_modal_pct}, B {sig_b.full_throttle_modal_pct}): "
-                   f"mean throttle differences include calibration, not only driver input")
-    out.append("DRS codes are compared for equality only; their open/closed meaning is not "
-               "verified in this repository")
-    out.append("associations are temporal, never causal")
+        add(LimitationCode.THROTTLE_CALIBRATION_DIFFERS,
+            f"typical full-throttle value differs per car (A "
+            f"{sig_a.full_throttle_modal_pct}, B {sig_b.full_throttle_modal_pct}): "
+            f"mean throttle differences include calibration, not only driver input")
+    add(LimitationCode.DRS_SEMANTICS_UNVERIFIED,
+        "DRS codes are compared for equality only; their open/closed meaning is not "
+        "verified in this repository")
+    add(LimitationCode.NO_TRACK_GEOMETRY,
+        "no track geometry: no apex, corner name or corner identity is available")
+    add(LimitationCode.ASSOCIATION_NOT_CAUSATION, "associations are temporal, never causal")
     return out
 
 

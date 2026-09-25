@@ -93,6 +93,8 @@ class DriverSignals:
     full_throttle_pct: float | None
     brake_available: bool
     throttle_available: bool
+    gear_available: bool = False
+    drs_available: bool = False
     # most frequent value among full-throttle samples (ties -> higher): the
     # car's typical "full" reading - 99 for #55, 100 for #63 in Singapore
     full_throttle_modal_pct: float | None = None
@@ -125,7 +127,9 @@ def detect_signals(trace: LapDistanceTrace) -> DriverSignals:
     sig = DriverSignals(
         driver_number=trace.driver_number, xs=xs, full_throttle_pct=full_level,
         brake_available=any(b is not None for b in brake),
-        throttle_available=bool(known_thr))
+        throttle_available=bool(known_thr),
+        gear_available=any(p.gear is not None for p in pts),
+        drs_available=any(p.drs is not None for p in pts))
 
     sig.brake_applications = _brake_applications(pts, xs, brake)
     full = [full_throttle_state(t, full_level) for t in thr]
