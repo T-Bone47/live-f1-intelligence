@@ -26,6 +26,16 @@ Phase history and evidence (read on demand, don't re-derive):
   1 skipped. The location fixture (`driver_*_location.json` + meta v2) is
   fetched but **left uncommitted**, because committing it makes HEAD red.
   car_data files are unchanged.
+- Phase 10.4 (2026-09-25, docs/PHASE_10_4_TIME_LOSS_ATTRIBUTION.md): deterministic
+  attribution `app/analysis/attribution.py` + `attribution_signals.py`, route
+  `GET /api/v1/sessions/{sid}/attribution`, context pack `lap_attribution_v1`.
+  Straight-to-straight segments (12 vs 10.2's 173) with a significance band from
+  the misalignment MEASURED at the official sector lines (E = 4.308 m) + a derived
+  speed-quantization walk. Real pair: **no segment exceeds its uncertainty**;
+  resolvable control-input differences reported as temporal associations only.
+  Evidence locked in `docs/evidence/phase_10_4_singapore_attribution.json`
+  (regenerate: `scripts/attribution_report.py`). D = E and the 4.31 m fallback are
+  PROVISIONAL (one real pair).
 - Additional sources (2026-09-25, docs/DATA_SOURCES.md §2.7–2.8): Blacktop
   (free tier; challenger for results/quali/standings via
   `app/analysis/source_crosscheck.py`) and RapidAPI F1 Live Pulse (20 req per
@@ -39,6 +49,10 @@ Phase history and evidence (read on demand, don't re-derive):
   pre-existing lint debt unasked.** Changed files must be ruff-clean.
 
 ## Next step
+0. Phase 10.5 (grounded explanation) consumes `attribution_facts()` only - never raw
+   telemetry; it may say only what the facts support. Calibrating D and E needs
+   more real pairs (fetch more with scripts/fetch_real_driver_pair.py). Postgres
+   tests run against a local `postgres:16` on :5432 (TEST_DATABASE_URL).
 1. Investigate the 10.3 S2 failure; do not tune it away. Start with driver 63's
    58.7-unit outlier near x≈0.62 and whether a single held projection moves
    the S2 line; then check whether the reference path (driver 55's own lap)
