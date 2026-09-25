@@ -2,12 +2,83 @@
 
 ## 17. Acceptance result (stated first)
 
-**BLOCKED.** No real same-session two-driver telemetry pair was obtained, so
-the real-data gate is not closed. Nothing below claims otherwise.
+**REAL-DATA VALIDATED — pipeline correctness.** A genuine same-session
+two-driver pair ran through raw OpenF1 → canonical mapper → 10.1B → 10.1C
+→ 10.2. The gate result was 9 passed, 1 skipped, both on the Windows
+machine that fetched the data and when reproduced here. The skipped
+check (finish plausibility) cannot execute, because both real traces end
+short of the cited lap length (see "Real pair results").
 
-What *was* delivered: every tool needed to close it with one command, an
-identity guard for the contamination that caused the earlier false
-"successes", and fixes for three real bugs in a live API route.
+This validates that the pipeline is correct on real data. It does **not**
+validate mid-lap delta *magnitudes* in slow corners, which carry roughly
+±0.1–0.2 s of alignment uncertainty (see below). The history of the
+BLOCKED investigation that preceded this result is kept further down,
+unchanged.
+
+## Real pair results (fixture `scripts/fixtures/real-openf1-pair/`)
+
+Session 9161, 2023 Singapore GP qualifying (Marina Bay). **Driver 55
+(Sainz) lap 19, 90.984 s** — Sainz's recorded pole time, an independent
+confirmation that the identity is genuine — against **driver 63 (Russell)
+lap 16, 91.056 s**. Both sector sets sum exactly to their lap times.
+Fetched 2026-09-24 18:42 UTC by `scripts/fetch_real_driver_pair.py`, with
+lap length 4940 m (Wikipedia, 2023 Singapore GP). Every number below is
+reproducible with `python ../scripts/audit_real_pair.py`.
+
+| | Driver 55 | Driver 63 |
+|---|---:|---:|
+| samples | 341 | 340 |
+| telemetry starts after lap start | 0.295 s | 0.314 s |
+| telemetry ends before lap end | 0.209 s | 0.062 s |
+| largest gap (threshold 2.0 s) | 0.920 s | 0.880 s |
+| valid speed / all channels present | 100% / yes | 100% / yes |
+| integrated distance | 4848.9 m (−1.84%) | 4856.4 m (−1.69%) |
+| trace confidence | HIGH, complete | HIGH, complete |
+
+**Distance shortfall.** About 0.7% is the unobserved lap edges (28–38 m at
+~270 kph). The remaining ~1.1% is systematic: after accounting for the
+edges, the two drivers agree within 0.04%. That is consistent with the
+racing line being shorter than the centreline an official length is
+measured on, but it cannot be proven without position data. The lap length
+was **not** adjusted to make the finish check pass.
+
+**Official sector lines as fixed physical anchors (independent of this
+codebase):**
+
+| | located (55 / 63) | official split Δ | engine Δ | error |
+|---|---|---:|---:|---:|
+| S1 | 1608.2 / 1603.9 m | −0.068 s | −0.098 s | −0.030 s |
+| S2 | 3399.1 / 3397.0 m | +0.025 s | +0.018 s | −0.007 s |
+
+Both drivers' independently integrated distances place the same physical
+lines 2–4 m apart. The signs match official timing at both lines. The
+mean error, −0.0185 s, matches the −0.019 s bias predicted *before*
+running the check. That bias comes from the start-offset difference:
+elapsed time is measured from each driver's first telemetry sample, not
+from the official lap start.
+
+## Precision limits found on real data (open issues)
+
+1. **Slow-corner alignment sensitivity.** An A/B distance misalignment of
+   1 m is worth 12–13 ms at ~300 kph, but 38–46 ms at 78–95 kph. The
+   reported max gain (−0.258 s at x=0.40, 78 kph) and max loss (+0.135 s
+   at x=0.614, 95 kph) both sit in slow corners, where the observed 2–4 m
+   misalignment means ±0.1–0.2 s. **They are not reliable engineering
+   findings.** Position-based alignment (OpenF1 `/location` x,y) is the
+   fix. That belongs to Phase 10.3.
+2. **Confidence does not express alignment precision.** Those points are
+   labelled HIGH, because `Confidence` reflects telemetry integrity only.
+   Per-point alignment uncertainty (≈ misalignment_m / speed) is needed.
+3. **Start-offset bias** of about |offA − offB| (19 ms here, bounded by one
+   sample interval, ~0.27 s) in every delta. Removing it needs
+   lap-start anchoring, which must not become extrapolation.
+4. **Segmentation over-fragments.** There are 173 segments, 146 shorter
+   than 50 m, and 124 changing by less than 10 ms. The 0.001 s default
+   was a resolution floor pending real data; it needs calibration (for
+   example, minimum span or minimum change in the order of the alignment
+   uncertainty above).
+5. **Finish not comparable** against the cited length: both traces end
+   at x≈0.98.
 
 ## 1. Objective
 
@@ -56,7 +127,7 @@ exact observed contamination.
 
 ## 4–8. Dataset, driver pair, lap selection, provenance, coverage
 
-Not obtained (see 17). Prepared instead:
+(At the time of the BLOCKED investigation - now obtained, see "Real pair results".) Prepared:
 
 - **Lap selection rule** (`select_reference_lap`): an explicit lap is used
   only if complete and not pit-out (otherwise error, never substituted);
@@ -117,18 +188,20 @@ The acceptance path is raw fixture → mapper → engines. It bypasses Postgres
 legitimately: the engines are pure computation, and 10.1A's E2E test
 already proves telemetry → Postgres → API lineage.
 
-## 15. Tests (fresh run, this session)
+## 15. Tests
 
-- Backend: **427 passed, 14 skipped**. Skipped = 4 pre-existing + 10 gated
-  real-pair tests.
-- Added: 13 identity/selection/integrity tests, 7 script plumbing tests, 1
-  route honesty test, and 2 Section 16 regression tests (float tolerance at
-  x=1.0; both drivers incomplete).
-- Red-green verified: the three route fixes, the b521a32 coverage fix, and
-  the float tolerance.
-- Mutation-checked: the identity guard and lap-selection rule.
-- Ruff: `app/` baseline 218 unchanged; `api/__init__.py` 12 before, 12
-  after; changed files clean. Frontend: build OK, 51/51, 0 ESLint errors.
+With the real fixture committed (fresh run): backend **436 passed, 5
+skipped**. The gate's 9 tests now run for real. The 5 skips are 2
+Gemini-key tests, 2 pre-existing fixture/setup skips, and the finish
+plausibility check (both traces end before x=1.0). Ruff `app/` baseline
+218, unchanged. Frontend build OK, 51/51, 0 ESLint errors.
+
+Before the fixture existed: 427 passed, 14 skipped. Added this phase: 13
+identity/selection/integrity tests, 7 script plumbing tests, 1 route
+honesty test, and 2 Section 16 regression tests. Red-green verified: the
+three route fixes, the b521a32 coverage fix, the float tolerance, and the
+acquisition-key fix. The identity guard and lap-selection rule were
+mutation-checked.
 
 ## Review notes (doubt-driven, **degraded**)
 
@@ -168,7 +241,7 @@ only check what the author believes the server wants). It now encodes
 OpenF1's real behaviour, and it was proven red before the fix and green
 after.
 
-## How to close the gate (run locally, outside a live F1 session)
+## Reproducing the acquisition (run locally, outside a live F1 session)
 
 ```bash
 cd backend
