@@ -12,3 +12,4 @@ artifacts/
 backend/.fastf1_cache/
 frontend/node_modules/
 frontend/dist/
+backend/.quota/
