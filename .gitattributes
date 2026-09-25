@@ -1,0 +1,3 @@
+# Evidence artifacts are byte-exact (canonical JSON, golden fixtures locked by
+# tests): never convert line endings on checkout.
+docs/evidence/*.json -text
