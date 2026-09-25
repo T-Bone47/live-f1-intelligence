@@ -74,7 +74,8 @@ class SnapshotBuilder:
               country_code: str | None = None,
               circuit_short_name: str | None = None) -> SessionSnapshot:
         tstate = self.timing.state
-        positions = {n: d.position or 0 for n, d in tstate.drivers.items()}
+        positions = {n: d.position for n, d in tstate.drivers.items()
+                     if d.position is not None}
         neighbors = self.gaps.neighbors_by_position(positions)
 
         rows: list[LeaderboardRow] = []
@@ -120,6 +121,8 @@ class SnapshotBuilder:
              "started_lap": b.started_lap}
             for b in self.battles.active_battles()
             if b.state.value != "APPROACHING"
+            # a battle is between neighbours at this moment
+            and neighbors.get(b.behind, (None, None))[0] == b.ahead
         ]
 
         return SessionSnapshot(

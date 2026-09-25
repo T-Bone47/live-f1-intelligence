@@ -147,6 +147,11 @@ class BattleDetector:
             return BattleState.APPROACHING
         return BattleState.NO_BATTLE
 
+    def end_pair(self, ahead: int, behind: int) -> None:
+        """The cars are no longer neighbours: the pair's battle is over. A later
+        battle between them starts fresh (no stale state or minimum gap)."""
+        self.battles.pop((ahead, behind), None)
+
     def active_battles(self) -> list[Battle]:
         return [b for b in self.battles.values()
                 if b.state not in (BattleState.NO_BATTLE,)]

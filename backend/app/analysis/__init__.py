@@ -96,6 +96,8 @@ class AnalysisEngine:
         # open pit stop per driver: (in-lap number | None, stop ts). Cleared
         # when the driver completes a later lap (the out-lap).
         self._open_pit: dict[int, tuple[int | None, datetime]] = {}
+        # car directly ahead at each driver's last interval sample (battle pairs)
+        self._car_ahead: dict[int, int | None] = {}
 
         # ---- Phase 5 deterministic intelligence layers ----
         from app.analysis.racepace2 import RacePace2
@@ -325,9 +327,15 @@ class AnalysisEngine:
         gap_value = iv.gap_to_leader_s if iv.gap_to_leader_s is not None else iv.gap_raw
         TimingEngine.apply_interval_sample(d, gap_value, iv.interval_s, lap=None)
 
+        # a car without a reported position is nobody's neighbour
         neighbors = self.gaps.neighbors_by_position(
-            {n: dd.position or 0 for n, dd in self.timing.state.drivers.items()})
+            {n: dd.position for n, dd in self.timing.state.drivers.items()
+             if dd.position is not None})
         ahead_n, _behind = neighbors.get(iv.driver_number, (None, None))
+        prev_ahead = self._car_ahead.get(iv.driver_number)
+        if prev_ahead is not None and prev_ahead != ahead_n:
+            self.battles.end_pair(prev_ahead, iv.driver_number)
+        self._car_ahead[iv.driver_number] = ahead_n
 
         events = []
         if ahead_n is not None and iv.interval_s is not None:
