@@ -45,7 +45,7 @@ from app.providers.openf1.client import OpenF1Client, OpenF1Error
 from app.providers.openf1.real_data import select_reference_lap, validate_rows_identity
 
 DEFAULT_OUT = Path(__file__).parent / "fixtures" / "real-openf1-pair"
-SCRIPT_VERSION = "1"
+SCRIPT_VERSION = "2"  # 2: also fetches /v1/location (Phase 10.3)
 
 
 async def acquire_pair(client, session_key: int, drivers: list[tuple[int, int | None]]) -> dict:
@@ -89,7 +89,14 @@ async def acquire_pair(client, session_key: int, drivers: list[tuple[int, int | 
             raise OpenF1Error(f"driver {driver} lap {lap['lap_number']}: no car_data in window "
                               f"(query: /v1/car_data {car_params})")
         validate_rows_identity(car, driver_number=driver, session_key=session_key)
-        out["drivers"][str(driver)] = {"lap": lap, "car_data": car}
+        # Phase 10.3: position for the same window, same identity guard and
+        # the same parser-verified date>/date< keys.
+        location = await fetch("location", dict(car_params))
+        if not location:
+            raise OpenF1Error(f"driver {driver} lap {lap['lap_number']}: no location in window "
+                              f"(query: /v1/location {car_params})")
+        validate_rows_identity(location, driver_number=driver, session_key=session_key)
+        out["drivers"][str(driver)] = {"lap": lap, "car_data": car, "location": location}
 
     if len(out["drivers"]) != 2:
         raise OpenF1Error("need two distinct drivers")
@@ -104,6 +111,8 @@ def write_fixture(result: dict, out_dir: Path, lap_length_m: float, lap_length_s
             json.dumps(result["drivers"][d]["lap"], indent=1))
         (out_dir / f"driver_{d}_car_data.json").write_text(
             json.dumps(result["drivers"][d]["car_data"]))
+        (out_dir / f"driver_{d}_location.json").write_text(
+            json.dumps(result["drivers"][d]["location"]))
     s = result["session"]
     meta = {
         "kind": "REAL provider data - raw OpenF1 rows, unmodified",
@@ -154,7 +163,7 @@ async def main() -> int:
     write_fixture(result, args.out, args.lap_length_m, args.lap_length_source)
     for d, v in result["drivers"].items():
         print(f"driver {d}: lap {v['lap']['lap_number']} ({v['lap']['lap_duration']}s), "
-              f"{len(v['car_data'])} car_data rows")
+              f"{len(v['car_data'])} car_data rows, {len(v['location'])} location rows")
     print(f"wrote {args.out}")
     return 0
 

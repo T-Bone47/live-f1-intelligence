@@ -15,6 +15,10 @@ Sections:
   3. alignment sensitivity: ms of apparent delta per metre of A/B distance
      misalignment (= 1/speed) at chosen points
   4. segmentation fragmentation statistics
+  5. (if driver_<n>_location.json exist) Phase 10.3 position alignment:
+     reference-path length vs the cited lap length (measures OpenF1's
+     unstated x/y unit), B's lateral offsets and rejections, sector-line
+     placement and engine-vs-official error by position vs by speed.
 """
 
 from __future__ import annotations
@@ -27,10 +31,16 @@ from pathlib import Path
 
 from _common import setup_logging  # noqa: F401  (puts backend/ on sys.path)
 
+from app.analysis.common.models import Confidence
 from app.analysis.delta_analysis import SegmentKind, analyze_delta
-from app.analysis.lap_comparison import compare_driver_laps
+from app.analysis.lap_comparison import compare_driver_laps, compare_traces
 from app.analysis.telemetry_integrity import telemetry_coverage
-from app.providers.openf1.mapping import to_car_sample, to_lap
+from app.analysis.track_geometry import (
+    build_centerline,
+    build_position_distance_trace,
+    project_positions,
+)
+from app.providers.openf1.mapping import to_car_sample, to_lap, to_location_sample
 
 DEFAULT = Path(__file__).parent / "fixtures" / "real-openf1-pair"
 
@@ -104,6 +114,54 @@ def main(fixture: Path) -> None:
     print(f"  {len(segs)} segments (+{len(an.segments) - len(segs)} NO_DATA), median span "
           f"{statistics.median(spans):.1f} m, {sum(1 for s in spans if s < 50)} shorter than 50 m, "
           f"{sum(1 for g in segs if abs(g.time_change_s) < 0.010)} changing < 10 ms")
+
+    if all((fixture / f"driver_{d}_location.json").exists() for d in ids):
+        _position_section(fixture, sid, length, ids, laps, samples, traces)
+    else:
+        print("\n5. position alignment: no location data in this fixture (fetch with script v2)")
+
+
+def _position_section(fixture, sid, length, ids, laps, samples, speed_traces) -> None:
+    a, b = ids
+    locs = {d: sorted((to_location_sample(r, sid) for r in
+                       json.loads((fixture / f"driver_{d}_location.json").read_text())),
+                      key=lambda s: s.ts) for d in ids}
+
+    def in_lap(d):
+        t0 = laps[d].started_at.timestamp()
+        return [s for s in locs[d] if t0 <= s.ts.timestamp() <= t0 + laps[d].duration_s]
+
+    cl = build_centerline(in_lap(a))
+    print(f"\n5. position alignment (reference path = driver {a}'s own lap)")
+    print(f"  reference path: {len(cl.points)} points, {cl.total_length:.1f} native units "
+          f"= {cl.total_length / length:.3f} x the cited {length:.0f} m")
+    for d in ids:
+        proj = project_positions(cl, in_lap(d), laps[d].duration_s)
+        offs = sorted(p.offset for p in proj)
+        n = {c: sum(1 for p in proj if p.confidence is c) for c in Confidence}
+        print(f"  driver {d}: {len(proj)} positions, median offset {offs[len(offs) // 2]:.1f} / "
+              f"max {offs[-1]:.1f} native units, held (MEDIUM) {n[Confidence.MEDIUM]}, "
+              f"low {n[Confidence.LOW]}, rejected {n[Confidence.NONE]}")
+    pos = {d: build_position_distance_trace(laps[d], samples[d], locs[d], cl, length) for d in ids}
+    an = analyze_delta(compare_traces(pos[a], pos[b], lap_length_m=length))
+    cum = {a: 0.0, b: 0.0}
+    for name, key in (("S1", "sector1_s"), ("S2", "sector2_s")):
+        for d in ids:
+            cum[d] += getattr(laps[d], key)
+        t = {d: laps[d].started_at.timestamp() + cum[d] for d in ids}
+        mp = abs(_dist_at_time(pos[a], t[a]) - _dist_at_time(pos[b], t[b]))
+        ms = abs(_dist_at_time(speed_traces[a], t[a]) - _dist_at_time(speed_traces[b], t[b]))
+        x = round((_dist_at_time(pos[a], t[a]) + _dist_at_time(pos[b], t[b])) / 2 / length, 3)
+        eng = next((s.delta_t_s for s in an.samples if abs(s.x - x) < 1e-9), None)
+        off = cum[a] - cum[b]
+        err = f"{eng - off:+.3f}s" if eng is not None else "n/a"
+        print(f"  {name}: drivers {mp:.1f} m apart by position vs {ms:.1f} m by speed | "
+              f"official {off:+.3f}s, position-engine {eng if eng is None else f'{eng:+.3f}s'} "
+              f"(error {err})")
+    segs = [g for g in an.segments if g.kind is not SegmentKind.NO_DATA]
+    print(f"  position-aligned: max gain {an.max_gain_s} @ {an.max_gain_x}, max loss "
+          f"{an.max_loss_s} @ {an.max_loss_x}, {len(segs)} segments, "
+          f"finish delta {an.delta_at_finish_s}")
 
 
 if __name__ == "__main__":

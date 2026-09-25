@@ -38,29 +38,40 @@ def _car(d, sk=SK):
              "speed": 200, "throttle": 90, "brake": 0, "rpm": 11000, "n_gear": 7, "drs": 0}]
 
 
+def _loc(d, sk=SK):
+    return [{"session_key": sk, "driver_number": d, "date": "2024-01-01T12:00:01+00:00",
+             "x": 100, "y": 200, "z": 5}]
+
+
 class StubClient:
-    def __init__(self, sessions=None, laps=None, car=None):
+    def __init__(self, sessions=None, laps=None, car=None, loc=None):
         self.sessions = [{"session_key": SK, "session_name": "Qualifying"}] \
             if sessions is None else sessions
         self.laps = laps or {}
         self.car = car or {}
+        self.loc = loc or {}
 
     async def get(self, resource, params):
         if resource == "sessions":
             return self.sessions
         d = params["driver_number"]
-        return self.laps.get(d, []) if resource == "laps" else self.car.get(d, [])
+        return {"laps": self.laps, "car_data": self.car, "location": self.loc}[resource].get(d, [])
 
 
 def _happy():
-    return StubClient(laps={1: [_lap(1)], 2: [_lap(2)]}, car={1: _car(1), 2: _car(2)})
+    return StubClient(laps={1: [_lap(1)], 2: [_lap(2)]}, car={1: _car(1), 2: _car(2)},
+                      loc={1: _loc(1), 2: _loc(2)})
 
 
 async def test_happy_path_returns_both_drivers_and_records_queries():
     res = await fetch.acquire_pair(_happy(), SK, [(1, None), (2, None)])
     assert set(res["drivers"]) == {"1", "2"}
     assert [q["endpoint"] for q in res["queries"]] == \
-        ["/v1/sessions", "/v1/laps", "/v1/car_data", "/v1/laps", "/v1/car_data"]
+        ["/v1/sessions", "/v1/laps", "/v1/car_data", "/v1/location",
+         "/v1/laps", "/v1/car_data", "/v1/location"]
+    loc_q = res["queries"][3]["params"]
+    assert (loc_q["date>"], loc_q["date<"]) == ("2024-01-01T12:00:00+00:00",
+                                                "2024-01-01T12:01:30+00:00")
     car_q = res["queries"][2]["params"]
     # OpenF1 rebuilds each filter as f"{key}={value}" before splitting on the
     # operator (openf1 query_api/query_params.py). A key of "date>=" therefore
@@ -84,6 +95,20 @@ async def test_wrong_session_car_data_aborts():
     client = _happy()
     client.car[2] = _car(2, sk=9159)
     with pytest.raises(IdentityMismatch):
+        await fetch.acquire_pair(client, SK, [(1, None), (2, None)])
+
+
+async def test_contaminated_location_aborts():
+    client = _happy()
+    client.loc[2] = _loc(44)
+    with pytest.raises(IdentityMismatch):
+        await fetch.acquire_pair(client, SK, [(1, None), (2, None)])
+
+
+async def test_empty_location_window_aborts():
+    client = _happy()
+    client.loc[1] = []
+    with pytest.raises(OpenF1Error, match="no location"):
         await fetch.acquire_pair(client, SK, [(1, None), (2, None)])
 
 
@@ -113,3 +138,4 @@ async def test_written_fixture_is_raw_and_carries_provenance(tmp_path):
     assert (meta["driver_a"], meta["driver_b"], meta["session_key"]) == (1, 2, SK)
     assert meta["lap_length_source"] == "test" and meta["queries"]
     assert json.loads((tmp_path / "driver_2_car_data.json").read_text()) == _car(2)  # unmodified
+    assert json.loads((tmp_path / "driver_2_location.json").read_text()) == _loc(2)
