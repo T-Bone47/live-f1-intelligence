@@ -157,6 +157,64 @@
   /* ── header ── */
   --header-h:             40px;
   --ribbon-h:             3px;
+
+  /* ============================================================
+     SEMANTIC LAYER (Phase 10.6) — design-system/live-f1-intelligence/MASTER.md §3
+     Components use these, not the primitives above. Every colour is
+     paired with a non-colour cue (label, icon, marker shape, line style).
+     ============================================================ */
+
+  /* surfaces */
+  --bg-primary:           var(--bg);
+  --bg-secondary:         var(--surface-trace);
+  --bg-panel:             var(--surface);
+  --bg-elevated:          var(--surface-elevated);
+  --bg-hover:             var(--surface-hover);
+
+  /* text — --text-muted-aa passes 4.5:1 on --bg-panel; legacy --text-muted is decorative only */
+  --text-muted-aa:        #8a94a1;
+  --text-disabled:        #4b535e;
+
+  /* borders */
+  --border-subtle:        var(--border);
+  --border-default:       var(--border-strong);
+  --border-emphasis:      #5b6674;
+
+  /* drivers: line/fill colour, and an "ink" variant that passes AA as text */
+  --driver-a-ink:         #ff6b63;
+  --driver-b-ink:         #6fb0f2;
+
+  /* Δt side of zero — which driver is ahead. Never good/bad. */
+  --delta-a-ahead:        var(--driver-a-ink);
+  --delta-b-ahead:        var(--driver-b-ink);
+
+  /* numeric sign only, where no driver context exists */
+  --positive:             #9fd8b4;
+  --negative:             #f2a09a;
+  --neutral:              var(--text-secondary);
+
+  /* evidence semantics */
+  --confirmed:            #f1f4f8;               /* significant: full-contrast, solid */
+  --confirmed-bg:         rgba(241, 244, 248, 0.10);
+  --uncertain:            #7e8896;               /* uncertainty band, not significant */
+  --uncertain-bg:         rgba(126, 136, 150, 0.12);
+  --unavailable:          #6b7480;               /* class F, NO_DATA */
+  --historical:           #d9c79c;               /* class B: official timing */
+  --historical-bg:        rgba(217, 199, 156, 0.12);
+  --derived:              #82cbbf;               /* class C: engine derivation */
+  --derived-bg:           rgba(130, 203, 191, 0.12);
+  --warning-bg:           rgba(255, 179, 64, 0.10);
+
+  /* telemetry channel families (always with a text label) */
+  --telemetry-speed:      #c9d2dd;
+  --telemetry-throttle:   #86d69f;
+  --telemetry-brake:      #ff8f7e;
+  --telemetry-gear:       #c6aaff;
+  --telemetry-drs:        #f3c96d;
+
+  /* typography — UI UX Pro Max "Developer Mono" pairing, scoped to the workbench */
+  --font-ui:              'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --font-label:           'IBM Plex Sans Condensed', 'IBM Plex Sans', 'Segoe UI', sans-serif;
 }
 
 /* ── Reduced motion ── */
