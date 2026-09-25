@@ -1,0 +1,2072 @@
+{
+ "$defs": {
+  "Accounting": {
+   "additionalProperties": false,
+   "properties": {
+    "actual_change_s": {
+     "title": "Actual Change S",
+     "type": "number"
+    },
+    "attributed_change_s": {
+     "title": "Attributed Change S",
+     "type": "number"
+    },
+    "below_significance_change_s": {
+     "title": "Below Significance Change S",
+     "type": "number"
+    },
+    "change_by_status": {
+     "additionalProperties": {
+      "type": "number"
+     },
+     "title": "Change By Status",
+     "type": "object"
+    },
+    "no_data_spans": {
+     "items": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "number"
+       }
+      ],
+      "type": "array"
+     },
+     "title": "No Data Spans",
+     "type": "array"
+    },
+    "unaccounted_s": {
+     "title": "Unaccounted S",
+     "type": "number"
+    },
+    "unattributed_significant_change_s": {
+     "title": "Unattributed Significant Change S",
+     "type": "number"
+    }
+   },
+   "required": [
+    "actual_change_s",
+    "attributed_change_s",
+    "unattributed_significant_change_s",
+    "below_significance_change_s",
+    "unaccounted_s",
+    "change_by_status",
+    "no_data_spans"
+   ],
+   "title": "Accounting",
+   "type": "object"
+  },
+  "Alignment": {
+   "additionalProperties": false,
+   "properties": {
+    "anchors": {
+     "items": {
+      "$ref": "#/$defs/Anchor"
+     },
+     "title": "Anchors",
+     "type": "array"
+    },
+    "misalignment_bound_m": {
+     "minimum": 0,
+     "title": "Misalignment Bound M",
+     "type": "number"
+    },
+    "mode": {
+     "$ref": "#/$defs/AlignmentMode"
+    },
+    "uncertainty_source": {
+     "enum": [
+      "SECTOR_LINE_ANCHORS",
+      "PARTIAL_ANCHORS",
+      "PROVISIONAL_DEFAULT"
+     ],
+     "title": "Uncertainty Source",
+     "type": "string"
+    },
+    "within_segment_change_bound_m": {
+     "minimum": 0,
+     "title": "Within Segment Change Bound M",
+     "type": "number"
+    }
+   },
+   "required": [
+    "mode",
+    "misalignment_bound_m",
+    "within_segment_change_bound_m",
+    "uncertainty_source",
+    "anchors"
+   ],
+   "title": "Alignment",
+   "type": "object"
+  },
+  "AlignmentMode": {
+   "enum": [
+    "NORMALIZED_DISTANCE",
+    "POSITION_PROJECTED",
+    "CENTERLINE_CALIBRATED",
+    "OTHER"
+   ],
+   "title": "AlignmentMode",
+   "type": "string"
+  },
+  "Anchor": {
+   "additionalProperties": false,
+   "properties": {
+    "distance_a_m": {
+     "title": "Distance A M",
+     "type": "number"
+    },
+    "distance_b_m": {
+     "title": "Distance B M",
+     "type": "number"
+    },
+    "line": {
+     "enum": [
+      "S1",
+      "S2"
+     ],
+     "title": "Line",
+     "type": "string"
+    },
+    "misalignment_m": {
+     "title": "Misalignment M",
+     "type": "number"
+    }
+   },
+   "required": [
+    "line",
+    "distance_a_m",
+    "distance_b_m",
+    "misalignment_m"
+   ],
+   "title": "Anchor",
+   "type": "object"
+  },
+  "Attribution": {
+   "additionalProperties": false,
+   "properties": {
+    "accounting": {
+     "$ref": "#/$defs/Accounting"
+    },
+    "sectors": {
+     "items": {
+      "$ref": "#/$defs/Sector"
+     },
+     "title": "Sectors",
+     "type": "array"
+    },
+    "segments": {
+     "items": {
+      "$ref": "#/$defs/Segment"
+     },
+     "title": "Segments",
+     "type": "array"
+    }
+   },
+   "required": [
+    "segments",
+    "accounting",
+    "sectors"
+   ],
+   "title": "Attribution",
+   "type": "object"
+  },
+  "AttributionStatus": {
+   "enum": [
+    "SINGLE_CONTROL_INPUT",
+    "MULTI_SIGNAL",
+    "SPEED_ONLY",
+    "INSUFFICIENT_EVIDENCE",
+    "NOT_SIGNIFICANT",
+    "NO_DATA"
+   ],
+   "title": "AttributionStatus",
+   "type": "string"
+  },
+  "Braking": {
+   "additionalProperties": false,
+   "properties": {
+    "applications_a": {
+     "title": "Applications A",
+     "type": "integer"
+    },
+    "applications_b": {
+     "title": "Applications B",
+     "type": "integer"
+    },
+    "band_after_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Band After S"
+    },
+    "band_before_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Band Before S"
+    },
+    "band_during_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Band During S"
+    },
+    "delta_after_s": {
+     "title": "Delta After S",
+     "type": "number"
+    },
+    "delta_before_s": {
+     "title": "Delta Before S",
+     "type": "number"
+    },
+    "delta_during_s": {
+     "title": "Delta During S",
+     "type": "number"
+    },
+    "onset_offset_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Onset Offset M"
+    },
+    "onset_offset_resolvable": {
+     "title": "Onset Offset Resolvable",
+     "type": "boolean"
+    },
+    "onset_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Onset X A"
+    },
+    "onset_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Onset X B"
+    },
+    "paired": {
+     "title": "Paired",
+     "type": "boolean"
+    },
+    "peak_pct_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Peak Pct A"
+    },
+    "peak_pct_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Peak Pct B"
+    },
+    "release_offset_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Release Offset M"
+    },
+    "release_offset_resolvable": {
+     "title": "Release Offset Resolvable",
+     "type": "boolean"
+    },
+    "release_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Release X A"
+    },
+    "release_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Release X B"
+    },
+    "speed_at_onset_a_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Speed At Onset A Kph"
+    },
+    "speed_at_onset_b_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Speed At Onset B Kph"
+    },
+    "zone_end_x": {
+     "title": "Zone End X",
+     "type": "number"
+    },
+    "zone_start_x": {
+     "title": "Zone Start X",
+     "type": "number"
+    }
+   },
+   "required": [
+    "paired",
+    "applications_a",
+    "applications_b",
+    "onset_x_a",
+    "onset_x_b",
+    "onset_offset_m",
+    "onset_offset_resolvable",
+    "release_x_a",
+    "release_x_b",
+    "release_offset_m",
+    "release_offset_resolvable",
+    "peak_pct_a",
+    "peak_pct_b",
+    "speed_at_onset_a_kph",
+    "speed_at_onset_b_kph",
+    "zone_start_x",
+    "zone_end_x",
+    "delta_before_s",
+    "delta_during_s",
+    "delta_after_s",
+    "band_before_s",
+    "band_during_s",
+    "band_after_s"
+   ],
+   "title": "Braking",
+   "type": "object"
+  },
+  "Calculation": {
+   "additionalProperties": false,
+   "properties": {
+    "attribution_version": {
+     "minLength": 1,
+     "title": "Attribution Version",
+     "type": "string"
+    },
+    "contract_version": {
+     "const": "evidence_v1",
+     "title": "Contract Version",
+     "type": "string"
+    },
+    "evidence_builder_version": {
+     "minLength": 1,
+     "title": "Evidence Builder Version",
+     "type": "string"
+    },
+    "lap_distance_version": {
+     "minLength": 1,
+     "title": "Lap Distance Version",
+     "type": "string"
+    }
+   },
+   "required": [
+    "contract_version",
+    "evidence_builder_version",
+    "attribution_version",
+    "lap_distance_version"
+   ],
+   "title": "Calculation",
+   "type": "object"
+  },
+  "Categorical": {
+   "additionalProperties": false,
+   "properties": {
+    "available": {
+     "title": "Available",
+     "type": "boolean"
+    },
+    "difference_fraction": {
+     "anyOf": [
+      {
+       "maximum": 1,
+       "minimum": 0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Difference Fraction"
+    },
+    "first_resolvable_x": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "First Resolvable X"
+    },
+    "min_a": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min A"
+    },
+    "min_b": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min B"
+    },
+    "runs": {
+     "items": {
+      "$ref": "#/$defs/DifferenceRun"
+     },
+     "title": "Runs",
+     "type": "array"
+    },
+    "values_a": {
+     "items": {
+      "type": "integer"
+     },
+     "title": "Values A",
+     "type": "array"
+    },
+    "values_b": {
+     "items": {
+      "type": "integer"
+     },
+     "title": "Values B",
+     "type": "array"
+    }
+   },
+   "required": [
+    "available",
+    "difference_fraction",
+    "runs",
+    "first_resolvable_x",
+    "min_a",
+    "min_b",
+    "values_a",
+    "values_b"
+   ],
+   "title": "Categorical",
+   "type": "object"
+  },
+  "Channels": {
+   "additionalProperties": false,
+   "properties": {
+    "brake": {
+     "title": "Brake",
+     "type": "boolean"
+    },
+    "drs": {
+     "title": "Drs",
+     "type": "boolean"
+    },
+    "gear": {
+     "title": "Gear",
+     "type": "boolean"
+    },
+    "throttle": {
+     "title": "Throttle",
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "brake",
+    "throttle",
+    "gear",
+    "drs"
+   ],
+   "title": "Channels",
+   "type": "object"
+  },
+  "Comparison": {
+   "additionalProperties": false,
+   "properties": {
+    "alignment": {
+     "$ref": "#/$defs/Alignment"
+    },
+    "driver_a": {
+     "$ref": "#/$defs/DriverLap"
+    },
+    "driver_b": {
+     "$ref": "#/$defs/DriverLap"
+    },
+    "engine_delta_last_covered_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Engine Delta Last Covered S"
+    },
+    "lap_delta_provenance_class": {
+     "enum": [
+      "B",
+      "F"
+     ],
+     "title": "Lap Delta Provenance Class",
+     "type": "string"
+    },
+    "lap_delta_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Lap Delta S"
+    },
+    "lap_length": {
+     "$ref": "#/$defs/LapLength"
+    },
+    "last_covered_x": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Last Covered X"
+    },
+    "sign_convention": {
+     "const": "delta_t = elapsed_A - elapsed_B; negative means A is ahead",
+     "title": "Sign Convention",
+     "type": "string"
+    },
+    "telemetry_confidence": {
+     "$ref": "#/$defs/Confidence"
+    }
+   },
+   "required": [
+    "driver_a",
+    "driver_b",
+    "lap_delta_s",
+    "lap_delta_provenance_class",
+    "engine_delta_last_covered_s",
+    "last_covered_x",
+    "sign_convention",
+    "lap_length",
+    "alignment",
+    "telemetry_confidence"
+   ],
+   "title": "Comparison",
+   "type": "object"
+  },
+  "Confidence": {
+   "enum": [
+    "HIGH",
+    "MEDIUM",
+    "LOW",
+    "NONE"
+   ],
+   "title": "Confidence",
+   "type": "string"
+  },
+  "DifferenceRun": {
+   "additionalProperties": false,
+   "properties": {
+    "length_m": {
+     "title": "Length M",
+     "type": "number"
+    },
+    "resolvable": {
+     "title": "Resolvable",
+     "type": "boolean"
+    },
+    "x_end": {
+     "title": "X End",
+     "type": "number"
+    },
+    "x_start": {
+     "title": "X Start",
+     "type": "number"
+    }
+   },
+   "required": [
+    "x_start",
+    "x_end",
+    "length_m",
+    "resolvable"
+   ],
+   "title": "DifferenceRun",
+   "type": "object"
+  },
+  "DriverLap": {
+   "additionalProperties": false,
+   "properties": {
+    "driver_number": {
+     "maximum": 99,
+     "minimum": 1,
+     "title": "Driver Number",
+     "type": "integer"
+    },
+    "lap_duration_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Lap Duration S"
+    },
+    "lap_number": {
+     "minimum": 1,
+     "title": "Lap Number",
+     "type": "integer"
+    },
+    "started_at": {
+     "title": "Started At",
+     "type": "string"
+    },
+    "telemetry": {
+     "$ref": "#/$defs/TelemetryCoverage"
+    }
+   },
+   "required": [
+    "driver_number",
+    "lap_number",
+    "lap_duration_s",
+    "started_at",
+    "telemetry"
+   ],
+   "title": "DriverLap",
+   "type": "object"
+  },
+  "LapLength": {
+   "additionalProperties": false,
+   "properties": {
+    "m": {
+     "exclusiveMinimum": 0,
+     "title": "M",
+     "type": "number"
+    },
+    "source": {
+     "maxLength": 300,
+     "minLength": 1,
+     "title": "Source",
+     "type": "string"
+    }
+   },
+   "required": [
+    "m",
+    "source"
+   ],
+   "title": "LapLength",
+   "type": "object"
+  },
+  "LapProvenance": {
+   "additionalProperties": false,
+   "properties": {
+    "driver_number": {
+     "title": "Driver Number",
+     "type": "integer"
+    },
+    "lap_number": {
+     "title": "Lap Number",
+     "type": "integer"
+    },
+    "lap_started_at": {
+     "title": "Lap Started At",
+     "type": "string"
+    },
+    "sample_count": {
+     "title": "Sample Count",
+     "type": "integer"
+    },
+    "session_id": {
+     "title": "Session Id",
+     "type": "string"
+    },
+    "telemetry_first_ts": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Telemetry First Ts"
+    },
+    "telemetry_last_ts": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Telemetry Last Ts"
+    }
+   },
+   "required": [
+    "driver_number",
+    "lap_number",
+    "session_id",
+    "lap_started_at",
+    "telemetry_first_ts",
+    "telemetry_last_ts",
+    "sample_count"
+   ],
+   "title": "LapProvenance",
+   "type": "object"
+  },
+  "LimitationCode": {
+   "enum": [
+    "ALIGNMENT_NORMALIZED_DISTANCE",
+    "ALIGNMENT_POSITION_PROJECTED_UNVALIDATED",
+    "UNCERTAINTY_DEFAULT_PROVISIONAL",
+    "UNCERTAINTY_SINGLE_ANCHOR",
+    "UNCERTAINTY_ANCHORS_LOWER_BOUND",
+    "UNCERTAINTY_WITHIN_SEGMENT_PROVISIONAL",
+    "BRAKE_CHANNEL_MISSING",
+    "THROTTLE_CHANNEL_MISSING",
+    "GEAR_CHANNEL_MISSING",
+    "DRS_CHANNEL_MISSING",
+    "TELEMETRY_COVERAGE_INCOMPLETE",
+    "INTRA_SEGMENT_SPLITS_LESS_CERTAIN",
+    "THROTTLE_CALIBRATION_DIFFERS",
+    "DRS_SEMANTICS_UNVERIFIED",
+    "NO_TRACK_GEOMETRY",
+    "ASSOCIATION_NOT_CAUSATION"
+   ],
+   "title": "LimitationCode",
+   "type": "string"
+  },
+  "LimitationItem": {
+   "additionalProperties": false,
+   "properties": {
+    "code": {
+     "$ref": "#/$defs/LimitationCode"
+    },
+    "message": {
+     "minLength": 1,
+     "title": "Message",
+     "type": "string"
+    }
+   },
+   "required": [
+    "code",
+    "message"
+   ],
+   "title": "LimitationItem",
+   "type": "object"
+  },
+  "Provenance": {
+   "additionalProperties": false,
+   "properties": {
+    "chain": {
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1,
+     "title": "Chain",
+     "type": "array"
+    },
+    "identity_checks": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Identity Checks",
+     "type": "array"
+    },
+    "input_digest": {
+     "pattern": "^sha256:[0-9a-f]{64}$",
+     "title": "Input Digest",
+     "type": "string"
+    },
+    "laps": {
+     "maxItems": 2,
+     "minItems": 2,
+     "prefixItems": [
+      {
+       "$ref": "#/$defs/LapProvenance"
+      },
+      {
+       "$ref": "#/$defs/LapProvenance"
+      }
+     ],
+     "title": "Laps",
+     "type": "array"
+    }
+   },
+   "required": [
+    "chain",
+    "input_digest",
+    "identity_checks",
+    "laps"
+   ],
+   "title": "Provenance",
+   "type": "object"
+  },
+  "Sector": {
+   "additionalProperties": false,
+   "properties": {
+    "coverage": {
+     "enum": [
+      "COVERED",
+      "NOT_COVERED"
+     ],
+     "title": "Coverage",
+     "type": "string"
+    },
+    "engine_change_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Engine Change S"
+    },
+    "engine_minus_official_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Engine Minus Official S"
+    },
+    "engine_provenance_class": {
+     "enum": [
+      "C",
+      "F"
+     ],
+     "title": "Engine Provenance Class",
+     "type": "string"
+    },
+    "line_misalignment_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Line Misalignment M"
+    },
+    "line_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Line X A"
+    },
+    "line_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Line X B"
+    },
+    "official_a_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Official A S"
+    },
+    "official_b_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Official B S"
+    },
+    "official_delta_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Official Delta S"
+    },
+    "official_provenance_class": {
+     "enum": [
+      "B",
+      "F"
+     ],
+     "title": "Official Provenance Class",
+     "type": "string"
+    },
+    "sector": {
+     "enum": [
+      1,
+      2,
+      3
+     ],
+     "title": "Sector",
+     "type": "integer"
+    },
+    "sector_id": {
+     "title": "Sector Id",
+     "type": "string"
+    },
+    "segment_ids": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Segment Ids",
+     "type": "array"
+    }
+   },
+   "required": [
+    "sector_id",
+    "sector",
+    "official_a_s",
+    "official_b_s",
+    "official_delta_s",
+    "official_provenance_class",
+    "engine_change_s",
+    "engine_minus_official_s",
+    "engine_provenance_class",
+    "coverage",
+    "line_x_a",
+    "line_x_b",
+    "line_misalignment_m",
+    "segment_ids"
+   ],
+   "title": "Sector",
+   "type": "object"
+  },
+  "Segment": {
+   "additionalProperties": false,
+   "properties": {
+    "accumulated_change_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Accumulated Change S"
+    },
+    "accumulation_midpoint_x": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Accumulation Midpoint X"
+    },
+    "association": {
+     "const": "TEMPORAL_ASSOCIATION",
+     "title": "Association",
+     "type": "string"
+    },
+    "attribution_status": {
+     "$ref": "#/$defs/AttributionStatus"
+    },
+    "braking": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Braking"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "delta_end_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Delta End S"
+    },
+    "direction": {
+     "$ref": "#/$defs/SegmentKind"
+    },
+    "distance_end_m": {
+     "title": "Distance End M",
+     "type": "number"
+    },
+    "distance_start_m": {
+     "title": "Distance Start M",
+     "type": "number"
+    },
+    "dominant_phase_a": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Dominant Phase A"
+    },
+    "drs": {
+     "$ref": "#/$defs/Categorical"
+    },
+    "gear": {
+     "$ref": "#/$defs/Categorical"
+    },
+    "grid_end_index": {
+     "title": "Grid End Index",
+     "type": "integer"
+    },
+    "grid_start_index": {
+     "title": "Grid Start Index",
+     "type": "integer"
+    },
+    "inherited_gap_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Inherited Gap S"
+    },
+    "label": {
+     "title": "Label",
+     "type": "string"
+    },
+    "onset_order": {
+     "items": {
+      "$ref": "#/$defs/SignalOnset"
+     },
+     "title": "Onset Order",
+     "type": "array"
+    },
+    "phase_accumulation_a": {
+     "additionalProperties": {
+      "type": "number"
+     },
+     "title": "Phase Accumulation A",
+     "type": "object"
+    },
+    "phase_accumulation_b": {
+     "additionalProperties": {
+      "type": "number"
+     },
+     "title": "Phase Accumulation B",
+     "type": "object"
+    },
+    "primary_signal": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Primary Signal"
+    },
+    "provenance": {
+     "$ref": "#/$defs/SegmentProvenance"
+    },
+    "provenance_class": {
+     "enum": [
+      "C",
+      "F"
+     ],
+     "title": "Provenance Class",
+     "type": "string"
+    },
+    "segment_id": {
+     "title": "Segment Id",
+     "type": "string"
+    },
+    "significant": {
+     "title": "Significant",
+     "type": "boolean"
+    },
+    "speed": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Speed"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "supporting_signals": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Supporting Signals",
+     "type": "array"
+    },
+    "telemetry_confidence": {
+     "$ref": "#/$defs/Confidence"
+    },
+    "telemetry_references": {
+     "items": {
+      "$ref": "#/$defs/TelemetryReference"
+     },
+     "title": "Telemetry References",
+     "type": "array"
+    },
+    "throttle": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Throttle"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "uncertainty_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Uncertainty S"
+    },
+    "x_end": {
+     "title": "X End",
+     "type": "number"
+    },
+    "x_start": {
+     "title": "X Start",
+     "type": "number"
+    }
+   },
+   "required": [
+    "segment_id",
+    "label",
+    "grid_start_index",
+    "grid_end_index",
+    "x_start",
+    "x_end",
+    "distance_start_m",
+    "distance_end_m",
+    "direction",
+    "inherited_gap_s",
+    "accumulated_change_s",
+    "delta_end_s",
+    "uncertainty_s",
+    "significant",
+    "attribution_status",
+    "primary_signal",
+    "supporting_signals",
+    "onset_order",
+    "accumulation_midpoint_x",
+    "braking",
+    "throttle",
+    "speed",
+    "gear",
+    "drs",
+    "phase_accumulation_a",
+    "phase_accumulation_b",
+    "dominant_phase_a",
+    "telemetry_confidence",
+    "association",
+    "provenance_class",
+    "provenance",
+    "telemetry_references"
+   ],
+   "title": "Segment",
+   "type": "object"
+  },
+  "SegmentKind": {
+   "enum": [
+    "GAINING",
+    "LOSING",
+    "RECOVERING",
+    "STABLE",
+    "NO_DATA"
+   ],
+   "title": "SegmentKind",
+   "type": "string"
+  },
+  "SegmentProvenance": {
+   "additionalProperties": false,
+   "properties": {
+    "delta_source": {
+     "const": "10.2 DeltaSample.delta_t_s",
+     "title": "Delta Source",
+     "type": "string"
+    },
+    "grid_indices": {
+     "maxItems": 2,
+     "minItems": 2,
+     "prefixItems": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "integer"
+      }
+     ],
+     "title": "Grid Indices",
+     "type": "array"
+    },
+    "sample_indices_a": {
+     "maxItems": 2,
+     "minItems": 2,
+     "prefixItems": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "integer"
+      }
+     ],
+     "title": "Sample Indices A",
+     "type": "array"
+    },
+    "sample_indices_b": {
+     "maxItems": 2,
+     "minItems": 2,
+     "prefixItems": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "integer"
+      }
+     ],
+     "title": "Sample Indices B",
+     "type": "array"
+    },
+    "ts_range_a": {
+     "anyOf": [
+      {
+       "maxItems": 2,
+       "minItems": 2,
+       "prefixItems": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "string"
+        }
+       ],
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Ts Range A"
+    },
+    "ts_range_b": {
+     "anyOf": [
+      {
+       "maxItems": 2,
+       "minItems": 2,
+       "prefixItems": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "string"
+        }
+       ],
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Ts Range B"
+    }
+   },
+   "required": [
+    "delta_source",
+    "grid_indices",
+    "sample_indices_a",
+    "sample_indices_b",
+    "ts_range_a",
+    "ts_range_b"
+   ],
+   "title": "SegmentProvenance",
+   "type": "object"
+  },
+  "SignalOnset": {
+   "additionalProperties": false,
+   "properties": {
+    "association": {
+     "const": "TEMPORAL_ASSOCIATION",
+     "title": "Association",
+     "type": "string"
+    },
+    "distance_m": {
+     "title": "Distance M",
+     "type": "number"
+    },
+    "family": {
+     "enum": [
+      "brake",
+      "throttle",
+      "speed",
+      "gear",
+      "drs"
+     ],
+     "title": "Family",
+     "type": "string"
+    },
+    "relation_to_midpoint": {
+     "enum": [
+      "BEFORE",
+      "AFTER",
+      "AT",
+      "UNDEFINED"
+     ],
+     "title": "Relation To Midpoint",
+     "type": "string"
+    },
+    "signal": {
+     "title": "Signal",
+     "type": "string"
+    },
+    "x": {
+     "title": "X",
+     "type": "number"
+    }
+   },
+   "required": [
+    "signal",
+    "family",
+    "x",
+    "distance_m",
+    "relation_to_midpoint",
+    "association"
+   ],
+   "title": "SignalOnset",
+   "type": "object"
+  },
+  "Source": {
+   "additionalProperties": false,
+   "properties": {
+    "circuit": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Circuit"
+    },
+    "event": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Event"
+    },
+    "provider": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Provider"
+    },
+    "season": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Season"
+    },
+    "session_id": {
+     "minLength": 1,
+     "title": "Session Id",
+     "type": "string"
+    },
+    "session_type": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Session Type"
+    }
+   },
+   "required": [
+    "provider",
+    "session_id",
+    "session_type",
+    "season",
+    "event",
+    "circuit"
+   ],
+   "title": "Source",
+   "type": "object"
+  },
+  "Speed": {
+   "additionalProperties": false,
+   "properties": {
+    "divergence_fraction": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Divergence Fraction"
+    },
+    "divergence_onset_x": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Divergence Onset X"
+    },
+    "end_speed_a_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "End Speed A Kph"
+    },
+    "end_speed_b_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "End Speed B Kph"
+    },
+    "max_difference_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Max Difference Kph"
+    },
+    "mean_difference_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Mean Difference Kph"
+    },
+    "min_difference_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min Difference Kph"
+    },
+    "min_speed_a_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min Speed A Kph"
+    },
+    "min_speed_b_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min Speed B Kph"
+    },
+    "min_speed_difference_kph": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min Speed Difference Kph"
+    },
+    "min_speed_resolvable": {
+     "title": "Min Speed Resolvable",
+     "type": "boolean"
+    },
+    "min_speed_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min Speed X A"
+    },
+    "min_speed_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Min Speed X B"
+    }
+   },
+   "required": [
+    "mean_difference_kph",
+    "min_difference_kph",
+    "max_difference_kph",
+    "min_speed_a_kph",
+    "min_speed_b_kph",
+    "min_speed_x_a",
+    "min_speed_x_b",
+    "min_speed_difference_kph",
+    "min_speed_resolvable",
+    "end_speed_a_kph",
+    "end_speed_b_kph",
+    "divergence_onset_x",
+    "divergence_fraction"
+   ],
+   "title": "Speed",
+   "type": "object"
+  },
+  "TelemetryCoverage": {
+   "additionalProperties": false,
+   "properties": {
+    "channels": {
+     "$ref": "#/$defs/Channels"
+    },
+    "complete": {
+     "title": "Complete",
+     "type": "boolean"
+    },
+    "confidence": {
+     "$ref": "#/$defs/Confidence"
+    },
+    "integrated_distance_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Integrated Distance M"
+    },
+    "sample_count": {
+     "minimum": 0,
+     "title": "Sample Count",
+     "type": "integer"
+    },
+    "x_first": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "X First"
+    },
+    "x_last": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "X Last"
+    }
+   },
+   "required": [
+    "sample_count",
+    "x_first",
+    "x_last",
+    "integrated_distance_m",
+    "complete",
+    "confidence",
+    "channels"
+   ],
+   "title": "TelemetryCoverage",
+   "type": "object"
+  },
+  "TelemetryReference": {
+   "additionalProperties": false,
+   "description": "Drill-down pointer to the EXISTING telemetry route - never the data itself.",
+   "properties": {
+    "driver_number": {
+     "title": "Driver Number",
+     "type": "integer"
+    },
+    "end": {
+     "title": "End",
+     "type": "string"
+    },
+    "lap_number": {
+     "title": "Lap Number",
+     "type": "integer"
+    },
+    "route": {
+     "title": "Route",
+     "type": "string"
+    },
+    "start": {
+     "title": "Start",
+     "type": "string"
+    }
+   },
+   "required": [
+    "driver_number",
+    "lap_number",
+    "route",
+    "start",
+    "end"
+   ],
+   "title": "TelemetryReference",
+   "type": "object"
+  },
+  "Throttle": {
+   "additionalProperties": false,
+   "properties": {
+    "application_offset_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Application Offset M"
+    },
+    "application_resolvable": {
+     "title": "Application Resolvable",
+     "type": "boolean"
+    },
+    "application_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Application X A"
+    },
+    "application_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Application X B"
+    },
+    "delta_after_application_s": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Delta After Application S"
+    },
+    "full_level_a_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full Level A Pct"
+    },
+    "full_level_b_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full Level B Pct"
+    },
+    "full_modal_a_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full Modal A Pct"
+    },
+    "full_modal_b_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full Modal B Pct"
+    },
+    "full_offset_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full Offset M"
+    },
+    "full_resolvable": {
+     "title": "Full Resolvable",
+     "type": "boolean"
+    },
+    "full_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full X A"
+    },
+    "full_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Full X B"
+    },
+    "lift_offset_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Lift Offset M"
+    },
+    "lift_resolvable": {
+     "title": "Lift Resolvable",
+     "type": "boolean"
+    },
+    "lift_x_a": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Lift X A"
+    },
+    "lift_x_b": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Lift X B"
+    },
+    "mean_throttle_difference_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Mean Throttle Difference Pct"
+    },
+    "minimum_a_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Minimum A Pct"
+    },
+    "minimum_b_pct": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Minimum B Pct"
+    }
+   },
+   "required": [
+    "full_level_a_pct",
+    "full_level_b_pct",
+    "full_modal_a_pct",
+    "full_modal_b_pct",
+    "lift_x_a",
+    "lift_x_b",
+    "lift_offset_m",
+    "lift_resolvable",
+    "application_x_a",
+    "application_x_b",
+    "application_offset_m",
+    "application_resolvable",
+    "full_x_a",
+    "full_x_b",
+    "full_offset_m",
+    "full_resolvable",
+    "minimum_a_pct",
+    "minimum_b_pct",
+    "mean_throttle_difference_pct",
+    "delta_after_application_s"
+   ],
+   "title": "Throttle",
+   "type": "object"
+  }
+ },
+ "additionalProperties": false,
+ "properties": {
+  "attribution": {
+   "$ref": "#/$defs/Attribution"
+  },
+  "calculation": {
+   "$ref": "#/$defs/Calculation"
+  },
+  "comparison": {
+   "$ref": "#/$defs/Comparison"
+  },
+  "contract_version": {
+   "const": "evidence_v1",
+   "title": "Contract Version",
+   "type": "string"
+  },
+  "evidence_id": {
+   "title": "Evidence Id",
+   "type": "string"
+  },
+  "evidence_type": {
+   "const": "lap_comparison",
+   "title": "Evidence Type",
+   "type": "string"
+  },
+  "limitations": {
+   "items": {
+    "$ref": "#/$defs/LimitationItem"
+   },
+   "minItems": 1,
+   "title": "Limitations",
+   "type": "array"
+  },
+  "provenance": {
+   "$ref": "#/$defs/Provenance"
+  },
+  "source": {
+   "$ref": "#/$defs/Source"
+  }
+ },
+ "required": [
+  "contract_version",
+  "evidence_type",
+  "evidence_id",
+  "calculation",
+  "source",
+  "comparison",
+  "attribution",
+  "limitations",
+  "provenance"
+ ],
+ "title": "LapComparisonEvidenceV1",
+ "type": "object"
+}
