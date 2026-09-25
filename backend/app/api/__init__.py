@@ -134,6 +134,22 @@ async def _load_lap_telemetry(pool, session_id: str, driver: int, lap_number: in
     return lap, samples
 
 
+async def _load_session_source(pool, session_id: str):
+    """Stored session metadata as evidence source info (Phase 10.5). Values are
+    passed through as stored; absent columns stay None - nothing is looked up
+    elsewhere or guessed."""
+    from app.evidence import SourceInfo
+
+    row = await pool.fetchrow(
+        "SELECT provider, session_type, year, meeting_name, circuit_short_name "
+        "FROM sessions WHERE session_id=$1", session_id)
+    if not row:
+        raise HTTPException(404, f"session {session_id} unknown")
+    return SourceInfo(session_id=session_id, provider=row["provider"],
+                      session_type=row["session_type"], season=row["year"],
+                      event=row["meeting_name"], circuit=row["circuit_short_name"])
+
+
 # ----------------------------------------------------------------- REST -----
 
 def create_app(registry: HubRegistry | None = None) -> FastAPI:
@@ -465,6 +481,71 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             "attribution": report_to_dict(report),
             "context_pack": attribution_facts(report),
         }
+
+    @app.get("/api/v1/sessions/{session_id}/evidence/lap-comparison")
+    async def get_lap_comparison_evidence(
+            session_id: str, driver_a: int, lap_a: int, driver_b: int, lap_b: int,
+            lap_length_m: float, lap_length_source: str,
+            contract_version: str = "evidence_v1",
+            _: None = Depends(rate_limit_dependency)):
+        """Phase 10.5 versioned evidence (evidence_v1) for RaceWise / 10.6.
+
+        Structured evidence only: no LLM, no natural-language conclusion, no
+        raw telemetry. Values are Phase 10.4's, unrounded; invalid evidence is
+        never returned (fail closed). Body = canonical JSON bytes, so the
+        same stored data and calculation versions give byte-identical output.
+        See docs/RACEWISE_EVIDENCE_CONTRACT.md.
+        """
+        from time import perf_counter
+
+        from fastapi.responses import Response
+
+        from app.evidence import (
+            EvidenceContractError,
+            EvidenceInputError,
+            build_lap_comparison_evidence,
+            to_canonical_json,
+            validate_request,
+        )
+        from app.storage.db import connect as db_connect
+
+        validate_session_id(session_id)
+        try:
+            validate_request(driver_a=driver_a, lap_a=lap_a, driver_b=driver_b, lap_b=lap_b,
+                             lap_length_m=lap_length_m, lap_length_source=lap_length_source,
+                             contract_version=contract_version)
+        except EvidenceInputError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        t0 = perf_counter()
+        pool = await db_connect(get_settings().database_url)
+        try:
+            source = await _load_session_source(pool, session_id)
+            (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
+                await _load_lap_telemetry(pool, session_id, d, n)
+                for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
+        finally:
+            await pool.close()
+        t1 = perf_counter()
+        try:
+            evidence = build_lap_comparison_evidence(
+                lap_obj_a, samples_a, lap_obj_b, samples_b, lap_length_m=lap_length_m,
+                lap_length_source=lap_length_source, source=source,
+                contract_version=contract_version)
+        except EvidenceInputError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        except EvidenceContractError as exc:
+            raise HTTPException(500, f"evidence withheld - failed {contract_version} "
+                                     f"validation (fail closed): {exc}") from exc
+        t2 = perf_counter()
+        body = to_canonical_json(evidence)
+        t3 = perf_counter()
+        return Response(content=body, media_type="application/json", headers={
+            "X-Evidence-Contract": evidence.contract_version,
+            "X-Evidence-Id": evidence.evidence_id,
+            "Server-Timing": (f"db;dur={(t1 - t0) * 1000:.1f}, "
+                              f"pipeline;dur={(t2 - t1) * 1000:.1f}, "
+                              f"serialize;dur={(t3 - t2) * 1000:.1f}"),
+        })
 
     @app.get("/api/v1/sessions/{session_id}/intelligence")
     async def get_intelligence(session_id: str,
