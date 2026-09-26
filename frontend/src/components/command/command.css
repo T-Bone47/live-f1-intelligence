@@ -543,12 +543,17 @@
   .cc-session { grid-template-columns: minmax(0, 1fr) auto; }
   .cc-session-state { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; }
 }
+@media (max-width: 899px) {
+  .cc { --cc-appbar-h: 84px; }
+  /* nav gets its own full-width row under the brand and mode */
+  .cc-appbar { flex-wrap: wrap; height: auto; gap: 0 var(--sp-2); padding: 0 var(--sp-3); }
+  .cc-brand { height: 44px; }
+  .cc-nav { order: 3; width: calc(100% + 2 * var(--sp-3)); height: 40px; margin: 0 calc(-1 * var(--sp-3)); padding: 0 var(--sp-1); border-top: 1px solid var(--border-subtle); }
+  .cc-nav-link { padding: 0 var(--sp-3); font-size: 12px; }
+}
 @media (max-width: 759px) {
   .cc { --cc-replay-h: 108px; }
-  .cc-appbar { gap: var(--sp-2); padding: 0 var(--sp-3); }
   .cc-brand-name span { display: none; }
-  .cc-nav-link { padding: 0 var(--sp-2); font-size: 11.5px; }
-  .cc-nav-link[href="/pitwall"] { display: none; }
   .cc-main { padding: var(--sp-2) var(--sp-3) calc(var(--cc-replay-h) + var(--sp-4)); }
   .cc-session { gap: var(--sp-3); }
   .cc-session-title { font-size: 20px; }
