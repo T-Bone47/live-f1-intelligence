@@ -171,3 +171,55 @@ and chips wrap.
   (ms precision), and change and band values also to 3 decimals.
 - Sectors are S1, S2 and S3. Official sector values carry class B; engine
   values carry class C.
+
+## 13. Phase 11 — Race Intelligence Command Center
+
+The hero surface. Everything above applies; this section adds what a
+multi-panel, time-scrubbed workstation needs. Page override:
+`pages/command-center.md`.
+
+**Visual north star.** Pit wall plus engineering workstation: deep tonal
+surfaces, hairline rules, tabular numerals, one accent per meaning. Premium
+comes from precision and alignment, not effects. No glow, no glass panels
+(only the two chrome bars use a light backdrop blur over scrolling content),
+no gradients except one faint top wash on the page root.
+
+**Tokens (tokens.css, Phase 11 layer).**
+
+| group | tokens | rule |
+|---|---|---|
+| elevation | `--background-root < -inset < -panel < -elevated < -hover < -selected` | depth is tonal; no shadows |
+| state | `--state-live / -replay / -historical / -warning / -danger / -success / -neutral / -unknown` | LIVE red only with the word and a connected socket |
+| flags | `--flag-green / -yellow / -red / -sc / -vsc / -blue / -chequered` | always with the flag's word or icon |
+| tyres | `--tyre-soft / -medium / -hard / -intermediate / -wet / -unknown` | ring + letter + word; unknown is dashed |
+| selection | `--focus-ink`, `--selection-rule` | neutral: selection is never a driver colour or a verdict |
+| radius | `--radius-row` 2 px < `--radius-panel` 6 px < `--radius-surface` 10 px | pills only for filter chips |
+| motion | `--motion-fast` 120 / `-normal` 200 / `-slow` 320 / `-exit` 140 ms; `--ease-standard / -emphasized / -exit` | enter slower than exit; spatial moves emphasized |
+
+**Driver identity.** A 3 px bar in the provider's team colour + the
+three-letter code + the number. Team colour comes from the data
+(`team_colour`), never a hard-coded map; the second car of a team is dashed
+in charts. Identity colour never encodes gain or loss.
+
+**Typography.** Display: IBM Plex Sans Condensed 700, uppercase, 26 px
+(session title, lap counter in JetBrains Mono 700). Labels: Plex Condensed
+600, 10.5–12 px, +0.08em. Numbers: JetBrains Mono, tabular. Body: Plex Sans
+13 px. Nothing below 10 px.
+
+**Motion (only state changes).** Timing rows glide to a new position (FLIP,
+transform, 320 ms emphasized); a changed gap tints for 320 ms; panels reveal
+with a 4 px rise; the nav and tab indicators slide; the scrubber fill
+follows the cursor. No pulsing, no looping animation except the loading
+shimmer. All of it is removed under `prefers-reduced-motion`.
+
+**States.** Every panel has loading (content-shaped skeleton), empty (what
+is missing, why) and error (what failed, retry) states. Missing values are
+"—" or a word, never 0.
+
+**Truth rules specific to the command center.**
+- One cursor, one moment: no panel may read a different frame.
+- Official text is quoted verbatim (race control) and marked `B OFFICIAL`;
+  engine values are marked `C DERIVED`.
+- Not in the data = said so: DRS availability, undercut/overcut, scheduled
+  distance, retirement status, event name.
+- No track map, corner names or "track position" from normalized distance.
