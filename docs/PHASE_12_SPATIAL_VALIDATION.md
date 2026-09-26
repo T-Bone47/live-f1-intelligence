@@ -226,3 +226,51 @@ projection as a full search, bit for bit (`test_real_narrow_window_...`).
 
 Both run once per recording and are cached next to it. The measurements from
 `scripts/bench_spatial.py` are in §10.
+
+## 10. Mutation testing and performance
+
+**Mutation sweep.** Each mutant was applied alone, the synthetic spatial
+suite was run with `-x`, and the original bytes were restored. The final
+result is **19 of 19 killed**.
+
+| # | mutation | killed by |
+|---|---|---|
+| M1 | reference not closed | `test_a_sample_in_the_gap_between_two_lap_rows_still_gets_a_fraction` |
+| M2 | pit windows ignored | `test_pit_lane_samples_keep_xy_but_get_no_fraction` |
+| M3 | all samples in the first driver's bucket | `test_rows_are_bucketed_by_their_own_driver_and_time_sorted` |
+| M4 | gate `>` → `>=` | `test_map_sector_passes_at_exactly_20_m_and_fails_just_above` |
+| M5 | lap 1 not excluded | `test_exclusions_are_counted_by_reason` |
+| M6 | pit-adjacent not excluded | `test_exclusions_are_counted_by_reason` |
+| M7 | STALE interpolates | `test_gap_over_2_s_is_stale_with_age_and_never_interpolated` |
+| M8 | no unwrap at the line | `test_interpolation_unwraps_across_the_finish_line` |
+| M9 | tie-break reversed | `test_fastest_eligible_lap_wins_and_ties_break_by_driver_then_lap` |
+| M10 | identity guard removed | `test_a_row_from_another_session_fails_closed` |
+| M11 | off-line samples get a fraction | `test_off_reference_garage_samples_get_no_fraction` |
+| M12 | uncited circuit falls back to 4259 m | `test_unvalidated_session_has_no_polyline_and_no_index` |
+| M13 | cache key without builder version | `test_the_cache_key_names_the_builder_version_and_the_recording` (see below) |
+| M14 | conflicting duplicates keep the first | `test_identical_duplicates_keep_one_and_conflicting_duplicates_drop_all` |
+| M15 | closed loop clamps instead of wrapping | `test_point_at_wraps_on_a_closed_loop_and_clamps_on_an_open_path` |
+| M16 | lap-row-gap samples lose the fraction | `test_a_sample_in_the_gap_between_two_lap_rows_still_gets_a_fraction` |
+| M17 | polyline allowed on unvalidated geometry | `test_tampered_documents_are_rejected[_t_unvalidated_polyline]` |
+| M18 | pit mode ignores the 90% threshold | `test_pit_mode_is_none_when_neither_window_is_off_reference` |
+| M19 | tolerance quantile p99.9 → p50 | `test_tolerance_is_the_p999_of_green_lap_offsets` |
+
+**M13 survived the first sweep.** The cache validation already recomputes
+the `track_id`, which binds the builder version, so a stale cache was still
+rebuilt. The spec (§9) fixes the key format regardless, so a test now pins
+it, and M13 is killed.
+
+**Performance** (`scripts/bench_spatial.py`, real recording, this machine):
+
+| measure | result |
+|---|---:|
+| cold build (load 31.0 s + build 54.7 s + write) | 85.8 s |
+| index on disk | 29.0 MB |
+| warm cache load (fresh store, caches on disk) | 0.04 s |
+| `read_index` tracemalloc peak | 89.1 MB |
+| `spatial_state_v1` (document + validation + canonical bytes), 1,000 seeded-random times | median 0.40 ms, p95 0.66 ms, max 1.28 ms |
+
+The cold build runs once per recording and builder version. Before
+`search_window` it was projected at about 0.4 ms per sample, which would have
+been about 15 minutes. Profiling showed about 83 segment evaluations per
+projection, which the narrow window removes.

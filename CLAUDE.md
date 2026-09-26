@@ -5,6 +5,7 @@ between sessions: keep "Current state" and "Next steps" true whenever a
 phase lands. Detailed evidence lives in the docs below; read on demand,
 don't re-derive.
 
+@docs/PHASE_12_SPATIAL_INTELLIGENCE.md
 @docs/PHASE_11_RACE_INTELLIGENCE_COMMAND_CENTER.md
 @docs/PHASE_10_6_FRONTEND_EVIDENCE_WORKBENCH.md
 @docs/PHASE_10_5_EVIDENCE_API.md
@@ -44,6 +45,8 @@ docker run -d --rm --name f1intel-test-pg -e POSTGRES_USER=f1intel -e POSTGRES_P
 ..\scripts\serve_command_center_dev.py [--port 8010]  # f1intel_dev + recordings/dutchgp, no hub
 ..\scripts\timeline_report.py      # rebuild the Phase 11 golden from the recording
 ..\scripts\finalize_recording.py <dir> --note "..."   # meta.json for a stalled recording
+..\scripts\spatial_report.py [--write-golden]         # 12A validation report (+ docs/spatial golden)
+..\scripts\bench_spatial.py        # 12A performance on the real recording
 cd ..\frontend; npm test; npm run build; npm run lint
 # npm run dev: / = command center, /sessions, /evidence = workbench, /pitwall = legacy
 # (dev proxy target: LFI_API_TARGET in frontend/.env.local, default :8000)
@@ -78,6 +81,24 @@ lap_length_source`. There is no circuit geometry, so a lap length is never
 invented.
 
 ## Current state (2026-09-26)
+- **12A Spatial foundation** (branch `phase-12-spatial-intelligence`, stacked
+  on phase 11; PR #2 still open). Backend only, no UI. `app/spatial/`:
+  - The session's own OpenF1 `/location` feed gives a closed reference loop.
+    Official finish/S1/S2 lines are measured from lap and sector timestamps.
+    A claim-scoped gate applies (user policy): MAP_SECTOR p95 ≤ 20 m,
+    CORNER p95 ≤ 5 m.
+  - Each sample is flagged PIT_LANE, OFF_REFERENCE or ON_REFERENCE. State at
+    time t uses only a driver's own two samples; there is no extrapolation.
+  - Contracts: `track_reference_v1`, `spatial_state_v1`, `spatial_trace_v1`.
+  - Routes: `/sessions/{sid}/track`, `/spatial?at=`, `/spatial/{driver}?from&to`.
+  - Caches sit next to the recording.
+  - Dutch GP result: MAP_SECTOR **passes** (p95 17.7/12.6/14.9 m); CORNER
+    fails.
+  - Measured facts: `PitStop.ts` = pit exit; DRS is null in all 900,900 car
+    samples; the feed reports one shared line (no racing line); there is no
+    corner source.
+  - Golden `docs/spatial/track_reference_v1_dutch_gp_2026.json`. Evidence in
+    `docs/PHASE_12_SPATIAL_VALIDATION.md`; 19/19 mutations killed.
 - **11 Race Intelligence Command Center** (branch `phase-11-race-command-center`):
   - `session_timeline_v1` (`app/analysis/timeline.py`): recordings folded in
     race order through AnalysisEngine; frames at START / each leader lap end /
@@ -146,6 +167,13 @@ invented.
 - **Test baseline:** see "Baseline" at the end of this file.
 
 ## Next steps
+1. **12B track map** (brainstorm → spec → plan first). It is the command
+   center panel on `/track` + `/spatial?at=`, driven by the Phase 11 cursor.
+   - **Decide first:** the cursor is lap-granular today. Car movement needs a
+     sub-lap time on the same single cursor, with no second clock.
+   - **Then:** 12C (telemetry/evidence sync) and 12D (battles, pit-lane
+     path).
+   - **Open 12A findings:** the lap-4 restart crossings (~35 m) and #14 lap 37.
 1. **Recorder stall after HTTP 429.** Both Dutch GP recording runs stalled
    around 1.83M envelopes (see `finalize_interrupted`). Then record a
    qualifying and a sprint to exercise session-type layouts.
@@ -231,7 +259,8 @@ invented.
 
 ## Roadmap
 ~~10.6 evidence workbench~~ → ~~11 command center (observational)~~ →
-11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
+~~12A spatial foundation~~ → 12B track map → 12C telemetry/evidence spatial
+sync → 12D battles / pit lane → 11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
 
 ## Baseline (Phase 11, verified 2026-09-26 on this machine, Postgres 16 up)

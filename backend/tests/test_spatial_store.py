@@ -138,3 +138,15 @@ def test_no_recording_gives_none(tmp_path):
     store = SpatialStore(tmp_path, CIRCUITS)
     assert store.get_track(SID) is None and store.get_track_bytes(SID) is None
     assert store.get_index(SID) is None
+
+
+def test_the_cache_key_names_the_builder_version_and_the_recording(root):
+    """Spec 9: key = "<builder version>|<frames size>|<frames mtime_ns>". The
+    track_id also binds the builder version, but the key must say it too, so
+    a cache is never judged by its content alone."""
+    SpatialStore(root, CIRCUITS).get_track_bytes(SID)
+    rec = _rec(root)
+    frames = (rec / "frames.jsonl.zst").stat()
+    expected = f"{contract.SPATIAL_BUILDER_VERSION}|{frames.st_size}|{frames.st_mtime_ns}"
+    for name in (TRACK_CACHE, INDEX_CACHE):
+        assert (rec / (name + ".key")).read_text(encoding="utf-8") == expected
