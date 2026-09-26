@@ -51,7 +51,7 @@ from app.analysis.common.models import CALC_VERSION
 from app.core.events import Envelope
 
 CONTRACT_VERSION = "session_timeline_v1"
-BUILDER_VERSION = "timeline-builder-1.0.0"
+BUILDER_VERSION = "timeline-builder-1.0.1"
 
 # The engine does nothing with car/location samples (on_car_sample returns [],
 # location has no handler), so skipping them cannot change any frame.
@@ -380,6 +380,10 @@ def limitations(unplaced_stints: int = 0) -> list[dict]:
         {"code": "FRAME_AT_LEADER_LAP_END",
          "message": "Each LAP frame is the moment the leader completes that lap; every "
                     "other car is part-way through its own lap."},
+        {"code": "LATEST_SAMPLE_AT_FRAME",
+         "message": "Gaps, intervals and positions are the latest samples at the frame "
+                    "moment; a gap can lag a position change by a few seconds (e.g. a car "
+                    "that has just lost the lead may still show its leader interval)."},
         {"code": "RACE_ORDER_RECONSTRUCTED",
          "message": "Recorded envelopes are folded in race order by documented "
                     "effective-time rules, not in the order they were fetched."},
