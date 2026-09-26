@@ -112,13 +112,20 @@ def _entry(index: SpatialIndex, driver: int, trk: DriverTrack, t: float) -> dict
     flag_a, flag_b = _FLAGS[trk.flag[lo]], _FLAGS[trk.flag[hi]]
     conf = min((_CONFS[trk.confidence[lo]], _CONFS[trk.confidence[hi]]), key=confidence_rank)
     fa, fb, la, lb = trk.fraction[lo], trk.fraction[hi], trk.lap[lo], trk.lap[hi]
-    laps_ok = la == lb or (la >= 0 and lb == la + 1)
+    # A sample in the short gap lap rows leave at the line (lap -1) is still
+    # on the reference: it pairs with either neighbour (confidence stays the
+    # worse of the two, LOW for the gap sample).
+    laps_ok = la == lb or (la >= 0 and lb == la + 1) or la < 0 or lb < 0
     if (flag_a is SampleFlag.ON_REFERENCE and flag_b is SampleFlag.ON_REFERENCE
             and not math.isnan(fa) and not math.isnan(fb) and laps_ok):
-        if fb < fa - 0.5:                      # the car crossed the finish line
+        crossed = fb < fa - 0.5                # the car crossed the finish line
+        if crossed:
             fb += 1.0
         f = fa + a * (fb - fa)
-        lap = la if f < 1.0 else lb
+        if crossed:
+            lap = la if f < 1.0 else lb
+        else:                                  # one lap: take whichever side is known
+            lap = la if la >= 0 else lb
         f %= 1.0
         x, y = index.centerline.point_at(
             ((f + index.finish_fraction) % 1.0) * index.centerline.total_length)

@@ -116,3 +116,19 @@ def test_pit_lane_state_has_xy_but_no_fraction():
     assert e["status"] == "POSITIONED" and e["flag"] == "PIT_LANE"
     assert e["reference_fraction"] is None and e["distance_m"] is None and e["lap_number"] is None
     assert e["x"] is not None and e["y"] is not None
+
+
+def test_a_sample_in_the_gap_between_two_lap_rows_still_gets_a_fraction():
+    """Real finding (Dutch GP, #12 lap 6->7): lap rows leave ~0.05-0.2 s gaps
+    at the line; a sample inside one belongs to no timed lap. The car is still
+    on the reference, so its position there keeps a fraction (LOW, no lap row
+    to check continuity) instead of silently losing it."""
+    from spatial_synth import at, lap_row
+    rows = synth_rows(extra=(lap_row(1, 2, at(60.0), 59.9), lap_row(1, 3, at(120.2), 59.8)))
+    index = _index(inputs_from_rows(SID, rows))
+    before = _entry(index, 1, 119.95)                      # bracket 119.75 (L2) / 120.0 (gap)
+    assert before["reference_fraction"] is not None and before["lap_number"] == 2
+    assert abs(circular_diff(before["reference_fraction"], -0.05 / 60)) < 1e-8
+    assert before["confidence"] == "LOW"
+    after = _entry(index, 1, 120.1)                        # bracket 120.0 (gap) / 120.25 (L3)
+    assert after["reference_fraction"] is not None and after["lap_number"] == 3
