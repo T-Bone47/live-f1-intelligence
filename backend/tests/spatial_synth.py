@@ -119,11 +119,20 @@ def sample_times(car: Car, laps: int) -> list[float]:
     return [first + j * DT for j in range(n + 1)]
 
 
+def _outward(s: float) -> tuple[float, float]:
+    """Unit normal pointing out of the square on the edge holding s."""
+    return ((0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0))[int((s % LENGTH) // SIDE)]
+
+
 def expected_xy(car: Car, seconds: float, pits: tuple[Pit, ...] = ()) -> tuple[float, float]:
-    x, y = track_xy(s_of(car, seconds))
+    """Position at `seconds`; inside a pit window the car is PIT_OFFSET units
+    outside the track, perpendicular to its edge (a parallel pit lane)."""
+    s = s_of(car, seconds)
+    x, y = track_xy(s)
     for p in pits:
         if p.driver == car.number and p.exit_at_s - p.lane_s <= seconds <= p.exit_at_s:
-            return x, y - PIT_OFFSET
+            nx, ny = _outward(s)
+            return x + nx * PIT_OFFSET, y + ny * PIT_OFFSET
     return x, y
 
 

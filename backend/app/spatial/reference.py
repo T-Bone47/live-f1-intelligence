@@ -17,6 +17,12 @@ from app.analysis.lap_distance import MAX_GAP_S
 from app.analysis.track_geometry import Centerline
 from app.spatial.source import LapRow, SpatialInputs
 
+# Hint window for projecting ~1M samples per session (Centerline default: 40).
+# Performance only - the edge fallback makes any window return the global
+# nearest point (test_a_narrow_search_window_gives_the_global_answer). A
+# car's consecutive samples advance ~1 reference segment (same feed cadence).
+SPATIAL_SEARCH_WINDOW = 8
+
 
 class NoReferenceLap(ValueError):
     """No lap qualifies, or its window holds fewer than 3 distinct points."""
@@ -92,4 +98,4 @@ def build_reference(inputs: SpatialInputs, lap: LapRow) -> Reference:
     closed = tuple(pts) if pts[-1] == pts[0] else (*pts, pts[0])
     return Reference(driver=lap.driver, lap=lap.lap, start=lap.start,
                      duration=float(lap.duration or 0.0), points=closed,
-                     centerline=Centerline(list(closed)))
+                     centerline=Centerline(list(closed), SPATIAL_SEARCH_WINDOW))
