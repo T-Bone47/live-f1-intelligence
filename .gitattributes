@@ -1,3 +1,5 @@
 # Evidence artifacts are byte-exact (canonical JSON, golden fixtures locked by
 # tests): never convert line endings on checkout.
 docs/evidence/*.json -text
+# Phase 11 session timelines are canonical JSON too (golden locked by tests).
+docs/timeline/*.json -text
