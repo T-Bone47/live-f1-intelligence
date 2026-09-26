@@ -20,10 +20,12 @@ export type ApiErrorKind =
   | "rate_limited"   // 429
   | "unavailable"    // network failure, 502/503/504
   | "unsupported"    // a 200 body that is not the expected contract
+  | "unvalidated"    // 409: spatial geometry did not pass its gate (Phase 12B)
   | "unexpected";
 
 export class ApiError extends Error {
-  constructor(readonly kind: ApiErrorKind, message: string, readonly status: number | null) {
+  constructor(readonly kind: ApiErrorKind, message: string, readonly status: number | null,
+              readonly reasons: string[] = []) {
     super(message);
     this.name = "ApiError";
   }
@@ -33,6 +35,7 @@ const SID_OK = /^[^/\\\s]{1,64}$/;
 
 function kindForStatus(status: number): ApiErrorKind {
   if (status === 404) return "not_found";
+  if (status === 409) return "unvalidated";
   if (status === 422) return "invalid";
   if (status === 429) return "rate_limited";
   if (status === 500) return "withheld";
@@ -40,15 +43,20 @@ function kindForStatus(status: number): ApiErrorKind {
   return "unexpected";
 }
 
-async function detailOf(r: Response): Promise<string> {
+/** The backend's own message; a structured detail ({message, reasons}) keeps its reasons. */
+async function detailOf(r: Response): Promise<{ message: string; reasons: string[] }> {
   try {
     const d = (await r.json())?.detail;
-    if (typeof d === "string") return d;
+    if (typeof d === "string") return { message: d, reasons: [] };
+    if (d && typeof d.message === "string") {
+      const reasons = Array.isArray(d.reasons) ? d.reasons.filter((x: unknown) => typeof x === "string") : [];
+      return { message: d.message, reasons };
+    }
   } catch { /* non-JSON body */ }
-  return `HTTP ${r.status}`;
+  return { message: `HTTP ${r.status}`, reasons: [] };
 }
 
-async function getJson(url: string, signal: AbortSignal | undefined, fetchImpl: typeof fetch):
+export async function getJson(url: string, signal: AbortSignal | undefined, fetchImpl: typeof fetch):
   Promise<{ body: unknown; response: Response }> {
   let r: Response;
   try {
@@ -57,7 +65,10 @@ async function getJson(url: string, signal: AbortSignal | undefined, fetchImpl: 
     if ((e as Error)?.name === "AbortError") throw e;
     throw new ApiError("unavailable", "The API could not be reached.", null);
   }
-  if (!r.ok) throw new ApiError(kindForStatus(r.status), await detailOf(r), r.status);
+  if (!r.ok) {
+    const { message, reasons } = await detailOf(r);
+    throw new ApiError(kindForStatus(r.status), message, r.status, reasons);
+  }
   try {
     return { body: await r.json(), response: r };
   } catch {
@@ -65,7 +76,7 @@ async function getJson(url: string, signal: AbortSignal | undefined, fetchImpl: 
   }
 }
 
-function sessionPath(sid: string): string {
+export function sessionPath(sid: string): string {
   if (!SID_OK.test(sid)) throw new ApiError("invalid", "Session id may not contain slashes or spaces.", null);
   return `/api/v1/sessions/${encodeURIComponent(sid)}`;
 }
