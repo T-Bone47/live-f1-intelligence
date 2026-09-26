@@ -74,10 +74,10 @@ class Worst(_M):
 
 class TimingLine(_M):
     line: Literal["FINISH", "S1", "S2"]
-    loop_fraction: float
+    loop_fraction: float | None
     distance_m: float | None
-    x: float
-    y: float
+    x: float | None
+    y: float | None
     n: int
     exclusions: dict[str, int]
     dispersion_m: Dispersion | None
@@ -193,6 +193,14 @@ class TrackReferenceV1(_M):
                 raise ValueError("polyline must be closed (x, y) pairs")
         elif polyline is not None:
             raise ValueError("unvalidated geometry must not publish a polyline")
+        validated = self.status == "VALIDATED_MAP_SECTOR"
+        for line in self.timing_lines:
+            placed = (line.loop_fraction, line.x, line.y)
+            if validated and None in placed:
+                raise ValueError(f"validated line {line.line} needs its position")
+            if not validated and (any(v is not None for v in placed)
+                                  or line.distance_m is not None):
+                raise ValueError(f"unvalidated line {line.line} must not publish a position")
         cited = self.circuit.lap_length_m is not None
         if (self.circuit.lap_length_m is None) != (self.circuit.lap_length_source is None):
             raise ValueError("a lap length needs its source")
@@ -250,6 +258,7 @@ class SpatialStateV1(_M):
     track_id: str
     at: str
     lap_length_m: float | None
+    line_placement_p95_m: dict[str, float] | None
     drivers: list[DriverState]
     limitations: list[Limitation]
 
@@ -292,6 +301,7 @@ class SpatialTraceV1(_M):
     from_ts: str
     to_ts: str
     lap_length_m: float | None
+    line_placement_p95_m: dict[str, float] | None
     samples: list[TraceSample]
     limitations: list[Limitation]
 

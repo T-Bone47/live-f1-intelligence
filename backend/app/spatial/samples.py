@@ -169,8 +169,19 @@ def classify_driver(inputs: SpatialInputs, driver: int, ref: Reference, finish_f
                     y=samples[i][2], z=None, provenance=None)
                 for i in idx]
         projected = project_positions(ref.centerline, locs, lap.duration or 0.0)
+        # project_positions unwraps from the reference start, which sits at the
+        # line; measured from the finish line itself, a lap runs over [0, 1).
+        # A position outside that (before the measured line at the lap's start,
+        # past it at the end) contradicts the timing lap: the lap is withheld
+        # rather than paired with a distance one lap away.
+        finish_u = finish_fraction - 1.0 if finish_fraction > 0.5 else finish_fraction
         for i, pp in zip(idx, projected, strict=True):
             t, x, y = samples[i]
-            frac = None if pp.confidence is Confidence.NONE else (pp.fraction - finish_fraction) % 1.0
-            out[i] = ClassifiedSample(t, x, y, SampleFlag.ON_REFERENCE, frac, lap.lap, pp.confidence)
+            if pp.confidence is Confidence.NONE:
+                out[i] = ClassifiedSample(t, x, y, SampleFlag.ON_REFERENCE, None, lap.lap,
+                                          pp.confidence)
+                continue
+            u = pp.fraction - finish_u
+            out[i] = ClassifiedSample(t, x, y, SampleFlag.ON_REFERENCE, u % 1.0,
+                                      lap.lap if 0.0 <= u < 1.0 else None, pp.confidence)
     return [s for s in out if s is not None]

@@ -109,3 +109,17 @@ def test_a_backward_jump_is_withheld_not_repaired():
     s = _at(classify_driver(inputs, 1, ref, finish, tol, []), 90.0)
     assert s.fraction is None and s.confidence is Confidence.NONE
     assert s.flag is SampleFlag.ON_REFERENCE
+
+
+def test_timing_lap_and_geometry_that_disagree_at_the_line_withhold_the_lap():
+    """Final review I2: a sample past the measured finish line while timing
+    still says the previous lap would pair 'lap 2' with a lap-3 position
+    (a (lap, distance) off by a whole lap). Its lap is withheld; the
+    fraction stays."""
+    from spatial_synth import lap_row
+    rows = synth_rows(extra=(lap_row(1, 2, at(60.0), 60.5), lap_row(1, 3, at(120.5), 59.5)))
+    inputs, ref, finish, tol = _setup(rows)
+    out = classify_driver(inputs, 1, ref, finish, tol, [])
+    s = _at(out, 120.25)                       # physically past the line, timing still lap 2
+    assert s.fraction is not None and s.fraction < 0.01 and s.lap is None
+    assert _at(out, 119.75).lap == 2 and _at(out, 120.75).lap == 3

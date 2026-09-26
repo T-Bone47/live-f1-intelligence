@@ -99,6 +99,8 @@ def test_index_round_trips_exactly(root, tmp_path):
     assert (back.session_id, back.track_id, back.finish_fraction, back.lap_length_m) == \
            (index.session_id, index.track_id, index.finish_fraction, index.lap_length_m)
     assert back.ref_points == index.ref_points and sorted(back.tracks) == sorted(index.tracks)
+    assert (back.line_p95_m, back.corner_precision_met) ==            (index.line_p95_m, index.corner_precision_met)
+    assert index.line_p95_m is not None
     for d, trk in index.tracks.items():
         other = back.tracks[d]
         for field in ("t", "x", "y", "flag", "confidence", "lap"):
@@ -147,6 +149,21 @@ def test_the_cache_key_names_the_builder_version_and_the_recording(root):
     SpatialStore(root, CIRCUITS).get_track_bytes(SID)
     rec = _rec(root)
     frames = (rec / "frames.jsonl.zst").stat()
-    expected = f"{contract.SPATIAL_BUILDER_VERSION}|{frames.st_size}|{frames.st_mtime_ns}"
     for name in (TRACK_CACHE, INDEX_CACHE):
-        assert (rec / (name + ".key")).read_text(encoding="utf-8") == expected
+        key = (rec / (name + ".key")).read_text(encoding="utf-8").split("|")
+        assert key[0] == contract.SPATIAL_BUILDER_VERSION
+        assert key[-2:] == [str(frames.st_size), str(frames.st_mtime_ns)]
+
+
+def test_a_changed_citation_rebuilds_the_cache(root):
+    """Final review I1: circuits.json is an input. A corrected length (or a
+    newly added citation) must never be answered from the old cache."""
+    first = SpatialStore(root, CIRCUITS).get_track(SID)
+    assert first["circuit"]["lap_length_m"] == 4000.0
+    corrected = {"Synthetic": CitedLength(5000.0, "corrected citation")}
+    again = SpatialStore(root, corrected).get_track(SID)
+    assert again["circuit"]["lap_length_m"] == 5000.0
+    assert again["circuit"]["lap_length_source"] == "corrected citation"
+    uncited = SpatialStore(root, {}).get_track(SID)
+    assert uncited["status"] == "UNVALIDATED"
+    assert SpatialStore(root, CIRCUITS).get_track(SID)["status"] == "VALIDATED_MAP_SECTOR"

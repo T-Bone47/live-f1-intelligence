@@ -68,6 +68,8 @@ class SpatialIndex:
     finish_fraction: float
     lap_length_m: float | None
     tracks: dict[int, DriverTrack]
+    line_p95_m: dict[str, float] | None = None   # measured timing-line p95 (metres)
+    corner_precision_met: bool = False           # CORNER gate; unknown counts as not met
     centerline: Centerline = field(init=False, repr=False)
 
     def __post_init__(self) -> None:

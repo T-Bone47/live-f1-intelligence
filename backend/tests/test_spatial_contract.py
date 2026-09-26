@@ -73,6 +73,11 @@ def test_unvalidated_session_has_no_polyline_and_no_index():
     assert doc["circuit"]["lap_length_m"] is None
     assert all(line["distance_m"] is None and line["dispersion_m"] is None
                for line in doc["timing_lines"])
+    # spec 5.4: no geometry on unvalidated geometry - line positions withheld too,
+    # while the measured dispersion stays as evidence
+    assert doc["timing_lines"] and all(
+        (line["x"], line["y"], line["loop_fraction"]) == (None, None, None)
+        and line["n"] > 0 for line in doc["timing_lines"])
 
 
 def test_no_eligible_reference_lap_is_unvalidated():
@@ -102,6 +107,9 @@ def _t_extra(d, _s): d["cause"] = "braking"
 def _t_nan(d, _s): d["timing_lines"][0]["dispersion_m"]["p95"] = math.nan
 def _t_unvalidated_polyline(d, _s): d["status"] = "UNVALIDATED"
 def _t_track_id(d, _s): d["track_id"] = "trk1_" + "0" * 24
+def _t_unvalidated_line_position(d, _s):
+    d["status"] = "UNVALIDATED"
+    d["reference"]["polyline"] = None       # only the line positions still leak
 def _t_status(d, _s): d["status"] = "VALIDATED_EVERYTHING"
 def _s_fraction_pit(_d, s): s["drivers"][0]["flag"] = "PIT_LANE"
 def _s_metres_uncited(_d, s): s["lap_length_m"] = None
@@ -110,7 +118,8 @@ def _s_stale_no_age(_d, s): s["drivers"][0]["status"] = "STALE"
 def _s_duplicate(_d, s): s["drivers"].append(copy.deepcopy(s["drivers"][0]))
 
 
-@pytest.mark.parametrize("tamper", [_t_extra, _t_nan, _t_unvalidated_polyline, _t_track_id,
+@pytest.mark.parametrize("tamper", [_t_extra, _t_nan, _t_unvalidated_polyline,
+                                    _t_unvalidated_line_position, _t_track_id,
                                     _t_status, _s_fraction_pit, _s_metres_uncited, _s_no_bracket,
                                     _s_stale_no_age, _s_duplicate])
 def test_tampered_documents_are_rejected(valid, tamper):
@@ -127,3 +136,22 @@ def test_state_doc_at_carries_utc(valid):
     _inputs, _doc, index = valid
     at = datetime(2026, 1, 1, 14, 0, 15, tzinfo=UTC).astimezone()
     assert state_doc(index, at)["at"] == "2026-01-01T14:00:15+00:00"
+
+
+def test_state_and_trace_docs_state_their_precision(valid):
+    """Final review I3: a consumer holding only a state or trace document must
+    see how precisely positions are placed and whether corner-level metre
+    claims are refused."""
+    import dataclasses
+    _inputs, doc, index = valid
+    expected = {line["line"]: line["dispersion_m"]["p95"] for line in doc["timing_lines"]}
+    state = state_doc(index, T0 + timedelta(seconds=300.0))
+    trace = trace_doc(index, 1, T0 + timedelta(seconds=100), T0 + timedelta(seconds=120))
+    assert state["line_placement_p95_m"] == expected == trace["line_placement_p95_m"]
+    corner_ok = doc["validation"]["gates"]["CORNER"]["passed"]
+    codes = {lim["code"] for lim in state["limitations"]}
+    assert ("CORNER_PRECISION_NOT_MET" in codes) is (not corner_ok)
+    refused = dataclasses.replace(index, corner_precision_met=False)
+    for d in (state_doc(refused, T0 + timedelta(seconds=300.0)),
+              trace_doc(refused, 1, T0 + timedelta(seconds=100), T0 + timedelta(seconds=120))):
+        assert "CORNER_PRECISION_NOT_MET" in {lim["code"] for lim in d["limitations"]}

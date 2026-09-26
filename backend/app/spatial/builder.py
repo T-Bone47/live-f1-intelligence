@@ -80,14 +80,17 @@ def _gate_doc(g) -> dict:
             "observed_p95_m": g.observed_p95_m, "reasons": list(g.reasons)}
 
 
-def _line_doc(m, finish_fraction: float | None, length: float | None) -> dict:
+def _line_doc(m, finish_fraction: float | None, length: float | None, validated: bool) -> dict:
+    """Unvalidated geometry publishes the measurement (n, exclusions,
+    dispersion, worst) but no position on the track (spec 5.4)."""
     distance = None
-    if length is not None and finish_fraction is not None:
+    if validated and length is not None and finish_fraction is not None:
         distance = ((m.fraction - finish_fraction) % 1.0) * length
         distance = 0.0 if m.line == "FINISH" else distance
     unit = "m" if length is not None else "fraction"
-    return {"line": m.line, "loop_fraction": m.fraction, "distance_m": distance,
-            "x": m.x, "y": m.y, "n": m.n, "exclusions": dict(m.exclusions),
+    return {"line": m.line, "loop_fraction": m.fraction if validated else None,
+            "distance_m": distance, "x": m.x if validated else None,
+            "y": m.y if validated else None, "n": m.n, "exclusions": dict(m.exclusions),
             "dispersion_m": None if m.dispersion_m is None else dict(m.dispersion_m),
             "dispersion_fraction": dict(m.dispersion_fraction),
             "worst": [{"driver_number": d, "lap_number": lap, "value": v, "unit": unit}
@@ -144,8 +147,9 @@ def build_spatial(inputs: SpatialInputs,
         pit_doc = {"mode": pit.mode, "share_entry": pit.share_entry, "share_exit": pit.share_exit,
                    "samples_entry": pit.samples_entry, "samples_exit": pit.samples_exit}
         finish = lines["FINISH"].fraction if "FINISH" in lines else None
-        lines_doc = [_line_doc(lines[name], finish, length) for name in LINES if name in lines]
         validated = gates["MAP_SECTOR"].passed and finish is not None
+        lines_doc = [_line_doc(lines[name], finish, length, validated)
+                     for name in LINES if name in lines]
         reference_doc = {"driver_number": ref.driver, "lap_number": ref.lap,
                          "started_at": iso(ref.start), "duration_s": ref.duration,
                          "point_count": len(ref.points),
@@ -157,7 +161,10 @@ def build_spatial(inputs: SpatialInputs,
                           if d in inputs.samples else empty_track()) for d in drivers}
             index = SpatialIndex(session_id=inputs.session_id, track_id=track_id,
                                  ref_points=ref.points, finish_fraction=finish,
-                                 lap_length_m=length, tracks=tracks)
+                                 lap_length_m=length, tracks=tracks,
+                                 line_p95_m=None if length is None else
+                                 {m.line: m.dispersion_m["p95"] for m in lines.values()},
+                                 corner_precision_met=gates["CORNER"].passed)
         else:
             reasons = list(gates["MAP_SECTOR"].reasons)
 
@@ -206,6 +213,8 @@ def _doc_limitations(index: SpatialIndex) -> list[dict]:
     codes = ["FEED_LINE_NOT_RACING_LINE", "INTERPOLATED_BETWEEN_SAMPLES", "RECORDING_ONLY"]
     if index.lap_length_m is not None:
         codes.append("METRES_NORMALIZED_TO_CITED_LENGTH")
+    if not index.corner_precision_met:
+        codes.append("CORNER_PRECISION_NOT_MET")
     return [_lim(c) for c in sorted(codes)]
 
 
@@ -214,6 +223,7 @@ def state_doc(index: SpatialIndex, at: datetime) -> dict:
     doc = {"contract_version": STATE_CONTRACT, "builder_version": SPATIAL_BUILDER_VERSION,
            "session_id": index.session_id, "track_id": index.track_id,
            "at": at.astimezone(UTC).isoformat(), "lap_length_m": index.lap_length_m,
+           "line_placement_p95_m": index.line_p95_m,
            "drivers": state_at(index, at.timestamp()), "limitations": _doc_limitations(index)}
     validate_state(doc)
     return doc
@@ -224,7 +234,7 @@ def trace_doc(index: SpatialIndex, driver: int, t0: datetime, t1: datetime) -> d
     doc = {"contract_version": TRACE_CONTRACT, "builder_version": SPATIAL_BUILDER_VERSION,
            "session_id": index.session_id, "track_id": index.track_id, "driver_number": driver,
            "from_ts": t0.astimezone(UTC).isoformat(), "to_ts": t1.astimezone(UTC).isoformat(),
-           "lap_length_m": index.lap_length_m,
+           "lap_length_m": index.lap_length_m, "line_placement_p95_m": index.line_p95_m,
            "samples": trace(index, driver, t0.timestamp(), t1.timestamp()),
            "limitations": _doc_limitations(index)}
     validate_trace(doc)

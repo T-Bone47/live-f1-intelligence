@@ -12,6 +12,7 @@ against the requested session (fail closed).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import threading
@@ -23,7 +24,7 @@ from pathlib import Path
 import app.spatial.builder as _builder
 import app.spatial.contract as _contract
 from app.analysis.timeline import to_canonical_json
-from app.spatial.circuits import CitedLength
+from app.spatial.circuits import CitedLength, load_circuits
 from app.spatial.source import SpatialIdentityError, load_inputs
 from app.spatial.state import DriverTrack, SpatialIndex
 from app.storage.timeline_store import index_recordings
@@ -42,6 +43,8 @@ def write_index(path: Path, index: SpatialIndex) -> None:
               "session_id": index.session_id, "track_id": index.track_id,
               "finish_fraction": index.finish_fraction, "lap_length_m": index.lap_length_m,
               "ref_points": [list(p) for p in index.ref_points],
+              "line_p95_m": index.line_p95_m,
+              "corner_precision_met": index.corner_precision_met,
               "drivers": [{"driver": d, "n": len(index.tracks[d].t)} for d in drivers]}
     with open(path, "wb") as fh:
         fh.write(json.dumps(header, separators=(",", ":")).encode() + b"\n")
@@ -74,7 +77,9 @@ def read_index(path: Path) -> SpatialIndex:
     return SpatialIndex(session_id=header["session_id"], track_id=header["track_id"],
                         ref_points=tuple((float(x), float(y)) for x, y in header["ref_points"]),
                         finish_fraction=float(header["finish_fraction"]),
-                        lap_length_m=header["lap_length_m"], tracks=tracks)
+                        lap_length_m=header["lap_length_m"], tracks=tracks,
+                        line_p95_m=header["line_p95_m"],
+                        corner_precision_met=bool(header["corner_precision_met"]))
 
 
 @dataclass
@@ -93,10 +98,17 @@ class SpatialStore:
         self._memory: dict[str, _Entry] = {}
         self._lock = threading.Lock()
 
-    @staticmethod
-    def _key(rec: Path) -> str:
+    def _circuits_digest(self) -> str:
+        """The cited lap lengths are an input: a corrected or added citation
+        must invalidate every cache built on the old table."""
+        table = self.circuits if self.circuits is not None else load_circuits()
+        rows = sorted((name, c.lap_length_m, c.source) for name, c in table.items())
+        return hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()[:16]
+
+    def _key(self, rec: Path) -> str:
         st = (rec / "frames.jsonl.zst").stat()
-        return f"{_contract.SPATIAL_BUILDER_VERSION}|{st.st_size}|{st.st_mtime_ns}"
+        return (f"{_contract.SPATIAL_BUILDER_VERSION}|circuits:{self._circuits_digest()}"
+                f"|{st.st_size}|{st.st_mtime_ns}")
 
     @staticmethod
     def _keyed(path: Path, key: str) -> bool:

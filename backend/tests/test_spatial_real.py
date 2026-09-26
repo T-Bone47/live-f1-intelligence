@@ -237,3 +237,37 @@ def test_real_narrow_window_projection_equals_global_search(built):
 def test_real_output_matches_the_committed_golden(built):
     _inputs, doc, _index = built
     assert to_canonical_json(doc) == GOLDEN.read_bytes()
+
+
+def test_real_lap_numbers_agree_with_the_geometry(built):
+    """Final review I2: a lap number is never paired with a position on the far
+    side of the measured finish line (no lap wraps inside itself), including
+    the reviewer's case - #1 just after starting lap 25 by timing."""
+    _inputs, _doc, index = built
+    for d, trk in index.tracks.items():
+        last: dict[int, float] = {}
+        for i in range(len(trk.t)):
+            lap, f = trk.lap[i], trk.fraction[i]
+            if lap < 0 or math.isnan(f):
+                continue
+            assert f >= last.get(lap, 0.0) - 0.5, (d, lap, trk.t[i])
+            last[lap] = f
+    at = datetime.fromisoformat("2026-08-23T14:05:45.790000+00:00").timestamp()
+    e = next(e for e in state_at(index, at) if e["driver_number"] == 1)
+    assert not (e["lap_number"] == 25 and e["distance_m"] is not None and e["distance_m"] > 4000)
+
+
+def test_real_state_docs_validate_and_state_their_precision(built):
+    """Final review I3 (and plan Task 11): real state documents at the Phase 11
+    LAP frames pass the contract and carry the measured precision and the
+    CORNER refusal."""
+    from app.spatial.builder import state_doc
+
+    _inputs, doc, index = built
+    p95 = {line["line"]: line["dispersion_m"]["p95"] for line in doc["timing_lines"]}
+    frames = [f for f in json.loads(TIMELINE.read_text(encoding="utf-8"))["frames"]
+              if f["kind"] == "LAP"]
+    for f in frames:
+        state = state_doc(index, datetime.fromisoformat(f["at"]))   # validates or raises
+        assert state["line_placement_p95_m"] == p95
+        assert "CORNER_PRECISION_NOT_MET" in {lim["code"] for lim in state["limitations"]}
