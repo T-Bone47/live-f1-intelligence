@@ -131,6 +131,8 @@ distance, sector, lap, confidence, gap and battle.
   - `test_tampered_documents_are_rejected` gains two cases:
     - sectors present on an UNVALIDATED track;
     - lengths that do not sum to the cited length.
+  - `test_cached_track_without_sectors_is_rebuilt` (store): a cached
+    document of the old shape fails the contract and is rebuilt (spec §5.4).
 - [ ] **Step 2: Run them. Expected: FAIL** (no `subpath`, no `sectors` key).
 - [ ] **Step 3: Implement.**
   - `Centerline.subpath`: use `bisect` over the existing cumulative
@@ -183,7 +185,8 @@ distance, sector, lap, confidence, gap and battle.
   - `test_no_fraction_means_no_sector`: a PIT_LANE state has
     `sector is None`.
   - A contract tamper case: a sector with a null fraction is rejected.
-  - A store round trip keeps `line_fractions`.
+  - A store round trip keeps `line_fractions`; a cached index header
+    without it is rebuilt.
   - `test_real_sector_agrees_with_the_published_lines`: at 50 seeded times,
     each positioned entry's sector is consistent with its `distance_m`
     against the track's S1 and S2 `distance_m`. Entries within 1e-6 m of a
@@ -287,7 +290,7 @@ export type UiAction = { type: "load"; frames: number[]; t: number } | { type: "
   | { type: "event"; key: string | null; t?: number } | { type: "density"; density: Density } | { type: "clear" };
 export function frameTimes(t: Timeline): number[];                   // epoch ms of each frame's `at`
 export function frameIndexAt(frames: number[], t: number): number;   // last frame <= t; 0 before all
-export function buildMoment(t: Timeline, index: number, at?: number): Moment;  // Moment gains t: number
+export function buildMoment(t: Timeline, index: number, at?: number): Moment;  // Moment gains t: number, frameAt: string (the frame's ISO at)
 export interface CommandUrl { session: string | null; lap: string | null; t: string | null; driver: number | null }
 export function fmtClockTenths(ms: number): string;                  // "13:41:02.5 UTC"
 ```
@@ -324,7 +327,10 @@ export function fmtClockTenths(ms: number): string;                  // "13:41:0
       frame, and the readout shows `fmtClockTenths(t)`;
     - `a malformed or out-of-range ?t= falls back to ?lap=` (Review
       Focus 5);
-    - `Shift+ArrowRight moves 10 s and every panel keeps one moment`.
+    - `Shift+ArrowRight moves 10 s and every panel keeps one moment`;
+    - `frame-row panels say which frame they show`: the timing tower,
+      positions, battles and strategy carry "as of LAP k · hh:mm:ss"
+      (spec §4).
   - Existing Phase 11 tests keep their assertions. Only their calls change:
     `seek` becomes `seekFrame`, and the speed buttons become the rate
     buttons.
@@ -436,7 +442,8 @@ export function signedArea(points: [number, number][]): number;   // screen coor
 export function placeLabels(anchors: { id: number; x: number; y: number }[], w: number, h: number):
   Map<number, { x: number; y: number; anchor: "start" | "end" }>;  // greedy over 4 offsets, no overlap
 export function TrackMap(p: { view: SpatialView; moment: Moment; selected: number | null;
-  battle: [number, number] | null; onSelect: (d: number | null) => void }): JSX.Element;
+  battle: [number, number] | null; onSelect: (d: number | null) => void;
+  onPositionSelect?: (driver: number, stateAt: string) => void }): JSX.Element;  // 12C hook
 ```
 
 - [ ] **Step 1: Take the orientation evidence.** This is a measurement and
@@ -471,6 +478,12 @@ export function TrackMap(p: { view: SpatialView; moment: Moment; selected: numbe
     - `reduced motion removes marker transitions`, via the `matchMedia`
       mock;
     - `the info drawer lists provenance and validated and unavailable capabilities`;
+    - `LOW or NONE confidence draws a dashed ring and states the grade in words`;
+    - `P1 of the current frame keeps a persistent label`;
+    - `clicking a timing line shows its measured p95 and n from the track document`;
+    - `hovering a sector highlights its path`;
+    - `choosing a marker emits onPositionSelect(driver, shown.at)`;
+    - `the map names the shown time and says when positions lag the cursor`;
     - `the browser computes no spatial value`: a source scan of
       `src/spatial/` and `src/components/spatial/` finds no
       `Math.hypot`, no arithmetic on `reference_fraction`, `distance_m` or
