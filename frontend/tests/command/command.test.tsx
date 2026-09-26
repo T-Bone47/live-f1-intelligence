@@ -7,7 +7,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { CommandCenter } from "../../src/components/command/CommandCenter";
-import { fmtGap } from "../../src/command/format";
+import { fmtAsOf, fmtClockTenths, fmtGap } from "../../src/command/format";
+import { frameIndexAt, frameTimes } from "../../src/command/moment";
 import type { Timeline } from "../../src/command/types";
 import { CATALOG, frameIndex, golden, json, mockApi, SID } from "./fixture";
 
@@ -85,7 +86,7 @@ describe("ONE SESSION STATE: every panel moves with the cursor", () => {
     }
     // race-control count = messages first included at or before this frame
     const known = t.race_control.filter((m) => m.frame_index <= i).length;
-    expect(screen.getByText(`${known} messages up to this lap`)).toBeInTheDocument();
+    expect(screen.getByText(`${known} messages up to this moment`)).toBeInTheDocument();
     // weather = the frame's own latest weather
     if (f.weather.track_temp_c != null) {
       const cell = screen.getByText("Track").closest(".cc-wx-cell")!;
@@ -103,10 +104,53 @@ describe("ONE SESSION STATE: every panel moves with the cursor", () => {
     expect(lapHeader(container)).toBe("LAP 21");
     const t = golden();
     const known = t.race_control.filter((m) => m.frame_index <= frameIndex(t, 21)).length;
-    expect(screen.getByText(`${known} messages up to this lap`)).toBeInTheDocument();
+    expect(screen.getByText(`${known} messages up to this moment`)).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "ArrowLeft" });
     fireEvent.keyDown(window, { key: "ArrowLeft" });
     expect(lapHeader(container)).toBe("LAP 19");
+  });
+
+  it("?t= mid-lap opens between frames", async () => {
+    const t = golden();
+    const frames = frameTimes(t);
+    const i = t.frames.findIndex((f) => f.kind === "LAP" && f.lap === 39);
+    const at = frames[i] + 20_000;
+    expect(at).toBeLessThan(frames[i + 1]);
+    const { container } = await renderAt(`&lap=12&t=${encodeURIComponent(new Date(at).toISOString())}`);
+    expect(lapHeader(container)).toBe("LAP 39");
+    expect(container.querySelector(".cc-replay-time")).toHaveTextContent(fmtClockTenths(at));
+    const known = t.race_control.filter((m) => Date.parse(m.ts!) <= at).length;
+    expect(screen.getByText(`${known} messages up to this moment`)).toBeInTheDocument();
+  });
+
+  it.each([["garbage"], ["2020-01-01T00:00:00Z"], ["2026-08-23T14:00:00"]])(
+    "a malformed or out-of-range ?t= (%s) falls back to ?lap=", async (bad) => {
+      const { container } = await renderAt(`&lap=30&t=${encodeURIComponent(bad)}`);
+      expect(lapHeader(container)).toBe("LAP 30");
+    });
+
+  it("Shift+ArrowRight moves 10 s and every panel keeps one moment", async () => {
+    const { container } = await renderAt("&lap=20");
+    const t = golden();
+    const frames = frameTimes(t);
+    const i = t.frames.findIndex((f) => f.kind === "LAP" && f.lap === 20);
+    fireEvent.keyDown(window, { key: "ArrowRight", shiftKey: true });
+    const at = frames[i] + 10_000;
+    expect(container.querySelector(".cc-replay-time")).toHaveTextContent(fmtClockTenths(at));
+    expect(lapHeader(container)).toBe("LAP 20");
+    const known = t.race_control.filter((m) => Date.parse(m.ts!) <= at).length;
+    expect(screen.getByText(`${known} messages up to this moment`)).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "ArrowLeft", shiftKey: true });
+    expect(container.querySelector(".cc-replay-time")).toHaveTextContent(fmtClockTenths(frames[i]));
+  });
+
+  it("frame-row panels say which frame they show", async () => {
+    const { container } = await renderAt("&lap=40");
+    const t = golden();
+    const f = t.frames.find((x) => x.kind === "LAP" && x.lap === 40)!;
+    for (const id of ["cc-timing", "cc-positions", "cc-battles", "cc-strategy"]) {
+      expect(container.querySelector(`#${id} .cc-asof`)).toHaveTextContent(fmtAsOf(f));
+    }
   });
 
   it("the lap-2 moment is inside the red flag", async () => {
@@ -179,15 +223,18 @@ describe("interaction", () => {
     expect(screen.getByRole("heading", { name: "Session" })).toBeInTheDocument();
   });
 
-  it("selecting a race-control message moves the cursor to its lap", async () => {
+  it("selecting a race-control message moves the cursor to its time", async () => {
     const { container } = await renderAt("&lap=40");
     act(() => { fireEvent.click(screen.getByRole("button", { name: "All" })); });
     const red = screen.getByText("RED FLAG - RACE SUSPENDED").closest("button")!;
     fireEvent.click(red);
     const t = golden();
     const m = t.race_control.find((x) => x.message === "RED FLAG - RACE SUSPENDED")!;
-    const f = t.frames[m.frame_index];
+    const at = Date.parse(m.ts!);
+    const f = t.frames[frameIndexAt(frameTimes(t), at)];
     expect(lapHeader(container)).toBe(f.kind === "LAP" ? `LAP ${f.lap}` : f.kind);
+    expect(container.querySelector(".cc-replay-time")).toHaveTextContent(fmtClockTenths(at));
+    expect(screen.getByText("RED FLAG - RACE SUSPENDED")).toBeInTheDocument();   // listed at its own time
   });
 });
 

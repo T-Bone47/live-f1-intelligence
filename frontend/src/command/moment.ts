@@ -1,8 +1,11 @@
 /**
  * ONE SESSION MOMENT. Every Command Center panel reads the same object, built
- * from the timeline and one cursor (a frame index). Lists are filtered to what
- * the backend says was known at that frame (`frame_index <= index`); nothing
- * is computed from values - only selected, ordered and grouped.
+ * from the timeline and the one cursor, race time t (Phase 12B). The frame is
+ * the last lap frame at or before t; race control, pit stops and weather are
+ * the items timestamped at or before t; engine events keep the frame the
+ * engine first knew them at (`frame_index`), because their own timestamp can
+ * precede that. Nothing is computed from values - only selected, ordered and
+ * grouped.
  */
 
 import type {
@@ -21,6 +24,10 @@ export interface Moment {
   timeline: Timeline;
   index: number;
   frame: Frame;
+  /** The frame's own time (ISO) - what "as of" labels name. */
+  frameAt: string | null;
+  /** The content time (epoch ms): the latest timestamped item or frame at or before the cursor. */
+  knownAt: number;
   isFinal: boolean;
   isStart: boolean;
   /** Leader-lap label for this frame and the recorded maximum. */
@@ -55,9 +62,59 @@ function identities(t: Timeline): Map<number, DriverIdentity> {
   return m;
 }
 
-export function buildMoment(t: Timeline, rawIndex: number): Moment {
+const timesCache = new WeakMap<Timeline, number[]>();
+/** Each frame's `at` as epoch ms (checkTimeline guarantees every frame has one). */
+export function frameTimes(t: Timeline): number[] {
+  let ms = timesCache.get(t);
+  if (!ms) {
+    ms = t.frames.map((f) => Date.parse(f.at ?? ""));
+    timesCache.set(t, ms);
+  }
+  return ms;
+}
+
+/** Index of the last value <= x in an ascending list, -1 when none. */
+function lastAtOrBefore(xs: number[], x: number): number {
+  let lo = 0, hi = xs.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (xs[mid] <= x) lo = mid + 1; else hi = mid;
+  }
+  return lo - 1;
+}
+
+/** The frame a panel shows at race time t: the last frame at or before t (START before all). */
+export function frameIndexAt(frames: number[], t: number): number {
+  return Math.max(0, lastAtOrBefore(frames, t));
+}
+
+const stampsCache = new WeakMap<Timeline, number[]>();
+function stamps(t: Timeline): number[] {
+  let ms = stampsCache.get(t);
+  if (!ms) {
+    ms = [...t.race_control, ...t.pit_stops, ...t.weather]
+      .filter((x) => x.ts != null).map((x) => Date.parse(x.ts!)).sort((a, b) => a - b);
+    stampsCache.set(t, ms);
+  }
+  return ms;
+}
+
+/**
+ * The content time of the cursor: the frame's own time or the latest
+ * timestamped item at or before t, whichever is later. It changes only when
+ * what the moment lists changes, so the moment can be reused between ticks.
+ */
+export function knownTime(t: Timeline, index: number, at: number): number {
+  const frameMs = frameTimes(t)[clampIndex(t, index)];
+  const xs = stamps(t);
+  const k = lastAtOrBefore(xs, at);
+  return k >= 0 ? Math.max(frameMs, xs[k]) : frameMs;
+}
+
+export function buildMoment(t: Timeline, rawIndex: number, at?: number): Moment {
   const index = clampIndex(t, rawIndex);
   const frame = t.frames[index];
+  const cut = at ?? frameTimes(t)[index];
   const rows = [...frame.rows].sort(byPosition);
   const row = new Map(rows.map((r) => [r.driver_number, r]));
 
@@ -73,11 +130,15 @@ export function buildMoment(t: Timeline, rawIndex: number): Moment {
   for (const list of stints.values()) list.sort((a, b) => a.stint_number - b.stint_number);
 
   const known = <T extends { frame_index: number }>(xs: T[]) => xs.filter((x) => x.frame_index <= index);
+  const knownAt = <T extends { frame_index: number; ts: string | null }>(xs: T[]) =>
+    xs.filter((x) => (x.ts != null ? Date.parse(x.ts) <= cut : x.frame_index <= index));
 
   return {
     timeline: t,
     index,
     frame,
+    frameAt: frame.at,
+    knownAt: cut,
     isFinal: frame.kind === "FINAL",
     isStart: frame.kind === "START",
     lap: frame.kind === "START" ? 0 : frame.lap,
@@ -87,9 +148,9 @@ export function buildMoment(t: Timeline, rawIndex: number): Moment {
     driver: identities(t),
     battles: frame.active_battles,
     stints,
-    pits: known(t.pit_stops),
-    raceControl: known(t.race_control),
-    weather: known(t.weather),
+    pits: knownAt(t.pit_stops),
+    raceControl: knownAt(t.race_control),
+    weather: knownAt(t.weather),
     events: known(t.events),
   };
 }

@@ -12,7 +12,7 @@ import { useMemo } from "react";
 import { battleState, driverCode, fmtLapTime, fmtSigned, teamColour } from "../../command/format";
 import { battleKey, pairIntervalHistory, type Moment } from "../../command/moment";
 import type { Battle } from "../../command/types";
-import { Badge, DriverChip, EmptyState, Panel, Tick, TyreChip } from "./ui";
+import { AsOf, Badge, DriverChip, EmptyState, Panel, Tick, TyreChip } from "./ui";
 import { useWidth } from "./useWidth";
 
 function BattleCard({ b, moment, selected, onSelect }: {
@@ -107,7 +107,7 @@ export function BattlePanel({ moment, selected, onSelect }: {
   const active = battles.find((b) => battleKey(b) === selected) ?? null;
   return (
     <Panel id="cc-battles" title="Battles" className="cc-battles"
-      meta={<span>{battles.length} between neighbours · battle detector</span>}>
+      meta={<><AsOf frame={moment.frame} /><span>{battles.length} between neighbours · battle detector</span></>}>
       {battles.length === 0 ? (
         <EmptyState title="No battles at this moment"
           why="The battle detector reports no pair of neighbouring cars within its thresholds at this lap." />

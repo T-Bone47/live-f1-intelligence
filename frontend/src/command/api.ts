@@ -100,10 +100,17 @@ export function checkTimeline(body: unknown, sid: string): Timeline {
     throw new ApiError("unsupported",
       `Timeline belongs to ${t.session?.session_id ?? "an unknown session"}, not ${sid}.`, 200);
   }
+  let prev = -Infinity;
   t.frames.forEach((f, i) => {
     if (f.index !== i || !Array.isArray(f.rows)) {
       throw new ApiError("unsupported", `Timeline frame ${i} is malformed.`, 200);
     }
+    // the one cursor is race time: a frame it cannot place is refused, never guessed
+    const at = f.at == null ? Number.NaN : Date.parse(f.at);
+    if (!Number.isFinite(at) || at < prev) {
+      throw new ApiError("unsupported", `Timeline frame ${i} has no usable time.`, 200);
+    }
+    prev = at;
   });
   for (const key of ["drivers", "stints", "pit_stops", "race_control", "weather", "events", "limitations"] as const) {
     if (!Array.isArray(t[key])) throw new ApiError("unsupported", `Timeline has no ${key} list.`, 200);

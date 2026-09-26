@@ -97,6 +97,7 @@ export function SessionHeader({ moment }: { moment: Moment }) {
 const SHORTCUTS: [string, string][] = [
   ["Space / K", "Play or pause the replay"],
   ["← / →", "Previous / next lap"],
+  ["Shift + ← / →", "10 seconds of race time back / forward"],
   ["Home / End", "Start / end of the recording"],
   ["↑ / ↓", "Move between drivers in the timing tower"],
   ["Enter", "Focus the highlighted driver"],

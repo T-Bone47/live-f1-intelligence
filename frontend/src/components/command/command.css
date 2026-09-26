@@ -213,6 +213,8 @@
   text-transform: uppercase; color: var(--text-primary);
 }
 .cc-panel-meta { font-size: 11px; color: var(--text-muted-aa); min-width: 0; }
+.cc-asof { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-secondary); margin-right: 8px; white-space: nowrap; }
+.cc-asof::after { content: "·"; margin-left: 8px; color: var(--text-muted-aa); }
 .cc-panel-actions { margin-left: auto; display: flex; gap: var(--sp-2); }
 .cc-panel-body { min-width: 0; }
 

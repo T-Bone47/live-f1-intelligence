@@ -43,7 +43,7 @@ export function WeatherPanel({ moment }: { moment: Moment }) {
     <Panel id="cc-weather" title="Weather" className="cc-weather"
       meta={<span>{last ? `last sample ${fmtClockUtc(last.ts)}` : "no samples yet"}</span>}>
       {!has ? (
-        <EmptyState title="Weather unavailable" why="No weather sample has been recorded up to this lap." />
+        <EmptyState title="Weather unavailable" why="No weather sample has been recorded up to this moment." />
       ) : (
         <>
           <dl className="cc-wx-grid">

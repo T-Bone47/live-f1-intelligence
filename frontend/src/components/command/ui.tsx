@@ -5,8 +5,8 @@
  */
 
 import type { ReactNode } from "react";
-import { compoundInfo, driverCode, teamColour } from "../../command/format";
-import type { DriverIdentity } from "../../command/types";
+import { compoundInfo, driverCode, fmtAsOf, teamColour } from "../../command/format";
+import type { DriverIdentity, Frame } from "../../command/types";
 
 const ICONS = {
   play: <polygon points="6 3 20 12 6 21 6 3" />,
@@ -65,6 +65,11 @@ export function Panel({ id, title, meta, actions, children, className = "", busy
       <div className="cc-panel-body">{children}</div>
     </section>
   );
+}
+
+/** Which lap frame a frame-row panel shows while the cursor may sit between frames. */
+export function AsOf({ frame }: { frame: Pick<Frame, "kind" | "lap" | "at"> }) {
+  return <span className="cc-asof">{fmtAsOf(frame)}</span>;
 }
 
 /** Driver identity: team colour bar (from provider data) + code + number. Never colour alone. */

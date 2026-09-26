@@ -11,7 +11,7 @@ import { memo, useMemo, useState, type PointerEvent } from "react";
 import { driverCode, phaseLabel, phaseTone, teamColour } from "../../command/format";
 import { positionHistory, type Moment } from "../../command/moment";
 import type { Timeline } from "../../command/types";
-import { Panel } from "./ui";
+import { AsOf, Panel } from "./ui";
 import { useWidth } from "./useWidth";
 
 const M = { l: 34, r: 66, t: 10, b: 24 };
@@ -104,7 +104,7 @@ export function PositionChart({ moment, selected, onSelect, onSeek }: {
   const hoveredDriver = hover?.driver ?? null;
   return (
     <Panel id="cc-positions" title="Position evolution"
-      meta={<span>positions at each leader lap end · P1 top · a gap = not reported</span>}>
+      meta={<><AsOf frame={moment.frame} /><span>positions at each leader lap end · P1 top · a gap = not reported</span></>}>
       <div ref={wrap} className="cc-chart-wrap">
         <svg className="cc-pos-chart" width={width} height={H} role="img"
              aria-label={`Position by lap, laps 0 to ${cursorLap} of ${total}. Current leader ${driverCode(moment.driver.get(moment.rows[0]?.driver_number), moment.rows[0]?.driver_number ?? 0)}.`}>

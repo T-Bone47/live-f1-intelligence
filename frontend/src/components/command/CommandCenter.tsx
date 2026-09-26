@@ -8,8 +8,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchTimeline } from "../../command/api";
-import { buildMoment, indexForLapToken, lapTokenForIndex } from "../../command/moment";
-import { readUrl, usePlayback, useUi, writeUrl, type Density } from "../../command/state";
+import {
+  buildMoment, frameIndexAt, frameTimes, indexForLapToken, knownTime, lapTokenForIndex,
+} from "../../command/moment";
+import { NUDGE_MS, parseUrlTime, readUrl, usePlayback, useUi, writeUrl, type Density } from "../../command/state";
 import { dataOf, useResource } from "../../command/useResource";
 import { BattlePanel } from "./BattlePanel";
 import { FocusPanel } from "./FocusPanel";
@@ -57,38 +59,52 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
   const [help, setHelp] = useState(false);
   const [tab, setTab] = useState<Tab>("timing");
 
-  // on arrival: cursor from the URL lap token, else the end of the recording
+  // on arrival: cursor from a valid URL time, else the URL lap token, else the end
   useEffect(() => {
     if (!timeline) return;
-    const last = timeline.frames.length - 1;
-    dispatch({ type: "load", last, index: indexForLapToken(timeline, url.lap) ?? last });
-  }, [timeline, url.lap, dispatch]);
+    const frames = frameTimes(timeline);
+    const last = frames.length - 1;
+    const t = parseUrlTime(url.t, frames) ?? frames[indexForLapToken(timeline, url.lap) ?? last];
+    dispatch({ type: "load", frames, t });
+  }, [timeline, url.t, url.lap, dispatch]);
 
-  usePlayback(ui.playing, ui.speed, dispatch);
+  usePlayback(ui.playing, dispatch);
 
-  const moment = useMemo(() => (timeline ? buildMoment(timeline, ui.index) : null), [timeline, ui.index]);
+  // the frame and the content time change far less often than t: the moment
+  // object is reused between playback ticks that change nothing it lists
+  const ready = !!timeline && ui.frames.length > 0;
+  const index = ready ? frameIndexAt(ui.frames, ui.t) : 0;
+  const knownAt = ready ? knownTime(timeline, index, ui.t) : 0;
+  const moment = useMemo(() => (ready ? buildMoment(timeline, index, knownAt) : null),
+    [ready, timeline, index, knownAt]);
 
-  // URL mirrors the moment (replaceState: scrubbing does not flood history)
+  // URL mirrors the cursor (replaceState: scrubbing does not flood history);
+  // ?t= only while the cursor sits between frames, not rewritten during playback
   useEffect(() => {
-    if (!timeline || typeof history === "undefined") return;
-    const next = writeUrl({ session: sid, lap: lapTokenForIndex(timeline, ui.index), driver: ui.driver });
+    if (!ready || typeof history === "undefined" || ui.playing) return;
+    const between = ui.t !== ui.frames[index];
+    const next = writeUrl({ session: sid, lap: lapTokenForIndex(timeline, index),
+                            t: between ? new Date(ui.t).toISOString() : null, driver: ui.driver });
     if (next !== location.search) history.replaceState(null, "", `${location.pathname}${next}`);
-  }, [timeline, sid, ui.index, ui.driver]);
+  }, [ready, timeline, sid, index, ui.t, ui.frames, ui.playing, ui.driver]);
 
-  const seek = useCallback((i: number) => dispatch({ type: "seek", index: i }), [dispatch]);
+  const seek = useCallback((i: number) => dispatch({ type: "seekFrame", index: i }), [dispatch]);
+  const seekTime = useCallback((ms: number) => dispatch({ type: "seekTime", t: ms }), [dispatch]);
   const selectDriver = useCallback((n: number | null) => dispatch({ type: "driver", driver: n }), [dispatch]);
   const selectBattle = useCallback((key: string | null) => dispatch({ type: "battle", key }), [dispatch]);
-  const selectEvent = useCallback((key: string | null, index?: number) => dispatch({ type: "event", key, index }), [dispatch]);
+  const selectEvent = useCallback((key: string | null, at?: number) => dispatch({ type: "event", key, t: at }), [dispatch]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || isTyping(e.target) || e.altKey || e.ctrlKey || e.metaKey) return;
       const onControl = (e.target as HTMLElement | null)?.closest?.("button, a, [role='row']");
       if ((e.key === " " && !onControl) || e.key === "k" || e.key === "K") { e.preventDefault(); dispatch({ type: "toggle" }); }
+      else if (e.key === "ArrowLeft" && e.shiftKey) { e.preventDefault(); dispatch({ type: "nudge", ms: -NUDGE_MS }); }
+      else if (e.key === "ArrowRight" && e.shiftKey) { e.preventDefault(); dispatch({ type: "nudge", ms: NUDGE_MS }); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); dispatch({ type: "step", by: -1 }); }
       else if (e.key === "ArrowRight") { e.preventDefault(); dispatch({ type: "step", by: 1 }); }
-      else if (e.key === "Home" && !onControl) { e.preventDefault(); dispatch({ type: "seek", index: 0 }); }
-      else if (e.key === "End" && !onControl) { e.preventDefault(); dispatch({ type: "seek", index: Number.MAX_SAFE_INTEGER }); }
+      else if (e.key === "Home" && !onControl) { e.preventDefault(); dispatch({ type: "seekFrame", index: 0 }); }
+      else if (e.key === "End" && !onControl) { e.preventDefault(); dispatch({ type: "seekFrame", index: Number.MAX_SAFE_INTEGER }); }
       else if (e.key === "Escape") { if (help) setHelp(false); else dispatch({ type: "clear" }); }
       else if (e.key === "?") { e.preventDefault(); setHelp((v) => !v); }
     };
@@ -99,7 +115,7 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
   const live = timeline?.source.kind === "LIVE_HUB";
   const mode: Mode = !timeline ? { kind: "none" }
     : live ? { kind: "live", connected: res.status === "success" }
-      : { kind: "historical", replaying: ui.playing || ui.index < ui.last };
+      : { kind: "historical", replaying: ui.playing || ui.t < (ui.frames[ui.frames.length - 1] ?? 0) };
   const battlePair = useMemo((): [number, number] | null => {
     if (!ui.battle) return null;
     const [a, b] = ui.battle.split("-").map(Number);
@@ -163,9 +179,9 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
           </div>
         </div>
       </main>
-      <ReplayBar moment={moment} playing={ui.playing} speed={ui.speed} live={live}
-                 onSeek={seek} onStep={(by) => dispatch({ type: "step", by })}
-                 onToggle={() => dispatch({ type: "toggle" })} onSpeed={(s) => dispatch({ type: "speed", speed: s })} />
+      <ReplayBar moment={moment} t={ui.t} playing={ui.playing} rate={ui.rate} live={live}
+                 onSeekTime={seekTime} onSeekFrame={seek} onStep={(by) => dispatch({ type: "step", by })}
+                 onToggle={() => dispatch({ type: "toggle" })} onRate={(r) => dispatch({ type: "rate", rate: r })} />
       <ShortcutHelp open={help} onClose={() => setHelp(false)} />
     </Page>
   );

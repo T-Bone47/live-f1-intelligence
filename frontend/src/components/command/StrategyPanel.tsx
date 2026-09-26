@@ -9,7 +9,7 @@
 import { useMemo, useState } from "react";
 import { compoundInfo, driverCode, fmtInt } from "../../command/format";
 import type { Moment, VisibleStint } from "../../command/moment";
-import { Badge, DriverChip, EmptyState, Panel, TyreChip } from "./ui";
+import { AsOf, Badge, DriverChip, EmptyState, Panel, TyreChip } from "./ui";
 import { useWidth } from "./useWidth";
 
 const LABEL_W = 70;
@@ -38,7 +38,7 @@ export function StrategyPanel({ moment, selected, onSelectDriver, onSeek }: {
 
   return (
     <Panel id="cc-strategy" title="Tyres & strategy" className="cc-strategy"
-      meta={<span>observed stints and stops · no prediction</span>}
+      meta={<><AsOf frame={moment.frame} /><span>observed stints and stops · no prediction</span></>}
       actions={
         <div className="cc-seg" role="group" aria-label="Strategy view">
           <button type="button" className="cc-seg-btn" aria-pressed={view === "stints"} onClick={() => setView("stints")}>Stints</button>
@@ -101,7 +101,7 @@ export function StrategyPanel({ moment, selected, onSelectDriver, onSeek }: {
       )}
       {view === "pits" && (
         pits.length === 0 ? (
-          <EmptyState title="No pit stops yet" why="No pit-stop record exists up to this lap." />
+          <EmptyState title="No pit stops yet" why="No pit-stop record exists up to this moment." />
         ) : (
           <div className="cc-scroll-y">
             <table className="cc-table">

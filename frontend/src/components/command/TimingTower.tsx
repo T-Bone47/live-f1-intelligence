@@ -12,7 +12,7 @@ import { fmtGap, fmtInterval, fmtLapTime, fmtInt } from "../../command/format";
 import type { Moment } from "../../command/moment";
 import type { Density } from "../../command/state";
 import type { DriverIdentity, TimingRow } from "../../command/types";
-import { Badge, DriverChip, Icon, Panel, Tick, TyreChip } from "./ui";
+import { AsOf, Badge, DriverChip, Icon, Panel, Tick, TyreChip } from "./ui";
 
 const SECTOR_TEXT: Record<string, string> = {
   PURPLE: "purple (session best at the time)", GREEN: "green (personal best)", YELLOW: "yellow (slower than personal best)",
@@ -119,7 +119,7 @@ export function TimingTower({ moment, selected, battlePair, density, onSelect, o
   const focusable = selected ?? moment.rows[0]?.driver_number;
   return (
     <Panel id="cc-timing" title="Timing" className="cc-timing"
-      meta={<span>{moment.rows.length} cars · order = backend position</span>}
+      meta={<><AsOf frame={moment.frame} /><span>{moment.rows.length} cars · order = backend position</span></>}
       actions={
         <div className="cc-seg" role="group" aria-label="Row density">
           {(["standard", "compact"] as const).map((d) => (

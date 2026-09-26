@@ -10,7 +10,7 @@
 
 import { useMemo, useState } from "react";
 import { RC_FILTERS, driverCode, fmtClockUtc, fmtLapTime, phaseLabel, rcKind, type RcKind } from "../../command/format";
-import type { Moment } from "../../command/moment";
+import { frameTimes, type Moment } from "../../command/moment";
 import type { RaceControlMessage, TimelineEvent } from "../../command/types";
 import { Badge, EmptyState, Icon, Panel, type IconName } from "./ui";
 
@@ -32,7 +32,7 @@ function derivedText(e: TimelineEvent, moment: Moment): string {
 
 export function RaceControlPanel({ moment, selectedKey, onSelect }: {
   moment: Moment; selectedKey: string | null;
-  onSelect: (key: string | null, frameIndex?: number) => void;
+  onSelect: (key: string | null, at?: number) => void;
 }) {
   const [filter, setFilter] = useState("key");
   const [source, setSource] = useState<"official" | "derived">("official");
@@ -44,7 +44,7 @@ export function RaceControlPanel({ moment, selectedKey, onSelect }: {
 
   return (
     <Panel id="cc-racecontrol" title="Race control" className="cc-rc"
-      meta={<span>{moment.raceControl.length} messages up to this lap</span>}
+      meta={<span>{moment.raceControl.length} messages up to this moment</span>}
       actions={
         <div className="cc-seg" role="group" aria-label="Source">
           <button type="button" className="cc-seg-btn" aria-pressed={source === "official"} onClick={() => setSource("official")}>Official</button>
@@ -61,7 +61,7 @@ export function RaceControlPanel({ moment, selectedKey, onSelect }: {
             ))}
           </div>
           {messages.length === 0 ? (
-            <EmptyState title="No messages" why="Race control sent no message of this kind up to this lap." />
+            <EmptyState title="No messages" why="Race control sent no message of this kind up to this moment." />
           ) : (
             <ol className="cc-rc-list">
               {messages.map((m: RaceControlMessage) => {
@@ -69,10 +69,13 @@ export function RaceControlPanel({ moment, selectedKey, onSelect }: {
                 const key = m.rcm_key ?? `${m.ts}-${m.message}`;
                 const on = key === selectedKey;
                 const fresh = m.frame_index === moment.index;
+                // the cursor moves to the message's own time (its first frame when untimed)
+                const messageTime = (x: RaceControlMessage) =>
+                  (x.ts != null ? Date.parse(x.ts) : frameTimes(moment.timeline)[x.frame_index]);
                 return (
                   <li key={key}>
                     <button type="button" className={`cc-rc-item cc-rc-${kind}${on ? " is-selected" : ""}${fresh ? " is-fresh" : ""}`}
-                            aria-pressed={on} onClick={() => onSelect(on ? null : key, on ? undefined : m.frame_index)}>
+                            aria-pressed={on} onClick={() => onSelect(on ? null : key, on ? undefined : messageTime(m))}>
                       <span className="cc-rc-icon"><Icon name={KIND_ICON[kind]} size={13} /></span>
                       <span className="cc-rc-meta">
                         <span className="cc-rc-lap">L{m.lap_number ?? "—"}</span>
@@ -105,7 +108,7 @@ export function RaceControlPanel({ moment, selectedKey, onSelect }: {
             <ol className="cc-rc-list">
               {derived.map((e) => (
                 <li key={e.event_key}>
-                  <button type="button" className="cc-rc-item cc-rc-info" onClick={() => onSelect(e.event_key, e.frame_index)}>
+                  <button type="button" className="cc-rc-item cc-rc-info" onClick={() => onSelect(e.event_key, frameTimes(moment.timeline)[e.frame_index])}>
                     <span className="cc-rc-icon"><Icon name={e.event_type === "PIT_STOP" ? "wrench" : "gauge"} size={13} /></span>
                     <span className="cc-rc-meta"><span className="cc-rc-time">{fmtClockUtc(e.timestamp)}</span></span>
                     <span className="cc-rc-msg">{derivedText(e, moment)}</span>

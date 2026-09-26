@@ -8,9 +8,11 @@ import { describe, expect, it } from "vitest";
 import { ApiError, checkTimeline } from "../../src/command/api";
 import { compoundInfo, fmtGap, fmtInterval, fmtLapTime, fmtSigned, fmtTemp, fmtWindKmh } from "../../src/command/format";
 import {
-  buildMoment, indexForLapToken, lapTokenForIndex, pairIntervalHistory, positionHistory,
+  buildMoment, frameIndexAt, frameTimes, indexForLapToken, knownTime, lapTokenForIndex,
+  pairIntervalHistory, positionHistory,
 } from "../../src/command/moment";
-import { initialUi, uiReducer } from "../../src/command/state";
+import { fmtAsOf, fmtClockTenths } from "../../src/command/format";
+import { initialUi, parseUrlTime, readUrl, TICK_CAP_MS, uiReducer, writeUrl } from "../../src/command/state";
 import { frameIndex, golden, SID } from "./fixture";
 
 describe("one session moment", () => {
@@ -112,6 +114,8 @@ describe("the timeline contract fails closed", () => {
     ["another session", (t: ReturnType<typeof golden>) => { t.session!.session_id = "openf1:1"; }],
     ["a frame out of order", (t: ReturnType<typeof golden>) => { t.frames[3].index = 7; }],
     ["no race-control list", (t: ReturnType<typeof golden>) => { (t as unknown as Record<string, unknown>).race_control = null; }],
+    ["a frame without a time", (t: ReturnType<typeof golden>) => { t.frames[5].at = null; }],
+    ["a frame time that goes backwards", (t: ReturnType<typeof golden>) => { t.frames[5].at = t.frames[2].at; }],
   ])("refuses %s", (_name, mutate) => {
     const t = golden();
     mutate(t);
@@ -119,21 +123,120 @@ describe("the timeline contract fails closed", () => {
   });
 });
 
-describe("replay reducer", () => {
-  const base = initialUi({ last: 73, index: 0 });
-  it("ticks forward and stops at the end", () => {
-    let s = uiReducer({ ...base, index: 72, playing: true }, { type: "tick" });
-    expect(s.index).toBe(73);
-    expect(s.playing).toBe(false);
-    s = uiReducer(s, { type: "tick" });
-    expect(s.index).toBe(73);
+describe("race-time cursor (Phase 12B)", () => {
+  const t = golden();
+  const frames = frameTimes(t);
+  const last = frames.length - 1;
+  const base = initialUi({ frames, t: frames[0], rate: 16 });
+
+  it("frame times are the frames' own at, in order", () => {
+    expect(frames).toHaveLength(t.frames.length);
+    frames.forEach((ms, i) => expect(ms).toBe(Date.parse(t.frames[i].at!)));
   });
-  it("play from the end restarts at the beginning; seek clamps and pauses", () => {
-    expect(uiReducer({ ...base, index: 73 }, { type: "play" })).toMatchObject({ index: 0, playing: true });
-    expect(uiReducer({ ...base, playing: true }, { type: "seek", index: 500 })).toMatchObject({ index: 73, playing: false });
-    expect(uiReducer(base, { type: "step", by: -1 }).index).toBe(0);
+
+  it("frameIndexAt picks the last frame at or before t", () => {
+    expect(frameIndexAt(frames, frames[5])).toBe(5);
+    expect(frameIndexAt(frames, frames[5] + 1)).toBe(5);
+    expect(frameIndexAt(frames, frames[6] - 1)).toBe(5);
+    expect(frameIndexAt(frames, frames[0] - 1000)).toBe(0);
+    expect(frameIndexAt(frames, frames[last] + 5000)).toBe(last);
   });
-  it("selecting an event moves the cursor to its frame", () => {
-    expect(uiReducer(base, { type: "event", key: "k", index: 12 })).toMatchObject({ index: 12, rcKey: "k" });
+
+  it("tick advances race time at the rate and stops at the end", () => {
+    let s = uiReducer({ ...base, t: frames[10], playing: true }, { type: "tick", wallMs: 100 });
+    expect(s.t).toBe(frames[10] + 1600);
+    s = uiReducer({ ...base, t: frames[last] - 100, rate: 4, playing: true }, { type: "tick", wallMs: 100 });
+    expect(s).toMatchObject({ t: frames[last], playing: false });
+    expect(uiReducer(s, { type: "tick", wallMs: 100 }).t).toBe(frames[last]);
+  });
+
+  it("a hidden-tab tick is capped", () => {
+    const s = uiReducer({ ...base, t: frames[10], playing: true }, { type: "tick", wallMs: 5000 });
+    expect(TICK_CAP_MS).toBe(250);
+    expect(s.t).toBe(frames[10] + 4000);
+  });
+
+  it("a tick while paused changes nothing", () => {
+    const s = { ...base, t: frames[10] };
+    expect(uiReducer(s, { type: "tick", wallMs: 100 })).toBe(s);
+  });
+
+  it("step back from mid-lap goes to the lap's own frame first", () => {
+    const mid = frames[20] + 30_000;
+    expect(mid).toBeLessThan(frames[21]);
+    let s = uiReducer({ ...base, t: mid, playing: true }, { type: "step", by: -1 });
+    expect(s).toMatchObject({ t: frames[20], playing: false });
+    s = uiReducer(s, { type: "step", by: -1 });
+    expect(s.t).toBe(frames[19]);
+    expect(uiReducer({ ...base, t: mid }, { type: "step", by: 1 }).t).toBe(frames[21]);
+    expect(uiReducer({ ...base, t: frames[0] }, { type: "step", by: -1 }).t).toBe(frames[0]);
+  });
+
+  it("play from the end restarts; seeks clamp and pause", () => {
+    expect(uiReducer({ ...base, t: frames[last] }, { type: "play" })).toMatchObject({ t: frames[0], playing: true });
+    expect(uiReducer({ ...base, playing: true }, { type: "seekTime", t: 1e15 })).toMatchObject({ t: frames[last], playing: false });
+    expect(uiReducer(base, { type: "seekTime", t: 0 }).t).toBe(frames[0]);
+    expect(uiReducer(base, { type: "seekFrame", index: 12 }).t).toBe(frames[12]);
+    expect(uiReducer(base, { type: "seekFrame", index: 999 }).t).toBe(frames[last]);
+  });
+
+  it("nudge moves race time by milliseconds within the bounds", () => {
+    expect(uiReducer({ ...base, t: frames[20] }, { type: "nudge", ms: 10_000 }).t).toBe(frames[20] + 10_000);
+    expect(uiReducer({ ...base, t: frames[0] }, { type: "nudge", ms: -10_000 }).t).toBe(frames[0]);
+  });
+
+  it("selecting an event with a time moves the cursor there", () => {
+    expect(uiReducer(base, { type: "event", key: "k", t: frames[12] + 5 })).toMatchObject({ t: frames[12] + 5, rcKey: "k" });
+    expect(uiReducer(base, { type: "event", key: "k" }).t).toBe(base.t);
+  });
+
+  it("lists include items timestamped at or before t between frames", () => {
+    const m = t.race_control.find((x) => x.frame_index > 1 && Date.parse(x.ts!) > frames[x.frame_index - 1])!;
+    const at = Date.parse(m.ts!);
+    const i = frameIndexAt(frames, at);
+    expect(i).toBe(m.frame_index - 1);
+    expect(buildMoment(t, i, at).raceControl).toContain(m);
+    expect(buildMoment(t, i).raceControl).not.toContain(m);
+    expect(buildMoment(t, i, at).raceControl.length)
+      .toBe(t.race_control.filter((x) => Date.parse(x.ts!) <= at).length);
+  });
+
+  it("events stay on the engine's frame_index (their own timestamp can precede it)", () => {
+    const e = t.events.find((x) => x.frame_index > 0 && Date.parse(x.timestamp) <= frames[x.frame_index - 1])!;
+    expect(e).toBeDefined();
+    const i = e.frame_index - 1;
+    expect(buildMoment(t, i, frames[i + 1] - 1).events).not.toContain(e);
+  });
+
+  it("knownTime changes only when the known content does", () => {
+    const i = 30;
+    const a = knownTime(t, i, frames[i] + 1);
+    expect(knownTime(t, i, frames[i] + 2)).toBe(a);
+    const stamps = [...t.race_control, ...t.pit_stops, ...t.weather].map((x) => Date.parse(x.ts!));
+    const next = Math.min(...stamps.filter((ms) => ms > frames[i]));
+    expect(knownTime(t, i, next)).toBe(next);
+    expect(buildMoment(t, i, knownTime(t, i, next + 1)).raceControl)
+      .toEqual(buildMoment(t, i, next + 1).raceControl);
+  });
+
+  it("formats the cursor clock to tenths and the frame a panel shows", () => {
+    expect(fmtClockTenths(Date.parse("2026-08-23T13:41:02.567Z"))).toBe("13:41:02.5 UTC");
+    expect(fmtClockTenths(Number.NaN)).toBe("—");
+    expect(fmtAsOf(t.frames[frameIndexAtLap(t, 40)])).toMatch(/^as of LAP 40 · \d\d:\d\d:\d\d$/);
+  });
+
+  it("the URL carries t only between frames; a bad or out-of-range t is ignored", () => {
+    const iso = new Date(frames[20] + 1500).toISOString();
+    expect(writeUrl({ session: SID, lap: "20", t: iso, driver: null })).toContain("t=");
+    expect(readUrl(`?session=x&t=${encodeURIComponent(iso)}`).t).toBe(iso);
+    expect(parseUrlTime(iso, frames)).toBe(frames[20] + 1500);
+    expect(parseUrlTime("garbage", frames)).toBeNull();
+    expect(parseUrlTime("2020-01-01T00:00:00Z", frames)).toBeNull();
+    expect(parseUrlTime("2026-08-23T13:41:02", frames)).toBeNull();     // no offset
+    expect(parseUrlTime(null, frames)).toBeNull();
   });
 });
+
+function frameIndexAtLap(t: ReturnType<typeof golden>, lap: number) {
+  return t.frames.findIndex((f) => f.kind === "LAP" && f.lap === lap);
+}

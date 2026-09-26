@@ -4,7 +4,7 @@
  * "Unavailable"), never null / undefined / NaN / Infinity, and never 0.
  */
 
-import type { BattleState, DriverIdentity, RaceControlMessage, TimingRow } from "./types";
+import type { BattleState, DriverIdentity, Frame, RaceControlMessage, TimingRow } from "./types";
 
 export const DASH = "—";
 
@@ -65,6 +65,20 @@ export function fmtClockUtc(iso: string | null | undefined): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return DASH;
   return `${d.toISOString().slice(11, 19)} UTC`;
+}
+
+/** The cursor clock to tenths of a second (truncated, never rounded up). */
+export function fmtClockTenths(ms: number | null | undefined): string {
+  if (ms == null || !Number.isFinite(ms)) return DASH;
+  return `${new Date(ms).toISOString().slice(11, 21)} UTC`;
+}
+
+/** Which frame a frame-row panel shows: "as of LAP 40 · 14:26:09". */
+export function fmtAsOf(frame: Pick<Frame, "kind" | "lap" | "at">): string {
+  const label = frame.kind === "LAP" ? `LAP ${frame.lap}` : frame.kind;
+  const d = frame.at ? new Date(frame.at) : null;
+  const clock = d && !Number.isNaN(d.getTime()) ? d.toISOString().slice(11, 19) : DASH;
+  return `as of ${label} · ${clock}`;
 }
 
 export function fmtDate(iso: string | null | undefined): string {
