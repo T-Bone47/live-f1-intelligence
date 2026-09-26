@@ -263,6 +263,57 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
         return Response(content=body, media_type="application/json",
                         headers={"X-Timeline-Contract": "session_timeline_v1"})
 
+    # ---------------------------------------------------- Phase 12A spatial --
+
+    @app.get("/api/v1/sessions/{session_id}/track")
+    async def get_session_track(session_id: str,
+                                _: None = Depends(rate_limit_dependency)):
+        """track_reference_v1: the session's own reference line, the official
+        timing lines measured on it, and the validation that gates every
+        spatial claim. Built from the recording; fail closed."""
+        validate_session_id(session_id)
+        store = _spatial_store(get_settings().recordings_dir)
+        body = await _spatial_call(store.get_track_bytes, session_id)
+        if body is None:
+            raise HTTPException(404, _no_spatial_recording(session_id))
+        return _spatial_response(body, "track_reference_v1")
+
+    @app.get("/api/v1/sessions/{session_id}/spatial")
+    async def get_spatial_state(session_id: str, at: str = Query(...),
+                                _: None = Depends(rate_limit_dependency)):
+        """spatial_state_v1: every car at `at` (ISO-8601 with a UTC offset)."""
+        from app.analysis.timeline import to_canonical_json
+        from app.spatial.builder import state_doc
+
+        validate_session_id(session_id)
+        when = _utc_param("at", at)
+        index = await _spatial_index(session_id)
+        doc = await _spatial_call(state_doc, index, when)
+        return _spatial_response(to_canonical_json(doc), "spatial_state_v1")
+
+    @app.get("/api/v1/sessions/{session_id}/spatial/{driver_number}")
+    async def get_spatial_trace(session_id: str, driver_number: int,
+                                from_: str = Query(..., alias="from"), to: str = Query(...),
+                                _: None = Depends(rate_limit_dependency)):
+        """spatial_trace_v1: one driver's classified samples in [from, to]
+        (at most 600 s - a resource guard, not an analytical limit)."""
+        from app.analysis.timeline import to_canonical_json
+        from app.spatial.builder import trace_doc
+
+        validate_session_id(session_id)
+        if not 1 <= driver_number <= 99:
+            raise HTTPException(422, "driver_number must be 1-99")
+        t0, t1 = _utc_param("from", from_), _utc_param("to", to)
+        if t0 >= t1:
+            raise HTTPException(422, "from must be before to")
+        if (t1 - t0).total_seconds() > SPATIAL_TRACE_MAX_S:
+            raise HTTPException(422, f"window longer than {SPATIAL_TRACE_MAX_S:.0f} s")
+        index = await _spatial_index(session_id)
+        if driver_number not in index.tracks:
+            raise HTTPException(404, f"driver {driver_number} has no spatial data in {session_id}")
+        doc = await _spatial_call(trace_doc, index, driver_number, t0, t1)
+        return _spatial_response(to_canonical_json(doc), "spatial_trace_v1")
+
     @app.get("/api/v1/sessions/{session_id}/snapshot")
     async def get_snapshot(session_id: str,
                            _: None = Depends(rate_limit_dependency)):
@@ -821,6 +872,67 @@ def _get_settings():
 
 
 _timeline_stores: dict[str, Any] = {}
+_spatial_stores: dict[str, Any] = {}
+SPATIAL_TRACE_MAX_S = 600.0
+
+
+def _spatial_store(recordings_dir):   # Path -> SpatialStore
+    """One spatial store (and in-memory cache) per recordings directory."""
+    from app.storage.spatial_store import SpatialStore
+
+    key = str(recordings_dir)
+    if key not in _spatial_stores:
+        _spatial_stores[key] = SpatialStore(recordings_dir)
+    return _spatial_stores[key]
+
+
+def _no_spatial_recording(session_id: str) -> str:
+    return (f"no recording for {session_id}: spatial data unavailable "
+            "(built from recordings only)")
+
+
+async def _spatial_call(fn, *args):
+    """Run spatial work off the event loop; contract or identity failures
+    withhold the output (500, fail closed)."""
+    from app.spatial.contract import SpatialContractError
+    from app.spatial.source import SpatialIdentityError
+
+    try:
+        return await asyncio.to_thread(fn, *args)
+    except (SpatialContractError, SpatialIdentityError) as exc:
+        raise HTTPException(500, f"spatial output withheld (fail closed): {exc}") from exc
+
+
+async def _spatial_index(session_id: str):
+    """The session's validated spatial index: 404 without a recording, 409
+    when its geometry did not pass the MAP_SECTOR gate."""
+    store = _spatial_store(get_settings().recordings_dir)
+    doc = await _spatial_call(store.get_track, session_id)
+    if doc is None:
+        raise HTTPException(404, _no_spatial_recording(session_id))
+    index = await _spatial_call(store.get_index, session_id)
+    if index is None:
+        raise HTTPException(409, {"message": "spatial geometry not validated for this session",
+                                  "status": doc["status"],
+                                  "reasons": doc["validation"]["reasons"]})
+    return index
+
+
+def _utc_param(name: str, value: str) -> datetime:
+    try:
+        when = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(422, f"{name} is not an ISO-8601 time") from exc
+    if when.tzinfo is None:
+        raise HTTPException(422, f"{name} must carry a UTC offset")
+    return when.astimezone(timezone.utc)  # noqa: UP017 - matches this module's imports
+
+
+def _spatial_response(body: bytes, contract: str):
+    from fastapi.responses import Response
+
+    return Response(content=body, media_type="application/json",
+                    headers={"X-Spatial-Contract": contract})
 
 
 def _timeline_store(recordings_dir):   # Path -> TimelineStore
