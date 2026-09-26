@@ -6,7 +6,7 @@
 
 import { memo } from "react";
 import type { LineName, TrackReference } from "../../spatial/types";
-import { headingDeg, pathData, type Fit } from "./geometry";
+import { headingDeg, LINE_TAG_DX, LINE_TAG_DY, pathData, type Fit } from "./geometry";
 
 const px = (fit: Fit, pts: number[][]) => pts.map(([x, y]) => fit.toPx(x, y));
 
@@ -52,7 +52,7 @@ export const LineLayer = memo(function LineLayer({ track, fit, active, onLine }:
              onClick={toggle} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}>
             <line className="sm-line-hit" x1={-12} x2={12} y1={0} y2={0} transform={place} />
             <line className="sm-line-tick" x1={-9} x2={9} y1={0} y2={0} transform={place} />
-            <text className="sm-line-tag" x={(at[0] + 12).toFixed(1)} y={(at[1] - 10).toFixed(1)}>{l.line}</text>
+            <text className="sm-line-tag" x={(at[0] + LINE_TAG_DX).toFixed(1)} y={(at[1] + LINE_TAG_DY).toFixed(1)}>{l.line}</text>
           </g>
         );
       })}

@@ -14,7 +14,7 @@ import type { LineName } from "../../spatial/types";
 import type { SpatialView } from "../../spatial/useSpatial";
 import { ErrorState, Panel } from "../command/ui";
 import { useWidth } from "../command/useWidth";
-import { mapFit, placeLabels } from "./geometry";
+import { lineTagBox, mapFit, placeLabels } from "./geometry";
 import { MapInfo } from "./MapInfo";
 import { CircuitLayer, LineLayer } from "./MapLayers";
 import { MapTable, NotOnMap, Tooltip } from "./MapParts";
@@ -78,13 +78,15 @@ export function TrackMap({ view, moment, selected, battle, playing, rate, onSele
       : m.d.driver_number === hover ? 3 : tagFor(m.d) ? 4 : 9);
     const wanted = base.filter((m) => rank(m) < 9).sort((a, b) => rank(a) - rank(b));
     const text = (m: MarkerModel) => `${m.code}${tagFor(m.d) ? ` ${tagFor(m.d)}` : ""}`;
+    const tags = (drawable?.timing_lines ?? []).filter((l) => l.x != null && l.y != null)
+      .map((l) => lineTagBox(fit.toPx(l.x!, l.y!), l.line));
     const spots = placeLabels(wanted.map((m) => ({ id: m.d.driver_number, x: m.x, y: m.y, w: text(m).length * 6.6 + 4 })),
-                              fit.width, fit.height);
+                              fit.width, fit.height, tags);
     return base.map((m) => {
       const s = spots.get(m.d.driver_number);
       return s ? { ...m, label: { dx: s.x - m.x, dy: s.y - m.y, anchor: s.anchor } } : m;
     }).sort((a, b) => Number(a.selected || a.battle) - Number(b.selected || b.battle));
-  }, [fit, order, moment.rows, moment.driver, selected, battle, hover, focusN]);
+  }, [fit, drawable, order, moment.rows, moment.driver, selected, battle, hover, focusN]);
 
   const register = useCallback((n: number, el: SVGGElement | null) => {
     if (el) refs.current.set(n, el); else refs.current.delete(n);

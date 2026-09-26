@@ -63,6 +63,14 @@ describe("placeLabels", () => {
     }
   });
 
+  it("avoids reserved boxes such as the timing-line tags (browser QA finding)", () => {
+    const reserved = [{ x0: 108, y0: 80, x1: 160, y1: 96 }];      // a tag right of the marker, above it
+    const p = placeLabels([{ id: 1, x: 100, y: 100, w: 30 }], 400, 300, reserved).get(1)!;
+    const x0 = p.anchor === "start" ? p.x : p.x - 30;
+    const hit = x0 < 160 && 108 < x0 + 30 && p.y - 10 < 96 && 80 < p.y + 2;
+    expect(hit).toBe(false);
+  });
+
   it("keeps labels inside the frame", () => {
     const out = placeLabels([{ id: 1, x: 395, y: 4, w: 30 }], 400, 300);
     const p = out.get(1)!;

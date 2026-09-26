@@ -60,6 +60,15 @@ export function pathData(px: [number, number][], close = false): string {
 }
 
 const LABEL_H = 12;
+
+export interface Box { x0: number; y0: number; x1: number; y1: number }
+
+/** Where a timing-line tag is drawn (baseline 10 px above, 12 px right of the line point) and its box. */
+export const LINE_TAG_DX = 12, LINE_TAG_DY = -10;
+export function lineTagBox(at: [number, number], text: string): Box {
+  const x0 = at[0] + LINE_TAG_DX, base = at[1] + LINE_TAG_DY;
+  return { x0, y0: base - LABEL_H + 2, x1: x0 + text.length * 6.4 + 2, y1: base + 2 };
+}
 const OFFSETS: { dx: number; dy: number; anchor: "start" | "end" }[] = [
   { dx: 9, dy: -7, anchor: "start" }, { dx: -9, dy: -7, anchor: "end" },
   { dx: 9, dy: 15, anchor: "start" }, { dx: -9, dy: 15, anchor: "end" },
@@ -68,11 +77,12 @@ const OFFSETS: { dx: number; dy: number; anchor: "start" | "end" }[] = [
 /**
  * Greedy label placement: each label takes the first of four offsets around
  * its marker that stays inside the frame and overlaps no label placed before
- * it (callers pass the most important labels first). `y` is the baseline.
+ * it or any reserved box, such as a timing-line tag (callers pass the most
+ * important labels first). `y` is the baseline.
  */
-export function placeLabels(anchors: { id: number; x: number; y: number; w: number }[], w: number, h: number):
-  Map<number, { x: number; y: number; anchor: "start" | "end" }> {
-  const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
+export function placeLabels(anchors: { id: number; x: number; y: number; w: number }[], w: number, h: number,
+                            reserved: Box[] = []): Map<number, { x: number; y: number; anchor: "start" | "end" }> {
+  const placed: Box[] = [...reserved];
   const out = new Map<number, { x: number; y: number; anchor: "start" | "end" }>();
   for (const a of anchors) {
     const boxes = OFFSETS.map((o) => {
