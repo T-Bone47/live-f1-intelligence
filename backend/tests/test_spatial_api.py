@@ -121,6 +121,56 @@ def test_no_recording_is_404_for_all_three_routes(client, cited):
         assert r.status_code == 404 and "no recording" in r.json()["detail"]
 
 
+def test_window_states_equal_the_state_at_each_time(client, cited):
+    """Phase 12B: one request carries the states a replay needs; each equals
+    the state route at the same time (no second state engine)."""
+    c, _rec = client
+    r = c.get(f"/api/v1/sessions/{SID}/spatial/window",
+              params={"from": _iso(300.0), "to": _iso(305.0), "step": 0.5})
+    assert r.status_code == 200 and r.headers["X-Spatial-Contract"] == "spatial_window_v1"
+    doc = r.json()
+    assert doc["contract_version"] == "spatial_window_v1" and doc["step_s"] == 0.5
+    assert [s["at"] for s in doc["states"]] == [_iso(300.0 + 0.5 * k)
+                                                for k in range(11)]
+    for state in doc["states"]:
+        one = c.get(f"/api/v1/sessions/{SID}/spatial", params={"at": state["at"]}).json()
+        assert state["drivers"] == one["drivers"]
+    assert doc["track_id"] == c.get(f"/api/v1/sessions/{SID}/track").json()["track_id"]
+
+
+def test_window_route_is_not_shadowed_by_the_driver_route(client, cited):
+    c, _rec = client
+    r = c.get(f"/api/v1/sessions/{SID}/spatial/window",
+              params={"from": _iso(300.0), "to": _iso(301.0)})
+    assert r.status_code == 200 and r.headers["X-Spatial-Contract"] == "spatial_window_v1"
+    assert r.json()["step_s"] == 0.5                       # the default step
+
+
+def test_window_route_limits(client, cited):
+    c, _rec = client
+    url = f"/api/v1/sessions/{SID}/spatial/window"
+    bad = [{"from": _iso(300.0), "to": _iso(300.0)},
+           {"from": _iso(301.0), "to": _iso(300.0)},
+           {"from": _iso(300.0), "to": _iso(420.5)},
+           {"from": _iso(300.0), "to": _iso(310.0), "step": 0.2},
+           {"from": _iso(300.0), "to": _iso(310.0), "step": 10.5},
+           {"from": "2026-01-01T12:05:00", "to": _iso(310.0)}]
+    for params in bad:
+        assert c.get(url, params=params).status_code == 422, params
+    full = c.get(url, params={"from": _iso(300.0), "to": _iso(420.0), "step": 0.25})
+    assert full.status_code == 200 and len(full.json()["states"]) == 481
+    other = c.get("/api/v1/sessions/openf1:777/spatial/window",
+                  params={"from": _iso(0.0), "to": _iso(1.0)})
+    assert other.status_code == 404
+
+
+def test_window_route_is_409_on_unvalidated_geometry(client):
+    c, _rec = client
+    r = c.get(f"/api/v1/sessions/{SID}/spatial/window",
+              params={"from": _iso(300.0), "to": _iso(301.0)})
+    assert r.status_code == 409 and "NO_CITED_LAP_LENGTH" in r.json()["detail"]["reasons"]
+
+
 def test_repeated_requests_are_byte_identical(client, cited):
     c, _rec = client
     a = c.get(f"/api/v1/sessions/{SID}/spatial", params={"at": _iso(412.3)})

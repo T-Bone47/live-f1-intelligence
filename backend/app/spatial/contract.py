@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 from itertools import pairwise
 from typing import Literal
 
@@ -23,6 +24,11 @@ SPATIAL_BUILDER_VERSION = "spatial-builder-1.0.0"
 TRACK_CONTRACT = "track_reference_v1"
 STATE_CONTRACT = "spatial_state_v1"
 TRACE_CONTRACT = "spatial_trace_v1"
+WINDOW_CONTRACT = "spatial_window_v1"
+WINDOW_MAX_S = 120.0          # resource guards on the batched window route,
+WINDOW_STEP_MIN_S = 0.25      # not analytical limits
+WINDOW_STEP_MAX_S = 10.0
+WINDOW_MAX_STATES = 481       # 120 s at the 0.25 s minimum step, both ends included
 
 Flag = Literal["ON_REFERENCE", "PIT_LANE", "OFF_REFERENCE"]
 Grade = Literal["HIGH", "MEDIUM", "LOW", "NONE"]
@@ -306,21 +312,62 @@ class SpatialStateV1(_M):
 
     @model_validator(mode="after")
     def _rules(self) -> SpatialStateV1:
-        if not _ordered_unique([d.driver_number for d in self.drivers]):
-            raise ValueError("drivers must be sorted and unique")
-        for d in self.drivers:
-            values = (d.flag, d.confidence, d.x, d.y, d.reference_fraction, d.distance_m,
-                      d.sector, d.lap_number, d.bracket, d.age_s)
-            if d.status == "NO_COVERAGE":
-                if any(v is not None for v in values):
-                    raise ValueError(f"#{d.driver_number}: NO_COVERAGE carries no value")
-                continue
-            if d.bracket is None or d.x is None or d.y is None or d.flag is None:
-                raise ValueError(f"#{d.driver_number}: {d.status} needs x, y, flag and a bracket")
-            if (d.status == "STALE") != (d.age_s is not None):
-                raise ValueError(f"#{d.driver_number}: age_s exactly when STALE")
-            _position_rules(d.flag, d.reference_fraction, d.distance_m, self.lap_length_m,
-                            d.sector)
+        _driver_rules(self.drivers, self.lap_length_m)
+        return self
+
+
+def _driver_rules(drivers: list[DriverState], lap_length_m: float | None) -> None:
+    """The per-car rules every state carries, alone or inside a window."""
+    if not _ordered_unique([d.driver_number for d in drivers]):
+        raise ValueError("drivers must be sorted and unique")
+    for d in drivers:
+        values = (d.flag, d.confidence, d.x, d.y, d.reference_fraction, d.distance_m,
+                  d.sector, d.lap_number, d.bracket, d.age_s)
+        if d.status == "NO_COVERAGE":
+            if any(v is not None for v in values):
+                raise ValueError(f"#{d.driver_number}: NO_COVERAGE carries no value")
+            continue
+        if d.bracket is None or d.x is None or d.y is None or d.flag is None:
+            raise ValueError(f"#{d.driver_number}: {d.status} needs x, y, flag and a bracket")
+        if (d.status == "STALE") != (d.age_s is not None):
+            raise ValueError(f"#{d.driver_number}: age_s exactly when STALE")
+        _position_rules(d.flag, d.reference_fraction, d.distance_m, lap_length_m, d.sector)
+
+
+class WindowState(_M):
+    at: str
+    drivers: list[DriverState]
+
+
+class SpatialWindowV1(_M):
+    """Phase 12B: the state of every car on a time grid - one request per
+    replay stretch (the API allows 120 requests a minute)."""
+    contract_version: Literal["spatial_window_v1"]
+    builder_version: str
+    session_id: str
+    track_id: str
+    from_ts: str
+    to_ts: str
+    step_s: float
+    lap_length_m: float | None
+    line_placement_p95_m: dict[str, float] | None
+    states: list[WindowState]
+    limitations: list[Limitation]
+
+    @model_validator(mode="after")
+    def _rules(self) -> SpatialWindowV1:
+        if not 1 <= len(self.states) <= WINDOW_MAX_STATES:
+            raise ValueError(f"a window holds 1-{WINDOW_MAX_STATES} states")
+        if not WINDOW_STEP_MIN_S <= self.step_s <= WINDOW_STEP_MAX_S:
+            raise ValueError("step outside the window limits")
+        times = [datetime.fromisoformat(s.at) for s in self.states]
+        if not _ordered_unique(times):
+            raise ValueError("window states must be in strict time order")
+        if times[0] != datetime.fromisoformat(self.from_ts) \
+                or times[-1] > datetime.fromisoformat(self.to_ts):
+            raise ValueError("window states must start at from_ts and end by to_ts")
+        for s in self.states:
+            _driver_rules(s.drivers, self.lap_length_m)
         return self
 
 
@@ -376,3 +423,7 @@ def validate_state(doc: dict) -> None:
 
 def validate_trace(doc: dict) -> None:
     _validate(SpatialTraceV1, doc)
+
+
+def validate_window(doc: dict) -> None:
+    _validate(SpatialWindowV1, doc)

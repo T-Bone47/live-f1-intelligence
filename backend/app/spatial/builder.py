@@ -10,7 +10,7 @@ an index: nothing downstream can place a car on it.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.spatial.circuits import CitedLength, cited_lap_length
 from app.spatial.contract import (
@@ -18,10 +18,12 @@ from app.spatial.contract import (
     STATE_CONTRACT,
     TRACE_CONTRACT,
     TRACK_CONTRACT,
+    WINDOW_CONTRACT,
     make_track_id,
     validate_state,
     validate_trace,
     validate_track,
+    validate_window,
 )
 from app.spatial.gate import evaluate_gate
 from app.spatial.reference import (
@@ -260,4 +262,22 @@ def trace_doc(index: SpatialIndex, driver: int, t0: datetime, t1: datetime) -> d
            "samples": trace(index, driver, t0.timestamp(), t1.timestamp()),
            "limitations": _doc_limitations(index)}
     validate_trace(doc)
+    return doc
+
+
+def window_doc(index: SpatialIndex, t0: datetime, t1: datetime, step_s: float) -> dict:
+    """spatial_window_v1 (Phase 12B): the state of every car at t0, t0 + step,
+    ... up to and including t1 - each exactly what state_doc gives at that
+    time. The limits are the route's; the contract re-checks them."""
+    t0, t1 = t0.astimezone(UTC), t1.astimezone(UTC)
+    n = int((t1 - t0).total_seconds() / step_s + 1e-9) + 1
+    times = [t0 + timedelta(seconds=k * step_s) for k in range(n)]
+    doc = {"contract_version": WINDOW_CONTRACT, "builder_version": SPATIAL_BUILDER_VERSION,
+           "session_id": index.session_id, "track_id": index.track_id,
+           "from_ts": t0.isoformat(), "to_ts": t1.isoformat(), "step_s": step_s,
+           "lap_length_m": index.lap_length_m, "line_placement_p95_m": index.line_p95_m,
+           "states": [{"at": at.isoformat(), "drivers": state_at(index, at.timestamp())}
+                      for at in times],
+           "limitations": _doc_limitations(index)}
+    validate_window(doc)
     return doc

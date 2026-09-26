@@ -316,3 +316,21 @@ def test_real_sector_agrees_with_the_published_lines(built):
             assert e["sector"] == (1 if d < s1 else 2 if d < s2 else 3)
             seen[e["sector"]] += 1
     assert all(n > 0 for n in seen.values())
+
+
+def test_real_window_matches_state_at(built):
+    """Phase 12B: the batched window on the real race equals the state
+    document at every grid time (20 s from the LAP 40 frame, 1 s step)."""
+    from datetime import timedelta
+
+    from app.spatial.builder import state_doc, window_doc
+
+    _inputs, _doc, index = built
+    frames = json.loads(TIMELINE.read_text(encoding="utf-8"))["frames"]
+    t0 = datetime.fromisoformat(next(f["at"] for f in frames if f["lap"] == 40))
+    doc = window_doc(index, t0, t0 + timedelta(seconds=20), 1.0)
+    assert len(doc["states"]) == 21
+    for k, state in enumerate(doc["states"]):
+        at = t0 + timedelta(seconds=k)
+        assert state["drivers"] == state_doc(index, at)["drivers"]
+    assert sum(e["status"] == "POSITIONED" for e in doc["states"][0]["drivers"]) >= 15

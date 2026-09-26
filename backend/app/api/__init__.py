@@ -291,6 +291,30 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
         doc = await _spatial_call(state_doc, index, when)
         return _spatial_response(to_canonical_json(doc), "spatial_state_v1")
 
+    @app.get("/api/v1/sessions/{session_id}/spatial/window")
+    async def get_spatial_window(session_id: str,
+                                 from_: str = Query(..., alias="from"), to: str = Query(...),
+                                 step: float = Query(0.5),
+                                 _: None = Depends(rate_limit_dependency)):
+        """spatial_window_v1 (Phase 12B): every car at from, from + step, ...
+        to. One request per replay stretch; each state equals /spatial?at=.
+        Registered before /spatial/{driver_number}, which would claim it."""
+        from app.analysis.timeline import to_canonical_json
+        from app.spatial.builder import window_doc
+        from app.spatial.contract import WINDOW_MAX_S, WINDOW_STEP_MAX_S, WINDOW_STEP_MIN_S
+
+        validate_session_id(session_id)
+        t0, t1 = _utc_param("from", from_), _utc_param("to", to)
+        if t0 >= t1:
+            raise HTTPException(422, "from must be before to")
+        if (t1 - t0).total_seconds() > WINDOW_MAX_S:
+            raise HTTPException(422, f"window longer than {WINDOW_MAX_S:.0f} s")
+        if not WINDOW_STEP_MIN_S <= step <= WINDOW_STEP_MAX_S:
+            raise HTTPException(422, f"step must be {WINDOW_STEP_MIN_S}-{WINDOW_STEP_MAX_S:.0f} s")
+        index = await _spatial_index(session_id)
+        doc = await _spatial_call(window_doc, index, t0, t1, step)
+        return _spatial_response(to_canonical_json(doc), "spatial_window_v1")
+
     @app.get("/api/v1/sessions/{session_id}/spatial/{driver_number}")
     async def get_spatial_trace(session_id: str, driver_number: int,
                                 from_: str = Query(..., alias="from"), to: str = Query(...),

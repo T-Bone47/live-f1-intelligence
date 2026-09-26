@@ -12,7 +12,7 @@ import pytest
 from spatial_synth import SID, T0, car_sample_row, synth_rows
 
 from app.analysis.timeline import to_canonical_json
-from app.spatial.builder import build_spatial, state_doc, trace_doc
+from app.spatial.builder import build_spatial, state_doc, trace_doc, window_doc
 from app.spatial.circuits import CitedLength
 from app.spatial.contract import (
     SpatialContractError,
@@ -20,6 +20,7 @@ from app.spatial.contract import (
     validate_state,
     validate_trace,
     validate_track,
+    validate_window,
 )
 from app.spatial.source import inputs_from_rows
 
@@ -168,6 +169,40 @@ def test_tampered_documents_are_rejected(valid, tamper):
     with pytest.raises(SpatialContractError):
         validate_track(track)
         validate_state(state)
+
+
+def _window(index) -> dict:
+    return json.loads(json.dumps(window_doc(index, T0 + timedelta(seconds=300.0),
+                                            T0 + timedelta(seconds=302.0), 0.5)))
+
+
+def test_window_doc_is_the_state_at_each_grid_time(valid):
+    _inputs, _doc, index = valid
+    doc = _window(index)
+    validate_window(doc)
+    assert len(doc["states"]) == 5
+    for k, state in enumerate(doc["states"]):
+        at = T0 + timedelta(seconds=300.0 + 0.5 * k)
+        assert state["at"] == at.isoformat()
+        assert state["drivers"] == json.loads(json.dumps(state_doc(index, at)["drivers"]))
+
+
+def _w_unsorted(w): w["states"][0], w["states"][1] = w["states"][1], w["states"][0]
+def _w_duplicate_time(w): w["states"][1]["at"] = w["states"][0]["at"]
+def _w_no_coverage_values(w):
+    w["states"][0]["drivers"][0].update(status="NO_COVERAGE")
+def _w_contract(w): w["contract_version"] = "spatial_state_v1"
+def _w_empty(w): w["states"] = []
+
+
+@pytest.mark.parametrize("tamper", [_w_unsorted, _w_duplicate_time, _w_no_coverage_values,
+                                    _w_contract, _w_empty])
+def test_tampered_windows_are_rejected(valid, tamper):
+    _inputs, _doc, index = valid
+    doc = _window(index)
+    tamper(doc)
+    with pytest.raises(SpatialContractError):
+        validate_window(doc)
 
 
 def test_state_doc_at_carries_utc(valid):
