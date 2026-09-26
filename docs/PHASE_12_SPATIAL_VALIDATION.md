@@ -274,3 +274,40 @@ The cold build runs once per recording and builder version. Before
 `search_window` it was projected at about 0.4 ms per sample, which would have
 been about 15 minutes. Profiling showed about 83 segment evaluations per
 projection, which the narrow window removes.
+
+## 11. Final whole-branch review
+
+A fresh reviewer, which had not seen the implementation, reviewed the whole
+branch (`de8d46a..8e7b331`). It found no Critical issues. Four findings were
+fixed test-first in one pass (`40d2543`):
+
+| finding | fix | regression |
+|---|---|---|
+| **The cache key ignored the cited lap lengths.** A corrected or added citation was answered from the old cache, with self-consistent wrong metres. | The key includes a digest of the circuit table in effect. | `test_a_changed_citation_rebuilds_the_cache` |
+| **A timing lap was paired with a geometric fraction from the other side of the line.** #1 at 14:05:45.79Z read "lap 25, 4,256.86 m" just after starting lap 25. About 4k samples were affected. | A lap is kept only when the continuity-unwrapped position lies in [0, 1) of that lap from the measured line; otherwise it is withheld and the fraction stays. | `test_timing_lap_and_geometry_that_disagree_at_the_line_withhold_the_lap`, `test_real_lap_numbers_agree_with_the_geometry` |
+| **State and trace documents had metres but no precision.** | `line_placement_p95_m`, plus `CORNER_PRECISION_NOT_MET` when the corner gate failed. | `test_state_and_trace_docs_state_their_precision`, `test_real_state_docs_validate_and_state_their_precision` |
+| **Unvalidated geometry still published timing-line positions.** The reviewer graded this Minor; it was raised to Important because spec §5.4 says no geometry. | Positions are null when unvalidated; the contract enforces this both ways. | `test_unvalidated_session_has_no_polyline_and_no_index`, tamper `_t_unvalidated_line_position` |
+
+After the fix pass:
+- **Backend:** 895 passed, 23 skipped (18 need Postgres, which was down, plus
+  the known 5), 1 failed (the known 10.3 S2 check).
+- **Real Dutch GP suite:** 12 passed, golden byte-identical.
+- **ruff:** clean on every changed file.
+
+**Deferred (minor, not fixed):**
+- One store lock covers every session, and failed builds are not memoized.
+- Extreme-year `at` values raise `OverflowError`, which surfaces as 500
+  instead of 422.
+- STALE lifts a NONE sample's confidence to LOW.
+- Validator gaps: a unit "m" without a citation, a ratio without a citation,
+  and a lap on off-line entries are not rejected.
+- The narrow-window comment overstates correctness on non-convex tracks. The
+  real spot check is bit-identical.
+- No property test that "the fraction never runs backwards"; the §2
+  "on-line share" is not reproduced.
+- The benchmark omits `index_recordings` and the double store call per
+  request.
+- `circuits.json` has no layout or year validity.
+- A second placeholder point (−3450, −4945), shared by #11 and #14 before
+  the race.
+- CLAUDE.md numbering.

@@ -125,6 +125,13 @@ continuity guards set their confidence; a jump is withheld, never repaired.
 A sample in the short gap that lap rows leave at the line still pairs with
 its neighbour, at confidence LOW.
 
+**Lap numbers never contradict the geometry.** A lap number is kept only
+when the continuity-unwrapped position lies in [0, 1) of that lap,
+measured from the line. Near the line, the timing lap and the geometric
+position can disagree by up to the line's dispersion; the lap is then
+withheld and the fraction kept, so a (lap, distance) pair is never one
+lap out.
+
 ## 6. Confidence
 
 Confidence is the project's existing `Confidence`, measuring data integrity:
@@ -160,6 +167,13 @@ dispersion and the claim-scoped gate.
 | `GET /api/v1/sessions/{sid}/spatial/{driver}?from=&to=` | `spatial_trace_v1` (window ≤ 600 s) | 422 bad range or driver · 404 no recording or driver · 409 · 500 |
 
 - Responses are canonical bytes with an `X-Spatial-Contract` header.
+- State and trace documents carry `line_placement_p95_m` (the measured
+  placement precision) and `CORNER_PRECISION_NOT_MET` when the corner gate
+  failed.
+- Unvalidated tracks publish the timing-line measurement but no line
+  position.
+- Caches are keyed on the builder version, the cited lap-length table
+  and the recording.
 - Times must carry a UTC offset. A `+hh:mm` offset in a raw URL must be sent
   as `%2B`.
 - The legacy `/circuit` route is unchanged.
@@ -213,12 +227,12 @@ The synthetic suite covers:
 | `test_spatial_reference.py` | 5 | eligibility, coverage, tie-break, closed reference |
 | `test_spatial_timing_lines.py` | 7 | percentiles, circular median, exclusions, worst, independence |
 | `test_spatial_gate.py` | 8 | citation, 20/5 m boundaries, n = 59/60, missing lines, independence |
-| `test_spatial_samples.py` | 8 | tolerance, ENTRY/EXIT/NONE pit modes, flags, continuity |
+| `test_spatial_samples.py` | 9 | tolerance, ENTRY/EXIT/NONE pit modes, flags, continuity, lap/geometry agreement |
 | `test_spatial_state.py` | 9 | bracket, unwrap, STALE, NO_COVERAGE, contamination, trace, lap-row gap |
-| `test_spatial_contract.py` | 17 | determinism, ids, unvalidated paths, capabilities, 10 tamper cases |
-| `test_spatial_store.py` | 9 | caches, key format, corruption, round trip, identity, concurrency |
+| `test_spatial_contract.py` | 19 | determinism, ids, unvalidated paths, precision, capabilities, 11 tamper cases |
+| `test_spatial_store.py` | 10 | caches, key format, citation change, corruption, round trip, identity, concurrency |
 | `test_spatial_api.py` | 9 | three routes, UTC handling, limits, 404/409/422, determinism |
-| `test_spatial_real.py` | 10 | the Dutch GP, independently recomputed (skips without the recording) |
+| `test_spatial_real.py` | 12 | the Dutch GP, independently recomputed (skips without the recording) |
 
 The mutation results are in `PHASE_12_SPATIAL_VALIDATION.md` §10.
 

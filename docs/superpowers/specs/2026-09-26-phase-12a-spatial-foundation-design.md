@@ -389,3 +389,16 @@ length; gate failure; tampered cache key; corrupted cache; contract tamper
 4. When the no-fix (0, 0, 0) placeholders occur (§5.1).
 
 None of these is assumed. Each is reported in the validation doc.
+
+## 14. Amendments after the final review (2026-09-26)
+
+- **§9 cache key:** it also carries a digest of the cited lap-length
+  table, so a changed citation never serves old metres.
+- **§5.5 lap numbers:** a lap number is withheld when the
+  continuity-unwrapped position is outside [0, 1) of the timing lap
+  from the measured line; the fraction is kept.
+- **§6 state and trace documents:** they carry `line_placement_p95_m`,
+  and `CORNER_PRECISION_NOT_MET` when the corner gate failed.
+- **§5.4 and §6 unvalidated track:** timing lines publish their
+  measurement but no position (`x`, `y`, `loop_fraction` and
+  `distance_m` are null).

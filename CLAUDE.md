@@ -264,12 +264,13 @@ sync → 12D battles / pit lane → 11.x predictive intelligence (pace/degradati
 explorer → session state machine → production hardening.
 
 ## Baseline (Phase 12A, verified 2026-09-26 on this machine, Postgres DOWN)
-- **Backend:** 889 passed, 23 skipped, 1 failed.
+- **Backend:** 895 passed, 23 skipped, 1 failed (after the final-review
+  fix pass).
   - The failure is the known 10.3 S2 check (uncommitted fixture; numbers
     unchanged).
   - Skips: 18 need Postgres (start the container to run them) plus the
     known 5 (2 Gemini key, 2 replay/recording setup, 1 finish NO_DATA).
-  - 94 new 12A tests. The 10 real-data spatial tests take ~100 s and need
+  - 100 new 12A tests. The 12 real-data spatial tests take ~100 s and need
     the recording.
 - **Frontend:** unchanged by 12A (202 passed at Phase 11).
 
