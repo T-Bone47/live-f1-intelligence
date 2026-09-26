@@ -5,6 +5,7 @@ between sessions: keep "Current state" and "Next steps" true whenever a
 phase lands. Detailed evidence lives in the docs below; read on demand,
 don't re-derive.
 
+@docs/PHASE_11_RACE_INTELLIGENCE_COMMAND_CENTER.md
 @docs/PHASE_10_6_FRONTEND_EVIDENCE_WORKBENCH.md
 @docs/PHASE_10_5_EVIDENCE_API.md
 @docs/RACEWISE_EVIDENCE_CONTRACT.md
@@ -40,7 +41,12 @@ docker run -d --rm --name f1intel-test-pg -e POSTGRES_USER=f1intel -e POSTGRES_P
 ..\scripts\attribution_report.py / evidence_report.py  # regenerate locked evidence (run with the venv python)
 ..\scripts\bench_attribution.py / bench_evidence.py    # performance
 ..\scripts\serve_evidence_dev.py   # real pair -> own DB f1intel_evidence_dev, API on :8000
+..\scripts\serve_command_center_dev.py [--port 8010]  # f1intel_dev + recordings/dutchgp, no hub
+..\scripts\timeline_report.py      # rebuild the Phase 11 golden from the recording
+..\scripts\finalize_recording.py <dir> --note "..."   # meta.json for a stalled recording
 cd ..\frontend; npm test; npm run build; npm run lint
+# npm run dev: / = command center, /sessions, /evidence = workbench, /pitwall = legacy
+# (dev proxy target: LFI_API_TARGET in frontend/.env.local, default :8000)
 npm run dev                         # /evidence = Phase 10.6 Evidence Workbench
 ```
 On this machine the default parallel vitest run can exhaust RAM (tinypool
@@ -72,6 +78,24 @@ lap_length_source`. There is no circuit geometry, so a lap length is never
 invented.
 
 ## Current state (2026-09-26)
+- **11 Race Intelligence Command Center** (branch `phase-11-race-command-center`):
+  - `session_timeline_v1` (`app/analysis/timeline.py`): recordings folded in
+    race order through AnalysisEngine; frames at START / each leader lap end /
+    FINAL. Golden `docs/timeline/session_timeline_v1_dutch_gp_2026.json`
+    (2026 Dutch GP race, OpenF1 11353, lap-2 red flag). Every frame is
+    checked against values recomputed from the raw rows.
+  - Routes: `/api/v1/sessions` (+`stored`), `/sessions/{sid}/laps`,
+    `/sessions/{sid}/timeline` (hub capture, or cached recording build).
+  - Engine fixes found on that data: pit state never cleared, stale battle
+    pairs, red flag ended by a sector clear, starting grid outside the
+    backfill window, sector status at crossing time.
+  - Frontend `/`: one cursor, one moment across timing, positions, battles,
+    focus, strategy, race control, weather and replay (`src/command/`,
+    `src/components/command/`). Verified in the browser at 375–1920 px.
+  - Real data lives outside git: `recordings/dutchgp/openf1-11353-race`
+    (finalized, `interrupted`: the recorder stalled after an HTTP 429) and
+    DB `f1intel_dev`. Re-record with `RECORDINGS_DIR=../recordings/dutchgp`
+    and `DATABASE_URL=.../f1intel_dev`.
 - **10.2: REAL-DATA VALIDATED** on the real pair (session 9161, 2023
   Singapore Q). #55 lap 19 (90.984 s) vs #63 lap 16 (91.056 s). Fixture:
   `scripts/fixtures/real-openf1-pair/`.
@@ -122,17 +146,21 @@ invented.
 - **Test baseline:** see "Baseline" at the end of this file.
 
 ## Next steps
-1. **Stored sessions/laps listing route** (backend, read-only) so the
-   workbench can offer pickers instead of typed ids. Then the RaceWise
-   integration contract, which unlocks the disabled hand-off button.
-2. **Calibrate D and E**, which needs more real pairs
+1. **Recorder stall after HTTP 429.** Both Dutch GP recording runs stalled
+   around 1.83M envelopes (see `finalize_interrupted`). Then record a
+   qualifying and a sprint to exercise session-type layouts.
+2. **Workbench pickers** from `/sessions/{sid}/laps` (the route exists now),
+   then the RaceWise integration contract (unlocks the hand-off button).
+3. **Verify LIVE** in the command center against a running hub (needs an
+   OpenF1 sponsor token, or a replay stream in race order).
+4. **Calibrate D and E**, which needs more real pairs
    (`scripts/fetch_real_driver_pair.py`, run outside live sessions).
-3. **Investigate the 10.3 S2 failure.** Do not tune it away. Start with #63's
+5. **Investigate the 10.3 S2 failure.** Do not tune it away. Start with #63's
    58.7-unit outlier near x≈0.62, then check whether #55's reference line
    cuts a corner that #63 takes wide.
-4. **Optional:** `scripts/crosscheck_sources.py --year 2026` after each
+6. **Optional:** `scripts/crosscheck_sources.py --year 2026` after each
    race weekend.
-5. **Live session only:** `scripts/record_live_pulse.py sessionInfo timingData`
+7. **Live session only:** `scripts/record_live_pulse.py sessionInfo timingData`
    (each route costs 1 of about 15 remaining requests).
 
 ## Non-negotiable rules (learned the hard way on this project)
@@ -202,9 +230,18 @@ invented.
    convention).
 
 ## Roadmap
-~~10.6 evidence workbench~~ → 11.x strategy / battles / tyres / predictive
-intelligence → replay clock/seek → qualifying Q1/Q2/Q3 → historical
+~~10.6 evidence workbench~~ → ~~11 command center (observational)~~ →
+11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
+
+## Baseline (Phase 11, verified 2026-09-26 on this machine, Postgres 16 up)
+- **Backend:** 813 passed, 5 skipped, 1 failed. The failure is the 10.3 S2
+  check, which runs only because the uncommitted location fixture is in
+  the working tree (it skips on a clean checkout). Skips: 2 Gemini key,
+  2 replay setup, 1 finish NO_DATA. The real-data timeline tests need
+  `recordings/**/openf1-11353-race` and skip without it.
+- **Frontend:** 202 passed (`npx vitest run --no-file-parallelism`), build
+  OK, tsc OK, ESLint 0 errors (105 pre-existing warnings).
 
 ## Baseline (verified 2026-09-25 at HEAD, fresh checkout, Postgres 16 up)
 - **Backend:** 739 passed, 10 skipped.
