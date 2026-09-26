@@ -1,0 +1,131 @@
+/*
+ * Track map (Phase 12B) - MASTER.md §14. An instrument plate: an inset field
+ * framed by registration corner ticks, a quiet reference loop, neutral sector
+ * strokes, and cars as the only coloured objects (identity colour, never a
+ * verdict). Motion is a transform glide between backend states while playing,
+ * and none under reduced motion.
+ */
+
+.cc-map .cc-panel-meta { display: flex; gap: 10px; flex-wrap: wrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sm-lag { color: var(--state-warning); }
+
+.sm-frame {
+  position: relative; min-height: 220px; border: 1px solid var(--border-subtle); border-radius: var(--radius-row);
+  background:
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) left 6px top 6px / 10px 1px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) left 6px top 6px / 1px 10px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) right 6px top 6px / 10px 1px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) right 6px top 6px / 1px 10px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) left 6px bottom 6px / 10px 1px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) left 6px bottom 6px / 1px 10px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) right 6px bottom 6px / 10px 1px no-repeat,
+    linear-gradient(var(--border-emphasis), var(--border-emphasis)) right 6px bottom 6px / 1px 10px no-repeat,
+    var(--background-inset);
+  overflow: hidden;
+}
+.sm-map { display: block; max-width: 100%; height: auto; }
+
+/* static layers */
+.sm-circuit { fill: none; stroke: var(--background-hover); stroke-width: 7; stroke-linejoin: round; }
+.sm-sector { fill: none; stroke: var(--border-emphasis); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round;
+             transition: stroke var(--motion-fast) var(--ease-standard); }
+.sm-sector.is-hot { stroke: var(--text-secondary); stroke-width: 2.5; }
+.sm-sector-label, .sm-line-tag, .sm-label {
+  paint-order: stroke; stroke: var(--background-inset); stroke-width: 3px; stroke-linejoin: round;
+}
+.sm-sector-label { font-family: var(--font-label); font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+                   fill: var(--text-muted-aa); pointer-events: none; }
+.sm-sector-label.is-hot { fill: var(--text-primary); }
+.sm-line { cursor: pointer; outline: none; }
+.sm-line-hit { stroke: transparent; stroke-width: 16; }
+.sm-line-tick { stroke: var(--text-primary); stroke-width: 2; stroke-linecap: square; }
+.sm-line-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; fill: var(--text-secondary); }
+.sm-line.is-active .sm-line-tick, .sm-line:focus-visible .sm-line-tick { stroke: var(--focus-ink); stroke-width: 3; }
+.sm-line.is-active .sm-line-tag { fill: var(--text-primary); }
+
+/* markers: backend positions only; the glide is rendering, never data */
+.sm-marker { transition: transform var(--spatial-tween, 0ms) linear; cursor: pointer; outline: none; }
+.sm-map.is-reduced .sm-marker { transition: none; }
+.sm-dot { stroke: var(--background-root); stroke-width: 1.25; }
+.sm-ring { stroke-width: 2.25; }
+.sm-square { stroke: var(--background-root); stroke-width: 1; }
+.sm-marker.is-stale { opacity: 0.5; }
+.sm-clock circle { fill: var(--background-panel); stroke: var(--text-secondary); stroke-width: 1; }
+.sm-clock path { fill: none; stroke: var(--text-secondary); stroke-width: 1; }
+.sm-uncertain { fill: none; stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 2 2; }
+.sm-halo { fill: none; stroke: var(--selection-rule); stroke-width: 1.5;
+           transition: opacity var(--motion-fast) var(--ease-standard); }
+.sm-marker.is-battle:not(.is-selected) .sm-halo { stroke-dasharray: 3 2; }
+.sm-focus { fill: none; stroke: var(--border-focus); stroke-width: 2; opacity: 0; }
+.sm-marker:focus-visible .sm-focus { opacity: 1; }
+.sm-battle-link { stroke: var(--selection-rule); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
+.sm-label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; fill: var(--text-primary); pointer-events: none; }
+.sm-tag { fill: var(--state-warning); }
+
+/* overlays */
+.sm-phase {
+  position: absolute; top: 10px; left: 12px; margin: 0; padding: 3px 8px 3px 7px;
+  border-left: 3px solid var(--border-emphasis); background: var(--background-elevated);
+  font-family: var(--font-label); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.sm-phase span { margin-left: 6px; font-family: var(--font-mono); font-weight: 500; letter-spacing: 0; text-transform: none;
+                 color: var(--text-muted-aa); }
+.sm-phase-red { border-left-color: var(--flag-red); }
+.sm-phase-sc { border-left-color: var(--flag-sc); }
+.sm-phase-vsc { border-left-color: var(--flag-vsc); }
+.sm-phase-chequered { border-left-color: var(--flag-chequered); }
+.sm-note {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; padding: 6px 10px;
+  background: var(--background-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-row);
+  font-size: 12px; color: var(--text-secondary); white-space: nowrap;
+}
+.sm-tooltip {
+  position: absolute; width: 180px; padding: 8px 10px; pointer-events: none; z-index: 2;
+  background: var(--background-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-row);
+  font-size: 12px;
+}
+.sm-tooltip-head { margin: 0 0 4px; font-weight: 600; }
+.sm-dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.sm-dl dt { font-family: var(--font-label); font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase; color: var(--text-muted-aa); }
+.sm-dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+.sm-state { padding: 28px 16px; text-align: center; }
+.sm-reasons { list-style: none; margin: 8px 0 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.sm-reasons code { font-family: var(--font-mono); font-size: 11px; padding: 2px 6px; border: 1px solid var(--border-default);
+                   border-radius: var(--radius-row); }
+.sm-skeleton { height: 280px; background: linear-gradient(90deg, transparent, var(--background-hover), transparent)
+                 0 0 / 200% 100% var(--background-inset); animation: sm-shimmer 1.4s linear infinite; }
+@keyframes sm-shimmer { to { background-position: -200% 0; } }
+
+.sm-line-readout { margin: 8px 0 0; font-size: 11.5px; color: var(--text-secondary); }
+.sm-offmap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.sm-offmap ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; }
+.sm-offmap li { display: inline-flex; align-items: center; gap: 6px; }
+.sm-offmap-why { font-size: 11px; color: var(--text-muted-aa); }
+
+.sm-info {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border-subtle); font-size: 12px;
+  animation: sm-rise var(--motion-normal) var(--ease-standard);
+}
+@keyframes sm-rise { from { opacity: 0; transform: translateY(4px); } }
+.sm-info h3 { margin: 0 0 6px; }
+.sm-info h3 + * { margin-bottom: 10px; }
+.sm-caps { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 4px; }
+.sm-caps em { font-style: normal; font-family: var(--font-label); font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em;
+              text-transform: uppercase; color: var(--text-muted-aa); }
+.sm-cap-ok em { color: var(--state-success); }
+.sm-caps p { margin: 2px 0 0; color: var(--text-muted-aa); font-size: 11.5px; }
+.sm-small { margin: 0; color: var(--text-secondary); line-height: 1.45; }
+.sm-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sm-legend li { display: flex; align-items: center; gap: 8px; }
+.sm-glyph .sm-shape { fill: var(--text-secondary); }
+.sm-glyph .sm-ring { fill: none; stroke: var(--text-secondary); stroke-width: 2; }
+.sm-info-btn[aria-expanded="true"] { border-color: var(--border-emphasis); }
+
+@media (max-width: 899px) { .sm-info { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) {
+  .sm-marker, .sm-sector, .sm-halo { transition: none; }
+  .sm-skeleton, .sm-info { animation: none; }
+}
