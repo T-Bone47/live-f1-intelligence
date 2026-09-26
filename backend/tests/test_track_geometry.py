@@ -16,6 +16,7 @@ from app.analysis.common.models import Confidence, LapClass
 from app.analysis.lap_comparison import compare_driver_laps, compare_traces, delta_at
 from app.analysis.lap_distance import build_lap_distance_trace, normalize_lap, resample_common_grid
 from app.analysis.track_geometry import (
+    Centerline,
     build_centerline,
     build_position_distance_trace,
     project_positions,
@@ -235,3 +236,36 @@ def test_car_samples_inside_a_location_gap_are_downgraded():
     assert in_hole and all(p.confidence == Confidence.LOW for p in in_hole)
     assert all(p.confidence == Confidence.HIGH for p in elsewhere)
     assert trace.confidence != Confidence.HIGH
+
+
+# --- Phase 12A: distance -> XY and closed loops ------------------------------
+
+SQ = [(0.0, 0.0), (400.0, 0.0), (400.0, 400.0), (0.0, 400.0)]
+
+
+def test_point_at_returns_vertices_and_interpolates_within_a_segment():
+    c = Centerline(SQ + [SQ[0]])
+    assert c.point_at(0) == (0.0, 0.0)
+    assert c.point_at(400) == (400.0, 0.0)
+    assert c.point_at(600) == (400.0, 200.0)
+
+
+def test_point_at_wraps_on_a_closed_loop_and_clamps_on_an_open_path():
+    closed, opened = Centerline(SQ + [SQ[0]]), Centerline(SQ[:3])
+    assert closed.is_closed and not opened.is_closed
+    assert closed.point_at(1650) == closed.point_at(50)
+    assert closed.point_at(-50) == closed.point_at(1550)
+    assert opened.point_at(-5) == (0.0, 0.0)
+    assert opened.point_at(10_000) == (400.0, 400.0)
+
+
+def test_point_at_round_trips_through_project():
+    c = Centerline(SQ + [SQ[0]])
+    for s in (0.0, 123.4, 399.999, 1234.5, 1599.0):
+        assert abs(c.project(*c.point_at(s)).s - s) < 1e-9
+
+
+def test_closing_the_loop_stops_points_before_the_line_clamping_to_zero():
+    # the open-polyline clamp found by the 12A spike
+    assert Centerline(SQ).project(0.0, 5.0).s == 0.0
+    assert Centerline(SQ + [SQ[0]]).project(0.0, 5.0).s == 1595.0

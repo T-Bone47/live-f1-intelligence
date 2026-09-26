@@ -89,6 +89,23 @@ class Centerline:
             self.cum.append(self.cum[-1] + math.hypot(x1 - x0, y1 - y0))
         self.total_length = self.cum[-1]
 
+    @property
+    def is_closed(self) -> bool:
+        """A loop: the last point repeats the first (Phase 12A closes the
+        reference lap this way, so projection wraps at the line)."""
+        return self.points[0] == self.points[-1]
+
+    def point_at(self, s: float) -> tuple[float, float]:
+        """Arc length -> (x, y). Taken modulo the length on a closed loop,
+        clamped to the ends on an open path."""
+        total = self.total_length
+        s = s % total if self.is_closed else max(0.0, min(total, s))
+        i = min(bisect.bisect_right(self.cum, s), len(self.cum) - 1) - 1
+        seg = self.cum[i + 1] - self.cum[i]
+        a = 0.0 if seg == 0 else (s - self.cum[i]) / seg
+        (x0, y0), (x1, y1) = self.points[i], self.points[i + 1]
+        return x0 + a * (x1 - x0), y0 + a * (y1 - y0)
+
     def _on_segment(self, i: int, x: float, y: float) -> tuple[float, float]:
         (x0, y0), (x1, y1) = self.points[i], self.points[i + 1]
         dx, dy = x1 - x0, y1 - y0
