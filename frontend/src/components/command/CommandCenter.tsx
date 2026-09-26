@@ -13,6 +13,8 @@ import {
 } from "../../command/moment";
 import { NUDGE_MS, parseUrlTime, readUrl, usePlayback, useUi, writeUrl, type Density } from "../../command/state";
 import { dataOf, useResource } from "../../command/useResource";
+import { useSpatial } from "../../spatial/useSpatial";
+import { TrackMap } from "../spatial/TrackMap";
 import { BattlePanel } from "./BattlePanel";
 import { FocusPanel } from "./FocusPanel";
 import { PositionChart } from "./PositionChart";
@@ -26,9 +28,9 @@ import { ErrorState, SkeletonRows } from "./ui";
 import { WeatherPanel } from "./WeatherPanel";
 import "./command.css";
 
-type Tab = "timing" | "race" | "strategy" | "events";
+type Tab = "timing" | "track" | "race" | "strategy" | "events";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "timing", label: "Timing" }, { id: "race", label: "Race" },
+  { id: "timing", label: "Timing" }, { id: "track", label: "Track" }, { id: "race", label: "Race" },
   { id: "strategy", label: "Strategy" }, { id: "events", label: "Events" },
 ];
 
@@ -113,6 +115,13 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
   }, [dispatch, help]);
 
   const live = timeline?.source.kind === "LIVE_HUB";
+  // Phase 12B: the backend's spatial state for the same cursor (never computed here)
+  const spatial = useSpatial({ sid, t: ui.t, playing: ui.playing, rate: ui.rate, live: !!live });
+  const focusSpatial = useMemo(() => {
+    if (ui.driver == null || spatial.status !== "ready" || !spatial.shown) return null;
+    const d = spatial.shown.drivers.find((x) => x.driver_number === ui.driver);
+    return d ? { state: d, at: spatial.shown.at } : null;
+  }, [ui.driver, spatial.status, spatial.shown]);
   const mode: Mode = !timeline ? { kind: "none" }
     : live ? { kind: "live", connected: res.status === "success" }
       : { kind: "historical", replaying: ui.playing || ui.t < (ui.frames[ui.frames.length - 1] ?? 0) };
@@ -159,6 +168,10 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
             <TimingTower moment={moment} selected={ui.driver} battlePair={battlePair} density={ui.density}
                          onSelect={selectDriver} onDensity={(d: Density) => dispatch({ type: "density", density: d })} />
           </div>
+          <div className="cc-area-map" data-tab="track">
+            <TrackMap view={spatial} moment={moment} selected={ui.driver} battle={battlePair}
+                      playing={ui.playing} rate={ui.rate} onSelect={selectDriver} />
+          </div>
           <div className="cc-area-chart" data-tab="race">
             <PositionChart moment={moment} selected={ui.driver} onSelect={selectDriver} onSeek={seek} />
           </div>
@@ -166,7 +179,8 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
             <BattlePanel moment={moment} selected={ui.battle} onSelect={selectBattle} />
           </div>
           <div className="cc-area-focus" data-tab="timing">
-            <FocusPanel moment={moment} driver={ui.driver} onClose={() => selectDriver(null)} onSeek={seek} />
+            <FocusPanel moment={moment} driver={ui.driver} spatial={focusSpatial}
+                        onClose={() => selectDriver(null)} onSeek={seek} />
           </div>
           <div className="cc-area-strategy" data-tab="strategy">
             <StrategyPanel moment={moment} selected={ui.driver} onSelectDriver={selectDriver} onSeek={seek} />

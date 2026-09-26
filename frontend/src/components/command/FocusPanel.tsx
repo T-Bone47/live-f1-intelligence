@@ -7,12 +7,12 @@
 
 import { useMemo, useState } from "react";
 import { fetchLapCatalog } from "../../command/api";
-import {
-  compoundInfo, driverCode, fmtGap, fmtInterval, fmtInt, fmtLapTime, fmtSigned,
-} from "../../command/format";
+import { compoundInfo, driverCode, fmtClockTenths, fmtGap, fmtInt, fmtInterval, fmtLapTime, fmtSigned } from "../../command/format";
 import type { Moment } from "../../command/moment";
 import { dataOf, useResource } from "../../command/useResource";
 import { Badge, DriverChip, EmptyState, Icon, Panel, Readout, TyreChip } from "./ui";
+import type { DriverState } from "../../spatial/types";
+import { fmtMetres, gradeWord, stateWords } from "../spatial/words";
 
 const SECTOR_WORD: Record<string, string> = { PURPLE: "session best", GREEN: "personal best", YELLOW: "slower than PB" };
 
@@ -76,8 +76,33 @@ function CompareEntry({ moment, driver }: { moment: Moment; driver: number }) {
   );
 }
 
-function DriverFocus({ moment, driver, onClose, onSeek }: {
-  moment: Moment; driver: number; onClose: () => void; onSeek: (index: number) => void;
+export interface FocusSpatial { state: DriverState; at: number }
+
+/** Phase 12B: the backend's spatial state of the focused car at the cursor, formatted only. */
+function TrackPosition({ spatial }: { spatial: FocusSpatial | null }) {
+  return (
+    <div className="cc-focus-block">
+      <p className="cc-label">Track position</p>
+      {spatial ? (
+        <>
+          <dl className="cc-readouts cc-readouts-3">
+            <Readout label="State" value={stateWords(spatial.state)} />
+            <Readout label="Lap" value={spatial.state.lap_number != null ? String(spatial.state.lap_number) : "—"} />
+            <Readout label="Sector" value={spatial.state.sector != null ? `S${spatial.state.sector}` : "—"} />
+            <Readout label="From the line" value={fmtMetres(spatial.state.distance_m)} sub="cited lap length" />
+            <Readout label="Confidence" value={gradeWord(spatial.state.confidence)} />
+          </dl>
+          <p className="cc-small cc-muted cc-mono">positions at {fmtClockTenths(spatial.at)}</p>
+        </>
+      ) : (
+        <p className="cc-small cc-muted">No spatial state for this car at this moment.</p>
+      )}
+    </div>
+  );
+}
+
+function DriverFocus({ moment, driver, spatial, onClose, onSeek }: {
+  moment: Moment; driver: number; spatial: FocusSpatial | null; onClose: () => void; onSeek: (index: number) => void;
 }) {
   const row = moment.row.get(driver);
   const id = moment.driver.get(driver);
@@ -128,6 +153,7 @@ function DriverFocus({ moment, driver, onClose, onSeek }: {
           })}
         </div>
       </div>
+      <TrackPosition spatial={spatial} />
       <div className="cc-focus-block">
         <p className="cc-label">Stints so far</p>
         <ol className="cc-focus-stints">
@@ -206,14 +232,14 @@ function SessionSummary({ moment }: { moment: Moment }) {
   );
 }
 
-export function FocusPanel({ moment, driver, onClose, onSeek }: {
-  moment: Moment; driver: number | null; onClose: () => void; onSeek: (index: number) => void;
+export function FocusPanel({ moment, driver, spatial = null, onClose, onSeek }: {
+  moment: Moment; driver: number | null; spatial?: FocusSpatial | null; onClose: () => void; onSeek: (index: number) => void;
 }) {
   return (
     <Panel id="cc-focus" title={driver != null ? "Driver focus" : "Session"} className="cc-focus-panel"
       meta={driver != null ? <span>at {moment.isStart ? "the start" : moment.isFinal ? "the end" : `lap ${moment.lap}`}</span> : undefined}>
       {driver != null
-        ? <DriverFocus moment={moment} driver={driver} onClose={onClose} onSeek={onSeek} />
+        ? <DriverFocus moment={moment} driver={driver} spatial={spatial} onClose={onClose} onSeek={onSeek} />
         : <SessionSummary moment={moment} />}
     </Panel>
   );

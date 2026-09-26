@@ -11,6 +11,7 @@ import { fmtAsOf, fmtClockTenths, fmtGap } from "../../src/command/format";
 import { frameIndexAt, frameTimes } from "../../src/command/moment";
 import type { Timeline } from "../../src/command/types";
 import { CATALOG, frameIndex, golden, json, mockApi, SID } from "./fixture";
+import { stateAt } from "../spatial/fixture";
 
 afterEach(() => { vi.unstubAllGlobals(); window.history.replaceState(null, "", "/"); });
 
@@ -89,7 +90,7 @@ describe("ONE SESSION STATE: every panel moves with the cursor", () => {
     expect(screen.getByText(`${known} messages up to this moment`)).toBeInTheDocument();
     // weather = the frame's own latest weather
     if (f.weather.track_temp_c != null) {
-      const cell = screen.getByText("Track").closest(".cc-wx-cell")!;
+      const cell = within(document.getElementById("cc-weather")!).getByText("Track").closest(".cc-wx-cell")!;
       expect(cell).toHaveTextContent(`${f.weather.track_temp_c.toFixed(1)}°C`);
     }
     // stints never extend past the frame: no stint number above the row's current one
@@ -193,7 +194,10 @@ describe("no fabrication", () => {
     const quoted = clone.querySelectorAll(".cc-rc-msg");
     expect(quoted.length).toBeGreaterThan(0);
     quoted.forEach((el) => el.remove());
-    expect(clone.textContent).not.toMatch(/\bTurn \d|\bApex\b|Braking zone|Track position|track map/i);
+    // Phase 12B: a validated track map and "Track position" now exist; corners,
+    // apexes, braking zones, DRS zones and racing lines still never do
+    clone.querySelectorAll(".sm-unavailable").forEach((el) => el.remove());
+    expect(clone.textContent).not.toMatch(/\bTurn \d|\bApex\b|Braking zone|\bcorner\b|DRS zone|racing line/i);
   });
 
   it("DRS is stated unavailable, not guessed", async () => {
@@ -260,5 +264,91 @@ describe("failure states", () => {
     render(<CommandCenter search="" />);
     expect(await screen.findByRole("link", { name: /open/i })).toHaveAttribute("href", `/?session=${encodeURIComponent(SID)}`);
     expect(screen.getByText("No recording")).toBeInTheDocument();
+  });
+});
+
+describe("track map in the command center (Phase 12B)", () => {
+  const map = () => document.getElementById("cc-map") as HTMLElement;
+  const mapMarkers = () => [...map().querySelectorAll("g.sm-marker")];
+  const S40 = stateAt(2);
+
+  it("the map shows the LAP 40 moment from the real fixture and names its time", async () => {
+    await renderAt("&lap=40");
+    expect(await within(map()).findByText(/positions at 14:26:09\.3 UTC/, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(mapMarkers()).toHaveLength(S40.drivers.filter((d) => d.status !== "NO_COVERAGE").length);
+  });
+
+  it("moving the cursor requests the new moment's state", async () => {
+    const t = golden();
+    const fetchMock = mockApi();
+    render(<CommandCenter search={search("&lap=40")} />);
+    await screen.findByRole("heading", { name: /netherlands · zandvoort/i }, { timeout: 8000 });
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    const next = Date.parse(t.frames[frameIndex(t, 41)].at!);
+    await waitFor(() => {
+      const ats = fetchMock.mock.calls.map((c) => new URL(String(c[0]), "http://x"))
+        .filter((u) => decodeURIComponent(u.pathname).endsWith("/spatial"))
+        .map((u) => Date.parse(u.searchParams.get("at")!));
+      expect(ats).toContain(next);
+    }, { timeout: 4000 });
+  });
+
+  it("after location coverage ends there are no markers and the map says so", async () => {
+    await renderAt();                                       // FINAL frame
+    expect(await within(map()).findByText("No position coverage at this moment", {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(mapMarkers()).toHaveLength(0);
+    expect(map().querySelector("path.sm-circuit")).not.toBeNull();
+  });
+
+  it("the red-flag frame shows the RED FLAG banner from the timeline", async () => {
+    await renderAt("&lap=2");
+    await within(map()).findByText(/positions at/, {}, { timeout: 4000 });
+    expect(map().querySelector(".sm-phase")).toHaveTextContent(/RED FLAG/);
+  });
+
+  it("selecting a driver highlights it on the map and fills Track position in driver focus", async () => {
+    const d = S40.drivers.find((x) => x.status === "POSITIONED" && x.sector != null)!;
+    await renderAt(`&lap=40&driver=${d.driver_number}`);
+    await within(map()).findByText(/positions at/, {}, { timeout: 4000 });
+    expect(map().querySelector(`g.sm-marker[data-driver="${d.driver_number}"]`)).toHaveClass("is-selected");
+    const focus = document.getElementById("cc-focus") as HTMLElement;
+    const block = within(focus).getByText("Track position").closest(".cc-focus-block") as HTMLElement;
+    expect(block).toHaveTextContent(`S${d.sector}`);
+    expect(block).toHaveTextContent(`${Math.round(d.distance_m!).toLocaleString("en-US")} m`);
+    expect(block).toHaveTextContent(/positions at 14:26:09\.3 UTC/);
+  });
+
+  it("selecting a battle highlights both cars", async () => {
+    await renderAt("&lap=40");
+    await within(map()).findByText(/positions at/, {}, { timeout: 4000 });
+    const t = golden();
+    const b = t.frames[frameIndex(t, 40)].active_battles[0];
+    fireEvent.click(document.querySelectorAll<HTMLButtonElement>(".cc-battle")[0]);
+    const lit = [b.ahead, b.behind].map((n) => map().querySelector(`g.sm-marker[data-driver="${n}"]`)).filter(Boolean);
+    expect(lit.length).toBeGreaterThan(0);
+    for (const m of lit) expect(m).toHaveClass("is-battle");
+  });
+
+  it.each([
+    ["404 on the track", { track: () => json({ detail: "no recording for openf1:11353" }, 404) }, /Spatial map unavailable/],
+    ["409 on the state", { state: () => json({ detail: { message: "spatial geometry not validated for this session",
+                                                         status: "UNVALIDATED", reasons: ["NO_CITED_LAP_LENGTH"] } }, 409) },
+     /NO_CITED_LAP_LENGTH/],
+    ["422 on the state", { state: () => json({ detail: "at must carry a UTC offset" }, 422) }, /at must carry a UTC offset/],
+    ["500 on the state", { state: () => json({ detail: "spatial output withheld (fail closed)" }, 500) }, /spatial output withheld/],
+  ])("%s shows its map state", async (_n, opts, text) => {
+    mockApi(opts as Parameters<typeof mockApi>[0]);
+    render(<CommandCenter search={search("&lap=40")} />);
+    await screen.findByRole("heading", { name: /netherlands · zandvoort/i }, { timeout: 8000 });
+    expect(await within(map()).findByText(text, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(mapMarkers()).toHaveLength(0);
+  });
+
+  it("mobile: the Track tab shows the map", async () => {
+    await renderAt("&lap=40");
+    fireEvent.click(screen.getByRole("button", { name: "Track" }));
+    expect(screen.getByRole("button", { name: "Track" })).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector(".cc-tab-track")).not.toBeNull();
+    expect(map().closest("[data-tab]")).toHaveAttribute("data-tab", "track");
   });
 });

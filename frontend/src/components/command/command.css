@@ -184,6 +184,7 @@
   display: grid; gap: var(--cc-gap);
   grid-template-columns: minmax(520px, 38fr) minmax(0, 40fr) minmax(300px, 22fr);
   grid-template-areas:
+    "timing map     focus"
     "timing chart   focus"
     "timing battles focus"
     "strategy strategy rc"
@@ -191,6 +192,7 @@
   align-items: start;
 }
 .cc-area-timing { grid-area: timing; }
+.cc-area-map { grid-area: map; }
 .cc-area-chart { grid-area: chart; }
 .cc-area-battles { grid-area: battles; }
 .cc-area-focus { grid-area: focus; }
@@ -501,11 +503,11 @@
 .cc-replay-speed { display: flex; align-items: center; gap: 4px; }
 
 /* ── tabs (mobile) ── */
-.cc-tabs { display: none; position: relative; grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: var(--radius-panel);
+.cc-tabs { display: none; position: relative; grid-template-columns: repeat(5, minmax(0, 1fr)); border-radius: var(--radius-panel);
   background: var(--background-panel); border: 1px solid var(--border-subtle); padding: 3px; }
 .cc-tab { min-height: 36px; font-family: var(--font-label); font-size: 12px; font-weight: 600; color: var(--text-muted-aa); position: relative; z-index: 1; }
 .cc-tab[aria-pressed="true"] { color: var(--text-primary); }
-.cc-tab-indicator { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 4); border-radius: 4px;
+.cc-tab-indicator { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 5); border-radius: 4px;
   background: var(--background-selected); box-shadow: inset 0 0 0 1px var(--border-default);
   transform: translateX(calc(var(--tab, 0) * 100%)); transition: transform var(--motion-normal) var(--ease-emphasized); }
 
@@ -529,6 +531,7 @@
   .cc-grid {
     grid-template-columns: minmax(420px, 42fr) minmax(0, 58fr);
     grid-template-areas:
+      "timing map"
       "timing chart"
       "timing battles"
       "focus  strategy"
@@ -540,7 +543,7 @@
 @media (max-width: 1023px) {
   .cc-grid {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "timing" "focus" "chart" "battles" "strategy" "rc" "weather";
+    grid-template-areas: "timing" "focus" "map" "chart" "battles" "strategy" "rc" "weather";
   }
   .cc-session { grid-template-columns: minmax(0, 1fr) auto; }
   .cc-session-state { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; }
@@ -564,6 +567,7 @@
   /* recomposed: one section at a time; timing tab = tower + focus */
   .cc-grid > [data-tab] { display: none; }
   .cc-tab-timing .cc-grid > [data-tab="timing"],
+  .cc-tab-track .cc-grid > [data-tab="track"],
   .cc-tab-race .cc-grid > [data-tab="race"],
   .cc-tab-strategy .cc-grid > [data-tab="strategy"],
   .cc-tab-events .cc-grid > [data-tab="events"] { display: block; }
