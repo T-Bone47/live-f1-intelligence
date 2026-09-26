@@ -103,6 +103,19 @@ describe("sessions and availability", () => {
     expect(h.result.current.status).toBe("loading");
   });
 
+  it("asks for no state before the cursor exists (browser QA finding: a request at 1970)", async () => {
+    const f = mockSpatial({ state: byTime });
+    const h = renderHook((p: Omit<Props, "t"> & { t: number | null }) => useSpatial(p),
+                         { initialProps: { ...base, t: null } });
+    await flush();
+    await wait(500);
+    expect(calls(f, "/spatial")).toHaveLength(0);
+    expect(h.result.current.shown).toBeNull();
+    h.rerender({ ...base, t: LAP40 });
+    await wait(120);
+    expect(calls(f, "/spatial")).toHaveLength(1);
+  });
+
   it("live sessions are unavailable without a request", async () => {
     const f = mockSpatial();
     const h = mount({ live: true });

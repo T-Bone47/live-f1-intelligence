@@ -55,7 +55,8 @@ const asApiError = (e: unknown): ApiError =>
 interface Pending { sid: string; trackId: string; from: number; step: number; reload: number }
 
 export function useSpatial({ sid, t, playing, rate, live }: {
-  sid: string; t: number; playing: boolean; rate: number; live: boolean;
+  /** The cursor; null until it exists (nothing is requested for a time that is not the cursor). */
+  sid: string; t: number | null; playing: boolean; rate: number; live: boolean;
 }): SpatialView {
   const [reload, setReload] = useState(0);
   const [trackSlot, setTrackSlot] = useState<{ sid: string; track: TrackReference | null; error: ApiError | null } | null>(null);
@@ -81,7 +82,7 @@ export function useSpatial({ sid, t, playing, rate, live }: {
 
   // ---- paused: one exact request per settled cursor; the latest wins
   useEffect(() => {
-    if (!trackId || playing) return;
+    if (!trackId || playing || t == null) return;
     const id = ++seq.current;
     const ctrl = new AbortController();
     const timer = setTimeout(() => {
@@ -105,12 +106,12 @@ export function useSpatial({ sid, t, playing, rate, live }: {
   const stepMs = plan.stepS * 1000, spanMs = plan.spanS * 1000;
   const ours = <T extends { sid: string; trackId: string }>(x: T) => x.sid === sid && x.trackId === trackId;
   const list = wins && trackId && ours(wins) ? wins.list.filter((w) => w.step_s === plan.stepS) : [];
-  const current = list.find((w) => Date.parse(w.from_ts) <= t && t <= Date.parse(w.to_ts)) ?? null;
+  const current = t == null ? null : list.find((w) => Date.parse(w.from_ts) <= t && t <= Date.parse(w.to_ts)) ?? null;
   const flight = pending.filter((p) => ours(p) && p.step === plan.stepS);
   const blocked = (from: number) => failed.some((f) => ours(f) && f.step === plan.stepS && f.from === from
                                                    && f.reload === reload);
   let need: number | null = null;
-  if (playing && trackId) {
+  if (playing && trackId && t != null) {
     if (!current) {
       const from = Math.floor(t / stepMs) * stepMs;
       if (!flight.some((p) => p.from <= t && t <= p.from + spanMs) && !blocked(from)) need = from;
@@ -137,9 +138,9 @@ export function useSpatial({ sid, t, playing, rate, live }: {
   // ---- what is shown: the exact state when it is at the cursor, else the
   // window state at or before it, else the last exact state (flagged lagging)
   const exact = paused && trackId && ours(paused) ? paused.shown : null;
-  const fromWindow = current ? selectState(current, t) : null;
-  const shown = !playing && exact && exact.at === t ? exact : fromWindow ?? exact;
-  const lagging = shown != null && Math.abs(t - shown.at) > stepMs;
+  const fromWindow = current && t != null ? selectState(current, t) : null;
+  const shown = t == null ? null : !playing && exact && exact.at === t ? exact : fromWindow ?? exact;
+  const lagging = shown != null && t != null && Math.abs(t - shown.at) > stepMs;
 
   const retry = useCallback(() => setReload((r) => r + 1), []);
 

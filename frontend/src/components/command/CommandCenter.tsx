@@ -45,6 +45,7 @@ function LoadingLayout() {
       <div className="cc-skel-block cc-skel-header" />
       <div className="cc-grid">
         <div className="cc-skel-block cc-area-timing"><SkeletonRows rows={14} label="Loading timing" /></div>
+        <div className="cc-skel-block cc-area-map" />
         <div className="cc-skel-block cc-area-chart" />
         <div className="cc-skel-block cc-area-focus" />
       </div>
@@ -116,7 +117,7 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
 
   const live = timeline?.source.kind === "LIVE_HUB";
   // Phase 12B: the backend's spatial state for the same cursor (never computed here)
-  const spatial = useSpatial({ sid, t: ui.t, playing: ui.playing, rate: ui.rate, live: !!live });
+  const spatial = useSpatial({ sid, t: ready ? ui.t : null, playing: ui.playing, rate: ui.rate, live: !!live });
   const focusSpatial = useMemo(() => {
     if (ui.driver == null || spatial.status !== "ready" || !spatial.shown) return null;
     const d = spatial.shown.drivers.find((x) => x.driver_number === ui.driver);
