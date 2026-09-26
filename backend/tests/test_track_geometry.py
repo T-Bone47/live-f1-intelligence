@@ -265,6 +265,15 @@ def test_point_at_round_trips_through_project():
         assert abs(c.project(*c.point_at(s)).s - s) < 1e-9
 
 
+def test_subpath_forward_and_across_the_line():
+    """Phase 12B: a sector path runs forward between two line positions,
+    with the end points inserted exactly and the loop's closing vertex once."""
+    c = Centerline(SQ + [SQ[0]])
+    assert c.subpath(100, 500) == [(100.0, 0.0), (400.0, 0.0), (400.0, 100.0)]
+    assert c.subpath(1550, 50) == [(0.0, 50.0), (0.0, 0.0), (50.0, 0.0)]
+    assert c.subpath(400, 800) == [(400.0, 0.0), (400.0, 400.0)]
+
+
 def test_closing_the_loop_stops_points_before_the_line_clamping_to_zero():
     # the open-polyline clamp found by the 12A spike
     assert Centerline(SQ).project(0.0, 5.0).s == 0.0

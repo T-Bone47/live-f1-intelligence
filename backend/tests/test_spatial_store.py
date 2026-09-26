@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import random
 import shutil
@@ -10,6 +11,7 @@ import threading
 import pytest
 from spatial_synth import SID, T0, synth_rows, write_recording
 
+from app.analysis.timeline import to_canonical_json
 from app.spatial import builder, contract
 from app.spatial.circuits import CitedLength
 from app.spatial.source import SpatialIdentityError
@@ -89,6 +91,19 @@ def test_a_corrupted_cache_is_rebuilt_not_served(root, builds):
     (rec / TRACK_CACHE).write_bytes(b"{not json")
     assert SpatialStore(root, CIRCUITS).get_track_bytes(SID) == body
     assert len(builds) == 3
+
+
+def test_cached_track_without_sectors_is_rebuilt(root, builds):
+    """Phase 12B spec 5.4: a cache written before sectors existed keeps the
+    same key (the builder version did not move) but fails the stricter
+    contract, so it is rebuilt rather than served."""
+    SpatialStore(root, CIRCUITS).get_track_bytes(SID)
+    path = _rec(root) / TRACK_CACHE
+    old = json.loads(path.read_bytes())
+    old.pop("sectors", None)
+    path.write_bytes(to_canonical_json(old))
+    doc = SpatialStore(root, CIRCUITS).get_track(SID)
+    assert len(doc.get("sectors", [])) == 3 and len(builds) == 2
 
 
 def test_index_round_trips_exactly(root, tmp_path):

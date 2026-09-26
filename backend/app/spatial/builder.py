@@ -97,6 +97,24 @@ def _line_doc(m, finish_fraction: float | None, length: float | None, validated:
                       for d, lap, v in m.worst]}
 
 
+SECTOR_LINES = (("FINISH", "S1"), ("S1", "S2"), ("S2", "FINISH"))
+
+
+def _sector_docs(centerline, lines, length: float) -> list[dict]:
+    """Phase 12B: each sector's path on the reference, from its measured
+    start line to its measured end line (the browser never computes one).
+    Metres are the lap-fraction span times the cited length."""
+    total = centerline.total_length
+    out = []
+    for k, (a, b) in enumerate(SECTOR_LINES, start=1):
+        s0, s1 = lines[a].fraction * total, lines[b].fraction * total
+        span = (lines[b].fraction - lines[a].fraction) % 1.0
+        out.append({"sector": k, "from_line": a, "to_line": b, "length_m": span * length,
+                    "polyline": [list(p) for p in centerline.subpath(s0, s1)],
+                    "label_point": list(centerline.point_at(s0 + span * total / 2))})
+    return out
+
+
 def _capabilities(inputs: SpatialInputs, lateral: dict[str, float]) -> dict:
     counts = inputs.counts
     return {
@@ -122,7 +140,7 @@ def build_spatial(inputs: SpatialInputs,
     track_id = make_track_id(inputs.session_id, inputs.input_digest, cited)
     candidates = reference_candidates(inputs, k=3)
 
-    reference_doc, lines_doc, tolerance_doc, pit_doc = None, [], None, None
+    reference_doc, lines_doc, tolerance_doc, pit_doc, sectors_doc = None, [], None, None, []
     lateral: dict[str, float] = {}
     index, reasons = None, []
     if not candidates:
@@ -156,6 +174,7 @@ def build_spatial(inputs: SpatialInputs,
                          "loop_length_feed_units": ref.centerline.total_length,
                          "polyline": [list(p) for p in ref.points] if validated else None}
         if validated:
+            sectors_doc = _sector_docs(ref.centerline, lines, length)
             drivers = sorted(set(inputs.drivers) | set(inputs.samples))
             tracks = {d: (track_from_samples(classify_driver(inputs, d, ref, finish, tol, windows))
                           if d in inputs.samples else empty_track()) for d in drivers}
@@ -194,6 +213,7 @@ def build_spatial(inputs: SpatialInputs,
                               else loop / length},
         "reference": reference_doc,
         "timing_lines": lines_doc,
+        "sectors": sectors_doc,
         "validation": {"gates": {k: _gate_doc(g) for k, g in gates.items()},
                        "reference_independence_m": independence,
                        "on_reference_tol": tolerance_doc, "pit_windows": pit_doc,

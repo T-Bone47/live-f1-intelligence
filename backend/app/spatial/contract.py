@@ -85,6 +85,20 @@ class TimingLine(_M):
     worst: list[Worst]
 
 
+LineName = Literal["FINISH", "S1", "S2"]
+SECTOR_LINES = (("FINISH", "S1"), ("S1", "S2"), ("S2", "FINISH"))
+SECTOR_LENGTH_TOL_M = 1e-6
+
+
+class SectorGeometry(_M):
+    sector: Literal[1, 2, 3]
+    from_line: LineName
+    to_line: LineName
+    length_m: float
+    polyline: list[list[float]]
+    label_point: list[float]
+
+
 class Session(_M):
     session_id: str
     circuit_short_name: str | None
@@ -176,6 +190,7 @@ class TrackReferenceV1(_M):
     coordinate_system: CoordinateSystem
     reference: Reference | None
     timing_lines: list[TimingLine]
+    sectors: list[SectorGeometry]
     validation: Validation
     capabilities: Capabilities
     limitations: list[Limitation]
@@ -210,6 +225,7 @@ class TrackReferenceV1(_M):
         lines = [line.line for line in self.timing_lines]
         if len(lines) != len(set(lines)):
             raise ValueError("duplicate timing line")
+        self._sector_rules(validated)
         expected = make_track_id(
             self.session.session_id, self.provenance.input_digest,
             CitedLength(self.circuit.lap_length_m, self.circuit.lap_length_source)
@@ -217,6 +233,29 @@ class TrackReferenceV1(_M):
         if self.track_id != expected:
             raise ValueError("track_id does not match its content")
         return self
+
+    def _sector_rules(self, validated: bool) -> None:
+        """Phase 12B: three contiguous sector paths, only on validated
+        geometry, each running exactly from its start line to its end line,
+        their metres adding up to the cited lap."""
+        if not validated:
+            if self.sectors:
+                raise ValueError("unvalidated geometry must not publish sector paths")
+            return
+        pairs = [(s.sector, s.from_line, s.to_line) for s in self.sectors]
+        if pairs != [(k, a, b) for k, (a, b) in enumerate(SECTOR_LINES, start=1)]:
+            raise ValueError("sectors must be 1 FINISH->S1, 2 S1->S2, 3 S2->FINISH")
+        if self.circuit.lap_length_m is None:
+            raise ValueError("sector metres need a cited lap length")
+        at = {line.line: [line.x, line.y] for line in self.timing_lines}
+        for s in self.sectors:
+            if len(s.polyline) < 2 or any(len(p) != 2 for p in s.polyline)                     or len(s.label_point) != 2:
+                raise ValueError(f"sector {s.sector}: path must be (x, y) pairs")
+            if s.polyline[0] != at.get(s.from_line) or s.polyline[-1] != at.get(s.to_line):
+                raise ValueError(f"sector {s.sector}: path must run line to line")
+        total = sum(s.length_m for s in self.sectors)
+        if abs(total - self.circuit.lap_length_m) > SECTOR_LENGTH_TOL_M:
+            raise ValueError("sector lengths must add up to the cited lap length")
 
 
 class Bracket(_M):

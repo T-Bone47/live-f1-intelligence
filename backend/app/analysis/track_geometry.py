@@ -112,6 +112,23 @@ class Centerline:
         (x0, y0), (x1, y1) = self.points[i], self.points[i + 1]
         return x0 + a * (x1 - x0), y0 + a * (y1 - y0)
 
+    def subpath(self, s0: float, s1: float) -> list[tuple[float, float]]:
+        """The path from arc length s0 forward to s1: point_at(s0), every vertex
+        strictly between, point_at(s1). On a closed loop it wraps past the end
+        when s1 < s0, and the closing vertex (a repeat of the first) counts
+        once."""
+        total = self.total_length
+        if self.is_closed:
+            start = s0 % total
+            span = (s1 - s0) % total
+            vertices = range(len(self.points) - 1)          # the closing repeat excluded
+            ahead = sorted(((self.cum[i] - start) % total, i) for i in vertices)
+        else:
+            start, span = s0, s1 - s0
+            ahead = [(self.cum[i] - start, i) for i in range(len(self.points))]
+        inner = [self.points[i] for d, i in ahead if 0.0 < d < span]
+        return [self.point_at(s0), *inner, self.point_at(s1)]
+
     def _on_segment(self, i: int, x: float, y: float) -> tuple[float, float]:
         x0, y0, dx, dy, seg2 = self._seg[i]
         t = 0.0 if seg2 == 0 else max(0.0, min(1.0, ((x - x0) * dx + (y - y0) * dy) / seg2))

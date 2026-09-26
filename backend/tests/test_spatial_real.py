@@ -271,3 +271,24 @@ def test_real_state_docs_validate_and_state_their_precision(built):
         state = state_doc(index, datetime.fromisoformat(f["at"]))   # validates or raises
         assert state["line_placement_p95_m"] == p95
         assert "CORNER_PRECISION_NOT_MET" in {lim["code"] for lim in state["limitations"]}
+
+
+def test_real_sectors_follow_the_measured_lines(built):
+    """Phase 12B: the three published sector paths run exactly from line to
+    line on the reference and their metres add up to the cited 4259 m."""
+    _inputs, doc, _index = built
+    sectors = doc["sectors"]
+    assert [(s["from_line"], s["to_line"]) for s in sectors] == [
+        ("FINISH", "S1"), ("S1", "S2"), ("S2", "FINISH")]
+    assert abs(sum(s["length_m"] for s in sectors) - 4259.0) < 1e-6
+    for s in sectors:
+        a, b = _line(doc, s["from_line"]), _line(doc, s["to_line"])
+        assert s["polyline"][0] == [a["x"], a["y"]] and s["polyline"][-1] == [b["x"], b["y"]]
+        span = (b["loop_fraction"] - a["loop_fraction"]) % 1.0
+        assert s["length_m"] == span * 4259.0
+        # every interior vertex is a reference vertex: nothing invented
+        ref = {tuple(p) for p in doc["reference"]["polyline"]}
+        assert all(tuple(p) in ref for p in s["polyline"][1:-1])
+    s1, s2 = _line(doc, "S1")["distance_m"], _line(doc, "S2")["distance_m"]
+    assert sectors[0]["length_m"] == pytest.approx(s1, abs=1e-9)
+    assert sectors[1]["length_m"] == pytest.approx(s2 - s1, abs=1e-9)

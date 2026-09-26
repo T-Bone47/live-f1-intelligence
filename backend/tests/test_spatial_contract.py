@@ -80,6 +80,31 @@ def test_unvalidated_session_has_no_polyline_and_no_index():
         and line["n"] > 0 for line in doc["timing_lines"])
 
 
+def test_validated_track_publishes_three_contiguous_sectors(valid):
+    """Phase 12B: the browser never computes sectors - the track document
+    carries their paths, from line to line, measured on the reference."""
+    _inputs, doc, _index = valid
+    lines = {line["line"]: line for line in doc["timing_lines"]}
+    sectors = doc["sectors"]
+    assert [s["sector"] for s in sectors] == [1, 2, 3]
+    assert [(s["from_line"], s["to_line"]) for s in sectors] == [
+        ("FINISH", "S1"), ("S1", "S2"), ("S2", "FINISH")]
+    for s in sectors:
+        start, end = lines[s["from_line"]], lines[s["to_line"]]
+        assert s["polyline"][0] == [start["x"], start["y"]]
+        assert s["polyline"][-1] == [end["x"], end["y"]]
+        assert len(s["label_point"]) == 2
+    assert abs(sum(s["length_m"] for s in sectors) - 4000.0) < 1e-6
+    for s in sectors:
+        span = (lines[s["to_line"]]["loop_fraction"] - lines[s["from_line"]]["loop_fraction"]) % 1.0
+        assert s["length_m"] == span * 4000.0
+
+
+def test_unvalidated_track_has_no_sectors():
+    doc, _index = build_spatial(inputs_from_rows(SID, synth_rows(laps=VALID_LAPS)), {})
+    assert doc["status"] == "UNVALIDATED" and doc["sectors"] == []
+
+
 def test_no_eligible_reference_lap_is_unvalidated():
     doc, index = build_spatial(inputs_from_rows(SID, synth_rows(laps=1)), CIRCUITS)
     validate_track(doc)
@@ -111,6 +136,14 @@ def _t_unvalidated_line_position(d, _s):
     d["status"] = "UNVALIDATED"
     d["reference"]["polyline"] = None       # only the line positions still leak
 def _t_status(d, _s): d["status"] = "VALIDATED_EVERYTHING"
+def _t_unvalidated_sectors(d, _s):
+    d["status"] = "UNVALIDATED"
+    d["reference"]["polyline"] = None
+    for line in d["timing_lines"]:          # only the sector paths still leak
+        line.update(loop_fraction=None, x=None, y=None, distance_m=None)
+def _t_sector_lengths(d, _s): d["sectors"][1]["length_m"] += 1.0
+def _t_sector_endpoint(d, _s): d["sectors"][2]["polyline"][0][0] += 0.5
+def _t_sector_order(d, _s): d["sectors"][0], d["sectors"][1] = d["sectors"][1], d["sectors"][0]
 def _s_fraction_pit(_d, s): s["drivers"][0]["flag"] = "PIT_LANE"
 def _s_metres_uncited(_d, s): s["lap_length_m"] = None
 def _s_no_bracket(_d, s): s["drivers"][0]["bracket"] = None
@@ -120,7 +153,8 @@ def _s_duplicate(_d, s): s["drivers"].append(copy.deepcopy(s["drivers"][0]))
 
 @pytest.mark.parametrize("tamper", [_t_extra, _t_nan, _t_unvalidated_polyline,
                                     _t_unvalidated_line_position, _t_track_id,
-                                    _t_status, _s_fraction_pit, _s_metres_uncited, _s_no_bracket,
+                                    _t_status, _t_unvalidated_sectors, _t_sector_lengths,
+                                    _t_sector_endpoint, _t_sector_order, _s_fraction_pit, _s_metres_uncited, _s_no_bracket,
                                     _s_stale_no_age, _s_duplicate])
 def test_tampered_documents_are_rejected(valid, tamper):
     _inputs, doc, index = valid
