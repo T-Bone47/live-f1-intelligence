@@ -39,7 +39,9 @@
 .sm-line { cursor: pointer; outline: none; }
 .sm-line-hit { stroke: transparent; stroke-width: 16; }
 .sm-line-tick { stroke: var(--text-primary); stroke-width: 2; stroke-linecap: square; }
-.sm-line-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; fill: var(--text-secondary); }
+.sm-line-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; fill: var(--text-primary); stroke: none; }
+.sm-line-tag-box { fill: var(--background-elevated); stroke: var(--border-emphasis); stroke-width: 1; }
+.sm-line.is-active .sm-line-tag-box { stroke: var(--focus-ink); }
 .sm-line.is-active .sm-line-tick, .sm-line:focus-visible .sm-line-tick { stroke: var(--focus-ink); stroke-width: 3; }
 .sm-line.is-active .sm-line-tag { fill: var(--text-primary); }
 

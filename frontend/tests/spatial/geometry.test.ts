@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { fitTransform, mapFit, placeLabels, signedArea } from "../../src/components/spatial/geometry";
+import { fitTransform, mapFit, nudgeClear, outwardOffset, placeLabels, signedArea } from "../../src/components/spatial/geometry";
 import { track } from "./fixture";
 
 const polyline = () => track().reference!.polyline! as [number, number][];
@@ -69,6 +69,23 @@ describe("placeLabels", () => {
     const x0 = p.anchor === "start" ? p.x : p.x - 30;
     const hit = x0 < 160 && 108 < x0 + 30 && p.y - 10 < 96 && 80 < p.y + 2;
     expect(hit).toBe(false);
+  });
+
+  it("a sector label steps out from under a timing-line tag (browser QA finding)", () => {
+    const tag = { x0: 90, y0: 90, x1: 120, y1: 104 };
+    const [x, y] = nudgeClear([100, 98], 16, [tag]);
+    const inside = x + 8 > tag.x0 && x - 8 < tag.x1 && y + 6 > tag.y0 && y - 6 < tag.y1;
+    expect(inside).toBe(false);
+    expect(nudgeClear([10, 10], 16, [tag])).toEqual([10, 10]);        // already clear: unchanged
+  });
+
+  it("sector names sit outside a clockwise loop, off the cars' path (browser QA finding)", () => {
+    const [ox, oy] = outwardOffset([0, 0], [10, 0], 14);             // travelling right on screen
+    expect(ox).toBeCloseTo(0, 9);
+    expect(oy).toBeCloseTo(-14, 9);                                   // outside = up
+    const [dx, dy] = outwardOffset([0, 0], [0, 10], 14);             // travelling down
+    expect(dx).toBeCloseTo(14, 9);
+    expect(dy).toBeCloseTo(0, 9);
   });
 
   it("keeps labels inside the frame", () => {

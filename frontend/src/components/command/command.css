@@ -574,6 +574,8 @@
   .cc-replay { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; height: auto; padding: var(--sp-2) var(--sp-3); gap: 6px var(--sp-3); }
   .cc-scrub { grid-column: 1 / -1; order: 3; }
   .cc-replay-speed { grid-column: 2; justify-self: end; }
+  .cc-replay-speed > .cc-small { display: none; }        /* the group's name says "multiples of race time" */
+  .cc-replay-speed .cc-seg-btn { padding-inline: 6px; }
   .cc-replay-readout { display: none; }
   .cc-battle-list { grid-template-columns: minmax(0, 1fr); }
   .cc-readouts-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

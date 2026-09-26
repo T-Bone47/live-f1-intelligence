@@ -63,11 +63,12 @@ const LABEL_H = 12;
 
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 
-/** Where a timing-line tag is drawn (baseline 10 px above, 12 px right of the line point) and its box. */
+/** Where a timing-line tag is drawn (text baseline 10 px above, 12 px right of the line point) and
+ * the box drawn around it - the same box label placement keeps clear. */
 export const LINE_TAG_DX = 12, LINE_TAG_DY = -10;
 export function lineTagBox(at: [number, number], text: string): Box {
-  const x0 = at[0] + LINE_TAG_DX, base = at[1] + LINE_TAG_DY;
-  return { x0, y0: base - LABEL_H + 2, x1: x0 + text.length * 6.4 + 2, y1: base + 2 };
+  const x0 = at[0] + LINE_TAG_DX - 4, base = at[1] + LINE_TAG_DY;
+  return { x0, y0: base - 10, x1: x0 + text.length * 6.4 + 8, y1: base + 4 };
 }
 const OFFSETS: { dx: number; dy: number; anchor: "start" | "end" }[] = [
   { dx: 9, dy: -7, anchor: "start" }, { dx: -9, dy: -7, anchor: "end" },
@@ -98,6 +99,25 @@ export function placeLabels(anchors: { id: number; x: number; y: number; w: numb
     out.set(a.id, { x: pick.x, y: pick.y, anchor: pick.anchor });
   }
   return out;
+}
+
+/** A short centred label (sector name) moved off any reserved box: the first of
+ * its own spot, then `step` px below, above, right, left, then twice as far. */
+export function nudgeClear(at: [number, number], step: number, reserved: Box[]): [number, number] {
+  const tries = [[0, 0], [0, step], [0, -step], [step, 0], [-step, 0], [0, 2 * step], [0, -2 * step]];
+  for (const [dx, dy] of tries) {
+    const x = at[0] + dx, y = at[1] + dy;
+    if (reserved.every((b) => x + 8 <= b.x0 || x - 8 >= b.x1 || y + 6 <= b.y0 || y - 6 >= b.y1)) return [x, y];
+  }
+  return at;
+}
+
+/** Pixel offset `d` px to the left of travel from a to b: outside the loop for a
+ * lap drawn clockwise on screen (the orientation ruling), so a sector name
+ * sits beside the cars' path rather than on it. */
+export function outwardOffset(a: [number, number], b: [number, number], d: number): [number, number] {
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  return [Math.sin(ang) * d, -Math.cos(ang) * d];
 }
 
 /** Screen angle (degrees) of the path leaving a point - orients a timing-line tick. */
