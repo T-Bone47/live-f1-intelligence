@@ -120,7 +120,11 @@ export function ShortcutHelp({ open, onClose }: { open: boolean; onClose: () => 
     <div className="cc-dialog-scrim" onClick={onClose}>
       <div ref={ref} className="cc-dialog" role="dialog" aria-modal="true" aria-labelledby="cc-help-title" tabIndex={-1}
            onClick={(e) => e.stopPropagation()}
-           onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Tab") { e.preventDefault(); onClose(); } }}>
+           onKeyDown={(e) => {
+             if (e.key === "Escape") { e.preventDefault(); onClose(); }
+             // one focusable control inside: Tab keeps focus in the dialog
+             else if (e.key === "Tab") { e.preventDefault(); ref.current?.querySelector<HTMLElement>("button")?.focus(); }
+           }}>
         <div className="cc-dialog-head">
           <h2 id="cc-help-title" className="cc-panel-title">Keyboard shortcuts</h2>
           <button type="button" className="cc-btn cc-btn-icon cc-btn-ghost" onClick={onClose} aria-label="Close"><Icon name="x" /></button>
