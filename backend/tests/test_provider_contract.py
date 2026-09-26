@@ -194,6 +194,26 @@ class TestFastF1Adapter:
         assert out["lap_duration"] is None  # missing stays missing
 
 
+# Real 2026 Dutch GP race red flag (OpenF1 11353), verbatim. The race was
+# suspended 13:05:28-13:33:00; sector clears and a TRACK CLEAR came during
+# the stoppage. OpenF1's 'SessionStatus' category is not in RCMCategory, so
+# the canonical category of the status rows is UNKNOWN.
+RED_FLAG_2026_NED = (
+    {"date": "2026-08-23T12:20:01+00:00", "category": "Flag",
+     "flag": "GREEN", "message": "GREEN LIGHT - PIT EXIT OPEN"},
+    {"date": "2026-08-23T13:03:28.567000+00:00", "category": "UNKNOWN",
+     "flag": None, "message": "SESSION STARTED"},
+    {"date": "2026-08-23T13:05:27.956000+00:00", "category": "UNKNOWN",
+     "flag": None, "message": "SESSION ABORTED"},
+    {"date": "2026-08-23T13:05:28+00:00", "category": "Other",
+     "flag": None, "message": "RED FLAG - RACE SUSPENDED"},
+    {"date": "2026-08-23T13:05:28+00:00", "category": "Flag",
+     "flag": "CLEAR", "message": "CLEAR IN TRACK SECTOR 16"},
+    {"date": "2026-08-23T13:08:00+00:00", "category": "Flag",
+     "flag": "CLEAR", "message": "TRACK CLEAR"},
+)
+
+
 class TestSessionStateProjection:
     def _fold_real_messages(self):
         from app.core.session_state import SessionStateProjection
@@ -226,19 +246,25 @@ class TestSessionStateProjection:
         p = self._fold_real_messages()
         assert all(t.from_phase != t.to_phase for t in p.history)
 
-    def test_red_flag_then_clear_recovers_to_live(self):
+    def test_clears_during_a_red_flag_do_not_end_it(self):
         from app.core.session_state import SessionStateProjection
 
-        p = SessionStateProjection()
-        p.apply([
-            {"date": "2026-08-23T13:10:00+00:00", "category": "Flag",
-             "flag": "GREEN", "message": "GREEN LIGHT - PIT EXIT OPEN"},
-            {"date": "2026-08-23T13:11:00+00:00", "category": "Flag",
-             "flag": "RED", "message": "RED FLAG"},
-            {"date": "2026-08-23T13:40:00+00:00", "category": "Flag",
-             "flag": "CLEAR", "message": "CLEAR IN TRACK SECTOR 7"},
-        ])
+        p = SessionStateProjection().apply(list(RED_FLAG_2026_NED) + [
+            {"date": "2026-08-23T13:05:52+00:00", "category": "Flag",
+             "flag": "DOUBLE YELLOW", "message": "DOUBLE YELLOW IN TRACK SECTOR 18"}])
+        assert p.phase.value == "RED_FLAG"
+        assert p.track_flag.value == "RED"      # sector flags do not replace the red
+
+    def test_session_started_resumes_after_a_red_flag(self):
+        from app.core.session_state import SessionStateProjection
+
+        p = SessionStateProjection().apply([*RED_FLAG_2026_NED,
+            {"date": "2026-08-23T13:33:00.088000+00:00", "category": "UNKNOWN",
+             "flag": None, "message": "SESSION STARTED"}])
         assert p.phase.value == "LIVE"
+        assert [t.to_phase.value for t in p.history] == ["LIVE", "RED_FLAG", "LIVE"]
+        # no flag message has arrived since the restart
+        assert p.track_flag.value == "UNKNOWN"
 
     def test_unknown_message_leaves_phase_stable(self):
         from app.core.session_state import SessionStateProjection

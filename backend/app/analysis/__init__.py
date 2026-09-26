@@ -93,6 +93,11 @@ class AnalysisEngine:
         self._state_transition_count = 0
         self._primed = False
         self._deferred: list = []
+        # open pit stop per driver: (in-lap number | None, stop ts). Cleared
+        # when the driver completes a later lap (the out-lap).
+        self._open_pit: dict[int, tuple[int | None, datetime]] = {}
+        # car directly ahead at each driver's last interval sample (battle pairs)
+        self._car_ahead: dict[int, int | None] = {}
 
         # ---- Phase 5 deterministic intelligence layers ----
         from app.analysis.racepace2 import RacePace2
@@ -229,6 +234,7 @@ class AnalysisEngine:
         result = self.timing.fold_lap(
             driver_number=lap.driver_number, lap_number=lap.lap_number,
             duration_s=lap.duration_s, deleted=deleted)
+        self._close_pit_if_out_lap_done(lap)
         pb = bool(result and result.get("personal_best"))
         sb_change = bool(result and result.get("session_best"))  # excludes first
         events = self.sig.lap_completed(
@@ -321,9 +327,15 @@ class AnalysisEngine:
         gap_value = iv.gap_to_leader_s if iv.gap_to_leader_s is not None else iv.gap_raw
         TimingEngine.apply_interval_sample(d, gap_value, iv.interval_s, lap=None)
 
+        # a car without a reported position is nobody's neighbour
         neighbors = self.gaps.neighbors_by_position(
-            {n: dd.position or 0 for n, dd in self.timing.state.drivers.items()})
+            {n: dd.position for n, dd in self.timing.state.drivers.items()
+             if dd.position is not None})
         ahead_n, _behind = neighbors.get(iv.driver_number, (None, None))
+        prev_ahead = self._car_ahead.get(iv.driver_number)
+        if prev_ahead is not None and prev_ahead != ahead_n:
+            self.battles.end_pair(prev_ahead, iv.driver_number)
+        self._car_ahead[iv.driver_number] = ahead_n
 
         events = []
         if ahead_n is not None and iv.interval_s is not None:
@@ -361,9 +373,25 @@ class AnalysisEngine:
 
     def on_pit_stop(self, pit, envelope):
         self.strategy.fold_pit_stop(pit.lane_duration_s)
-        self.timing.mark_pit(pit.driver_number, True)
+        completed = self.timing.state.driver(pit.driver_number).lap_number
+        out_lap_done = (pit.lap_number is not None and completed is not None
+                        and completed > pit.lap_number)
+        if not out_lap_done:   # a stop delivered late never re-opens the pit state
+            self.timing.mark_pit(pit.driver_number, True)
+            self._open_pit[pit.driver_number] = (pit.lap_number, pit.ts)
         ev = self.sig.pit_stop(pit.driver_number, pit.ts, pit.lane_duration_s)
         return [ev] if ev else []
+
+    def _close_pit_if_out_lap_done(self, lap) -> None:
+        """A completed lap after the in-lap (or, without an in-lap number, a
+        completed lap started at/after the stop) means the car is back out."""
+        open_pit = self._open_pit.get(lap.driver_number)
+        if open_pit is None or lap.duration_s is None:
+            return
+        in_lap, stop_ts = open_pit
+        if (lap.lap_number > in_lap) if in_lap is not None else (lap.started_at >= stop_ts):
+            self.timing.mark_pit(lap.driver_number, False)
+            del self._open_pit[lap.driver_number]
 
     def on_weather(self, wx, envelope):
         raw = self.weather.fold(

@@ -6,6 +6,7 @@ app/providers/replay.py and docs/DATA_PIPELINE.md.
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import time
@@ -66,3 +67,65 @@ class Recorder:
         finally:
             self._fh.close()
         log.info("recorder finalized at %s (%d frames)", self.frames_path, self._seq)
+
+
+_SESSION_KEYS = ("session_id", "provider_session_key", "session_name", "country_code",
+                 "status", "date_start", "date_end", "meeting_name", "year",
+                 "session_type", "circuit_short_name")
+
+
+def finalize_interrupted(recording_dir: Path, note: str) -> dict:
+    """Write meta.json for a recording whose recorder never did (it died or was
+    stopped). Everything is derived from the frames and labelled: the meta says
+    `interrupted`, carries the caller's note, and lists per-model-type counts
+    and the last source timestamp so the coverage can be judged. Refuses to
+    overwrite an existing meta.json."""
+    from zstandard import ZstdDecompressor
+
+    rec = Path(recording_dir)
+    meta_path = rec / "meta.json"
+    if meta_path.exists():
+        raise FileExistsError(f"{meta_path} exists; not overwriting a recorder's own meta")
+    frames = bad = 0
+    event_types: set[str] = set()
+    coverage: dict[str, dict] = {}
+    session: dict = {}
+    provider = None
+    with open(rec / "frames.jsonl.zst", "rb") as fh:
+        reader = ZstdDecompressor().stream_reader(fh, read_across_frames=True)
+        for raw in io.BufferedReader(reader):
+            if not raw.strip():
+                continue
+            try:
+                env = json.loads(raw)["envelope"]
+            except (ValueError, KeyError):
+                bad += 1
+                continue
+            frames += 1
+            event_types.add(env["event_type"])
+            model = (env.get("payload") or {}).get("model") or {}
+            mtype = model.get("type", "UNKNOWN")
+            c = coverage.setdefault(mtype, {"count": 0, "last_source_ts": None})
+            c["count"] += 1
+            ts = env.get("source_timestamp")
+            if ts and (c["last_source_ts"] is None or ts > c["last_source_ts"]):
+                c["last_source_ts"] = ts
+            if mtype == "SessionInfo" and not session:
+                session = {k: model.get(k) for k in _SESSION_KEYS}
+                provider = model.get("provider")
+    meta = {
+        "session": session,
+        "provider": provider,
+        "recorded_at_epoch": (rec / "frames.jsonl.zst").stat().st_mtime,
+        "frames": frames,
+        "unreadable_lines": bad,
+        "event_types": sorted(event_types),
+        "format": "f1intel-recording-v1",
+        "capabilities_notes": [],
+        "interrupted": True,
+        "note": note,
+        "coverage": {k: coverage[k] for k in sorted(coverage)},
+        "finalized_by": "app.ingest.recorder.finalize_interrupted",
+    }
+    meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    return meta

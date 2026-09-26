@@ -96,6 +96,17 @@ class SessionHub:
         self.pipeline.bus.subscribe("analysis", _on_env)
         self.engine.sig.listeners.append(_on_intelligence)
 
+        # Phase 11: lap frames captured live by the same recorder the offline
+        # timeline builder uses (the engine is folded above, not again here)
+        from app.analysis.timeline import TimelineRecorder
+
+        self.timeline = TimelineRecorder(self.engine, fold_into_engine=False)
+
+        async def _on_timeline(env: Envelope) -> None:
+            self.timeline.fold(env)
+
+        self.pipeline.bus.subscribe("timeline", _on_timeline)
+
         # live telemetry channel: latest-wins coalescing per driver
         self.telemetry = TelemetryCoalescer()
 

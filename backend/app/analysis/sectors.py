@@ -29,6 +29,7 @@ class DriverSectorState:
     best: dict[int, float] = field(default_factory=dict)       # PB per sector
     best_lap: dict[int, int] = field(default_factory=dict)
     last: dict[int, float] = field(default_factory=dict)
+    last_class: dict[int, str] = field(default_factory=dict)   # status when crossed
 
 
 @dataclass
@@ -78,6 +79,7 @@ class SectorEngine:
             classification = "PURPLE" if current_holder == driver_number else "GREEN"
         else:
             classification = "YELLOW"
+        d.last_class[sector_index] = classification
 
         delta = (time_s - prev_pb) if prev_pb is not None else None
         return SectorClassification(

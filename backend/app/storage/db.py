@@ -504,6 +504,72 @@ class Repository:
             " FROM sessions ORDER BY date_start DESC NULLS LAST LIMIT $1", limit)
         return [dict(r) for r in rows]
 
+    # ------------------------------------------------ discovery (Phase 11) ---
+    # Read-only. Session-level rows plus per-session aggregates over laps
+    # (PK/ix_laps_session) and one EXISTS probe on the telemetry index - no
+    # scan of telemetry rows. Absent metadata stays NULL.
+
+    async def session_catalog(self) -> list[dict[str, Any]]:
+        rows = await self.pool.fetch(
+            """SELECT s.session_id, s.provider, s.provider_session_key, s.meeting_name,
+                      s.year, s.session_type, s.session_name, s.circuit_short_name,
+                      s.country_code, s.country_name, s.location, s.date_start,
+                      s.date_end, s.status,
+                      (SELECT count(*) FROM (
+                           SELECT driver_number FROM laps WHERE session_id = s.session_id
+                           UNION
+                           SELECT driver_number FROM session_drivers
+                            WHERE session_id = s.session_id) d) AS drivers,
+                      l.laps, l.max_lap,
+                      EXISTS (SELECT 1 FROM telemetry_car t
+                               WHERE t.session_id = s.session_id) AS has_car_telemetry
+               FROM sessions s
+               LEFT JOIN LATERAL (SELECT count(*) AS laps, max(lap_number) AS max_lap
+                                    FROM laps WHERE laps.session_id = s.session_id) l ON true
+               ORDER BY s.date_start DESC NULLS LAST, s.session_id""")
+        return [dict(r) for r in rows]
+
+    async def session_lap_catalog(self, session_id: str) -> dict[str, Any] | None:
+        """Drivers (identity as stored, else NULL) and their stored laps, each
+        flagged with whether car telemetry exists inside the lap's window."""
+        if not await self.pool.fetchval(
+                "SELECT 1 FROM sessions WHERE session_id=$1", session_id):
+            return None
+        laps = await self.pool.fetch(
+            """SELECT l.driver_number, l.lap_number, l.started_at, l.duration_s,
+                      l.deleted, l.is_pit_out_lap,
+                      (l.duration_s IS NOT NULL AND EXISTS (
+                          SELECT 1 FROM telemetry_car t
+                           WHERE t.session_id = l.session_id
+                             AND t.driver_number = l.driver_number
+                             AND t.ts BETWEEN l.started_at
+                                 AND l.started_at + l.duration_s * interval '1 second'
+                      )) AS has_car_telemetry
+               FROM laps l WHERE l.session_id=$1
+               ORDER BY l.driver_number, l.lap_number""", session_id)
+        ident = await self.pool.fetch(
+            """SELECT sd.driver_number, d.full_name, d.name_acronym,
+                      t.display_name AS team_name, t.colour_hex AS team_colour
+               FROM session_drivers sd JOIN drivers d USING (driver_id)
+               LEFT JOIN teams t ON t.team_id = d.team_id
+               WHERE sd.session_id=$1""", session_id)
+        drivers: dict[int, dict[str, Any]] = {}
+        for r in ident:
+            drivers[r["driver_number"]] = {
+                "driver_number": r["driver_number"], "acronym": r["name_acronym"],
+                "full_name": r["full_name"], "team_name": r["team_name"],
+                "team_colour": r["team_colour"], "laps": []}
+        for r in laps:
+            d = drivers.setdefault(r["driver_number"], {
+                "driver_number": r["driver_number"], "acronym": None, "full_name": None,
+                "team_name": None, "team_colour": None, "laps": []})
+            d["laps"].append({
+                "lap_number": r["lap_number"], "started_at": r["started_at"],
+                "duration_s": r["duration_s"], "deleted": r["deleted"],
+                "is_pit_out_lap": r["is_pit_out_lap"],
+                "has_car_telemetry": r["has_car_telemetry"]})
+        return {"session_id": session_id, "drivers": [drivers[k] for k in sorted(drivers)]}
+
     async def session_driver_list(self, session_id: str) -> list[dict[str, Any]]:
         rows = await self.pool.fetch(
             """SELECT sd.driver_number, d.driver_id, d.full_name,

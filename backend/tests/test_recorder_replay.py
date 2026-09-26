@@ -116,3 +116,69 @@ async def test_missing_recording_fails_cleanly(tmp_path: Path) -> None:
         session = await provider.resolve_session(str(session_dir))
         async for _ in provider.run(session):
             pass
+
+
+# ---------------------------------------------------------------- Phase 11 --
+# A recorder that dies (or hangs and is stopped) leaves frames without
+# meta.json. finalize_interrupted derives meta.json from the frames only and
+# says so: interrupted, with per-type coverage. Nothing is filled in.
+
+def _session_env(ts: datetime) -> Envelope:
+    from app.core.enums import ProvenanceClass
+
+    return Envelope(
+        event_type="session.discovered", session_id="openf1:test", source="openf1",
+        source_timestamp=ts, ingestion_timestamp=ts, provenance_class=ProvenanceClass.B,
+        payload={"model": {"type": "SessionInfo", "session_id": "openf1:test",
+                           "provider": "openf1", "provider_session_key": "test",
+                           "session_type": "Race", "session_name": "Race", "year": 2026,
+                           "meeting_name": None, "date_start": ts.isoformat(),
+                           "date_end": None, "status": "FINISHED"}})
+
+
+def _interrupted(tmp_path: Path) -> Path:
+    rec = Recorder(tmp_path / "recordings", "cut")
+    base = datetime.fromisoformat("2026-08-23T13:00:00+00:00")
+    rec.write(_session_env(base))
+    for i in range(3):
+        rec.write(_env(i, base + timedelta(seconds=i * 10)))
+    rec.finalize()                     # frames flushed, write_meta never called
+    return rec.dir
+
+
+def test_finalize_interrupted_writes_honest_meta(tmp_path: Path) -> None:
+    from app.ingest.recorder import finalize_interrupted
+
+    d = _interrupted(tmp_path)
+    assert not (d / "meta.json").exists()
+    meta = finalize_interrupted(d, note="recorder hung after HTTP 429")
+    on_disk = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+    assert on_disk == meta
+    assert meta["interrupted"] is True and meta["note"] == "recorder hung after HTTP 429"
+    assert meta["frames"] == 4 and meta["unreadable_lines"] == 0
+    assert meta["event_types"] == ["session.discovered", "weather.updated"]
+    assert meta["session"]["session_id"] == "openf1:test"
+    assert meta["session"]["meeting_name"] is None          # never filled in
+    cov = meta["coverage"]["WeatherPoint"]
+    assert cov["count"] == 3 and cov["last_source_ts"] == "2026-08-23T13:00:20Z"
+
+
+async def test_a_finalized_recording_replays(tmp_path: Path) -> None:
+    from app.ingest.recorder import finalize_interrupted
+
+    d = _interrupted(tmp_path)
+    finalize_interrupted(d, note="test")
+    provider = ReplayProvider(d)
+    provider.set_speed(0)
+    session = await provider.resolve_session(str(d))
+    items = [i async for i in provider.run(session)]
+    assert len(items) == 4
+
+
+def test_finalize_refuses_to_overwrite_a_real_meta(tmp_path: Path) -> None:
+    from app.ingest.recorder import finalize_interrupted
+
+    d = _interrupted(tmp_path)
+    (d / "meta.json").write_text('{"frames": 1}', encoding="utf-8")
+    with pytest.raises(FileExistsError):
+        finalize_interrupted(d, note="test")

@@ -178,15 +178,90 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
 
     @app.get("/api/v1/sessions")
     async def list_sessions(_: None = Depends(rate_limit_dependency)):
-        reg = get_registry()
-        return {
+        """Active realtime hubs (unchanged) + stored sessions (Phase 11
+        discovery). Stored metadata is passed through as stored; a session's
+        timeline is available when a hub runs it or a recording holds it."""
+        from app.storage.db import Repository
+        from app.storage.db import connect as db_connect
+        from app.storage.timeline_store import index_recordings
+
+        hubs = _registry.hubs if _registry is not None else {}
+        out: dict[str, Any] = {
             "active": [
                 {"session_id": sid,
                  "clients": hub.metrics.clients_connected,
                  "phase": hub.engine.rc.phase().value}
-                for sid, hub in sorted(reg.hubs.items())
-            ]
+                for sid, hub in sorted(hubs.items())
+            ],
+            "stored": [],
         }
+        settings = get_settings()
+        try:
+            pool = await db_connect(settings.database_url)
+        except Exception:  # noqa: BLE001 - discovery degrades, never crashes
+            out["stored_error"] = "database unavailable"
+            return out
+        try:
+            rows = await Repository(pool).session_catalog()
+        finally:
+            await pool.close()
+        recorded = index_recordings(settings.recordings_dir)
+        out["stored"] = [{**r, "timeline_available": r["session_id"] in recorded
+                          or r["session_id"] in hubs} for r in rows]
+        return out
+
+    @app.get("/api/v1/sessions/{session_id}/laps")
+    async def get_session_laps(session_id: str,
+                               _: None = Depends(rate_limit_dependency)):
+        """Stored drivers and laps of one session (Phase 11 discovery)."""
+        from app.storage.db import Repository
+        from app.storage.db import connect as db_connect
+
+        validate_session_id(session_id)
+        pool = await db_connect(get_settings().database_url)
+        try:
+            body = await Repository(pool).session_lap_catalog(session_id)
+        finally:
+            await pool.close()
+        if body is None:
+            raise HTTPException(404, f"session {session_id} unknown")
+        return body
+
+    @app.get("/api/v1/sessions/{session_id}/timeline")
+    async def get_session_timeline(session_id: str,
+                                   _: None = Depends(rate_limit_dependency)):
+        """Phase 11 session_timeline_v1: one engine snapshot per lap boundary.
+
+        A running hub serves the frames it captured live; otherwise the
+        timeline is built from the session's recording (cached next to it).
+        Validated and identity-checked before it is served (fail closed)."""
+        from fastapi.responses import Response
+
+        from app.analysis.timeline import (
+            TimelineContractError,
+            to_canonical_json,
+            validate_timeline,
+        )
+
+        validate_session_id(session_id)
+        hub = _registry.get(session_id) if _registry is not None else None
+        try:
+            if hub is not None:
+                hub.engine.flush_deferred()
+                timeline = hub.timeline.to_dict(source={
+                    "kind": "LIVE_HUB", "provider": hub.metrics.provider_name})
+                validate_timeline(timeline)
+                body = to_canonical_json(timeline)
+            else:
+                body = await asyncio.to_thread(
+                    _timeline_store(get_settings().recordings_dir).get_bytes, session_id)
+        except TimelineContractError as exc:
+            raise HTTPException(500, f"timeline withheld (fail closed): {exc}") from exc
+        if body is None:
+            raise HTTPException(404, f"no recording or running session for {session_id}: "
+                                     "timeline unavailable")
+        return Response(content=body, media_type="application/json",
+                        headers={"X-Timeline-Contract": "session_timeline_v1"})
 
     @app.get("/api/v1/sessions/{session_id}/snapshot")
     async def get_snapshot(session_id: str,
@@ -743,6 +818,19 @@ def _get_settings():
     from app.config import get_settings as _gs
 
     return _gs()
+
+
+_timeline_stores: dict[str, Any] = {}
+
+
+def _timeline_store(recordings_dir):   # Path -> TimelineStore
+    """One store (and in-memory cache) per recordings directory."""
+    from app.storage.timeline_store import TimelineStore
+
+    key = str(recordings_dir)
+    if key not in _timeline_stores:
+        _timeline_stores[key] = TimelineStore(recordings_dir)
+    return _timeline_stores[key]
 
 
 _UTC = timezone.utc

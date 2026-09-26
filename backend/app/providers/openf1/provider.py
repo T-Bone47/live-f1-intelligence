@@ -32,6 +32,11 @@ LIVE_WINDOW_AFTER = timedelta(minutes=30)
 # Historical backfill sweeps bounded windows so a whole race's telemetry is
 # never fetched in one response.
 HIST_WINDOW = timedelta(minutes=10)
+# Session-keyed low-volume channels (laps, pits, weather, race control,
+# positions, intervals) are fetched in one ranged call, so a wide lower bound
+# costs nothing. Verified need: the 2026 Dutch GP starting grid arrives as
+# position rows 53 min before date_start, outside LIVE_WINDOW_BEFORE.
+RANGED_LOOKBACK = timedelta(hours=3)
 
 
 class OpenF1Provider:
@@ -168,7 +173,8 @@ class OpenF1Provider:
         seed = (session.date_start - LIVE_WINDOW_BEFORE) if session.date_start else (
             datetime.now(tz=timezone.utc) - timedelta(hours=6)
         )
-        cursors = _Cursors(seed=seed)
+        ranged_seed = (session.date_start - RANGED_LOOKBACK) if session.date_start else seed
+        cursors = _Cursors(seed=seed, ranged_seed=min(seed, ranged_seed))
 
         drivers_rows = await self._client.drivers(sk)
         for row in drivers_rows:
@@ -364,10 +370,12 @@ class _Cursors:
         "laps", "car_data", "location", "pit", "weather",
         "race_control", "position", "intervals",
     )
+    WINDOWED = ("car_data", "location")   # high-rate: bounded windows from `seed`
 
-    def __init__(self, seed: datetime) -> None:
+    def __init__(self, seed: datetime, ranged_seed: datetime | None = None) -> None:
         for name in self.FIELDS:
-            setattr(self, name, seed)
+            start = seed if name in self.WINDOWED or ranged_seed is None else ranged_seed
+            setattr(self, name, start)
         self.idle_rounds = 0
         self.rounds = 0
 

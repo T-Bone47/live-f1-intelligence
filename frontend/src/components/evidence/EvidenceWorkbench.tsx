@@ -109,7 +109,7 @@ export function EvidenceWorkbench({ search = typeof location !== "undefined" ? l
     <div className="ewb" data-testid="evidence-workbench">
       <a className="ewb-skip" href="#ewb-main">Skip to evidence</a>
       <header className="ewb-bar">
-        <a href="/" className="ewb-back"><Icon name="arrowLeft" />Pit wall</a>
+        <a href="/" className="ewb-back"><Icon name="arrowLeft" />Command center</a>
         <p className="ewb-product">Live F1 Intelligence <span>/ Evidence Workbench</span></p>
         <p className="ewb-bar-meta">evidence_v1 · lap comparison</p>
       </header>

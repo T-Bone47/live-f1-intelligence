@@ -111,3 +111,30 @@ class TestAggregates:
     def test_confidence_high_for_direct_classification(self):
         p = SectorEngine.provenance_for("s")
         assert p.confidence.value == "HIGH"
+
+
+class TestLastCrossingStatus:
+    """Phase 11: the timing tower shows each driver's last sector crossings
+    with the status they had when crossed (not re-derived later)."""
+
+    def test_last_class_records_each_crossing_status(self):
+        eng = SectorEngine("s")
+        fold(eng, 1, 1, 1, 30.0)          # PURPLE (first sighting)
+        fold(eng, 1, 2, 1, 30.4)          # YELLOW (slower than PB)
+        assert eng.drivers[1].last[1] == 30.4
+        assert eng.drivers[1].last_class[1] == "YELLOW"
+
+    def test_last_class_keeps_the_status_at_crossing_time(self):
+        eng = SectorEngine("s")
+        fold(eng, 1, 1, 1, 30.0)          # driver 1 PURPLE
+        fold(eng, 2, 1, 1, 29.5)          # driver 2 takes the session best
+        assert eng.drivers[1].last_class[1] == "PURPLE"
+        assert eng.drivers[2].last_class[1] == "PURPLE"
+
+    def test_deleted_crossing_leaves_last_untouched(self):
+        eng = SectorEngine("s")
+        fold(eng, 1, 1, 2, 30.0)
+        eng.fold_sector(driver_number=1, lap_number=2, sector_index=2,
+                        time_s=28.0, deleted=True)
+        assert eng.drivers[1].last[2] == 30.0
+        assert eng.drivers[1].last_class[2] == "PURPLE"
