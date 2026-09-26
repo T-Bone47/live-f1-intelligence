@@ -3,3 +3,4 @@
 docs/evidence/*.json -text
 # Phase 11 session timelines are canonical JSON too (golden locked by tests).
 docs/timeline/*.json -text
+docs/spatial/*.json -text

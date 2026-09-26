@@ -10,6 +10,7 @@ import io
 import json
 import logging
 import time
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from zstandard import ZstdCompressor
@@ -67,6 +68,42 @@ class Recorder:
         finally:
             self._fh.close()
         log.info("recorder finalized at %s (%d frames)", self.frames_path, self._seq)
+
+
+def iter_recording_models(
+    frames_path: Path,
+    include_types: frozenset[str],
+    count_markers: Mapping[str, tuple[bytes, ...]] | None = None,
+    counts: dict[str, int] | None = None,
+) -> Iterator[tuple[dict, dict]]:
+    """Stream (envelope fields without payload, model) for the given model
+    types, as plain dicts (no Envelope validation - callers guard identity).
+
+    Lines are filtered on the '"type":"<T>"' bytes before any JSON parsing.
+    `count_markers` counts lines containing ALL of a name's byte patterns
+    into `counts[name]` without parsing them (e.g. DRS nulls in car samples).
+    """
+    from zstandard import ZstdDecompressor
+
+    markers = [f'"type":"{t}"'.encode() for t in include_types]
+    tally = dict(count_markers or {})
+    if counts is not None:
+        for name in tally:
+            counts.setdefault(name, 0)
+    with open(frames_path, "rb") as fh:
+        reader = ZstdDecompressor().stream_reader(fh, read_across_frames=True)
+        for raw in io.BufferedReader(reader):
+            if counts is not None:
+                for name, patterns in tally.items():
+                    if all(p in raw for p in patterns):
+                        counts[name] += 1
+            if not any(mk in raw for mk in markers):
+                continue
+            env = json.loads(raw)["envelope"]
+            model = (env.get("payload") or {}).get("model") or {}
+            if model.get("type") not in include_types:
+                continue
+            yield {k: v for k, v in env.items() if k != "payload"}, model
 
 
 _SESSION_KEYS = ("session_id", "provider_session_key", "session_name", "country_code",
