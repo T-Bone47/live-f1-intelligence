@@ -82,11 +82,17 @@ class ProjectedPosition:
 class Centerline:
     """An open polyline in the session's own (x, y) frame, start line -> finish line."""
 
-    def __init__(self, points: list[tuple[float, float]]):
+    def __init__(self, points: list[tuple[float, float]], search_window: int = SEARCH_WINDOW):
         self.points = points
+        # Performance only: the edge fallback in project() keeps every answer
+        # equal to a full search whatever the window (tested).
+        self.search_window = search_window
         self.cum = [0.0]
+        self._seg: list[tuple[float, float, float, float, float]] = []  # x0, y0, dx, dy, |d|^2
         for (x0, y0), (x1, y1) in pairwise(points):
             self.cum.append(self.cum[-1] + math.hypot(x1 - x0, y1 - y0))
+            dx, dy = x1 - x0, y1 - y0
+            self._seg.append((x0, y0, dx, dy, dx * dx + dy * dy))
         self.total_length = self.cum[-1]
 
     @property
@@ -107,9 +113,7 @@ class Centerline:
         return x0 + a * (x1 - x0), y0 + a * (y1 - y0)
 
     def _on_segment(self, i: int, x: float, y: float) -> tuple[float, float]:
-        (x0, y0), (x1, y1) = self.points[i], self.points[i + 1]
-        dx, dy = x1 - x0, y1 - y0
-        seg2 = dx * dx + dy * dy
+        x0, y0, dx, dy, seg2 = self._seg[i]
         t = 0.0 if seg2 == 0 else max(0.0, min(1.0, ((x - x0) * dx + (y - y0) * dy) / seg2))
         px, py = x0 + t * dx, y0 + t * dy
         return math.hypot(x - px, y - py), self.cum[i] + t * (self.cum[i + 1] - self.cum[i])
@@ -129,10 +133,10 @@ class Centerline:
         line moves from the last segments to the first ones. If the best
         match lands on the window's edge the car may have moved further, so
         fall back to a full search."""
-        n = len(self.points) - 1
-        if hint is None or n <= 2 * SEARCH_WINDOW + 1:
+        n, w = len(self.points) - 1, self.search_window
+        if hint is None or n <= 2 * w + 1:
             return self._search(x, y, range(n))
-        window = [(hint + k) % n for k in range(-SEARCH_WINDOW, SEARCH_WINDOW + 1)]
+        window = [(hint + k) % n for k in range(-w, w + 1)]
         p = self._search(x, y, window)
         if p.segment in (window[0], window[-1]):
             return self._search(x, y, range(n))

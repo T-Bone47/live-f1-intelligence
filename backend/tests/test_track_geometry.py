@@ -269,3 +269,18 @@ def test_closing_the_loop_stops_points_before_the_line_clamping_to_zero():
     # the open-polyline clamp found by the 12A spike
     assert Centerline(SQ).project(0.0, 5.0).s == 0.0
     assert Centerline(SQ + [SQ[0]]).project(0.0, 5.0).s == 1595.0
+
+
+def test_a_narrow_search_window_gives_the_global_answer():
+    """Phase 12A projects ~2M real samples, so it narrows the hint window; the
+    edge fallback must keep every answer equal to a full search."""
+    pts = [square_xy(float(i)) for i in range(400)]
+    narrow, full = Centerline(pts + [pts[0]], search_window=3), Centerline(pts + [pts[0]])
+    hint = None
+    walk = [(s, 0.4) for s in range(0, 400, 1)] + [(250.0, 3.0), (10.0, -2.0), (399.5, 0.0)]
+    for s, off in walk:           # includes jumps far outside the window
+        x, y = square_xy(s)
+        p = narrow.project(x + off, y + off, hint)
+        g = full.project(x + off, y + off, None)
+        assert (p.s, p.offset, p.segment) == (g.s, g.offset, g.segment)
+        hint = p.segment
