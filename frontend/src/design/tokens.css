@@ -215,6 +215,61 @@
   /* typography — UI UX Pro Max "Developer Mono" pairing, scoped to the workbench */
   --font-ui:              'IBM Plex Sans', 'Segoe UI', sans-serif;
   --font-label:           'IBM Plex Sans Condensed', 'IBM Plex Sans', 'Segoe UI', sans-serif;
+
+  /* ============================================================
+     PHASE 11 COMMAND CENTER — design-system/live-f1-intelligence/MASTER.md §13
+     Additive. Elevation is tonal (root < inset < panel < elevated < focus);
+     no drop shadows. Every state/flag/tyre colour ships with its word.
+     ============================================================ */
+
+  /* elevation */
+  --background-root:      #07090b;
+  --background-inset:     #0a0d10;   /* plot areas, wells */
+  --background-panel:     #0e1115;
+  --background-elevated:  #13171c;
+  --background-hover:     #171c22;
+  --background-selected:  #1c232b;
+
+  /* state (mode / connection) */
+  --state-live:           #ff453a;   /* only with the word LIVE and a connected socket */
+  --state-replay:         #a0caff;
+  --state-historical:     var(--historical);
+  --state-warning:        var(--warning);
+  --state-danger:         #ff6b63;
+  --state-success:        #5fd38a;
+  --state-neutral:        var(--text-secondary);
+  --state-unknown:        var(--unavailable);
+
+  /* track / session flags */
+  --flag-green:           #4cd07d;
+  --flag-yellow:          #ffd60a;
+  --flag-red:             #ff453a;
+  --flag-sc:              #ffb340;
+  --flag-vsc:             #f0a33b;
+  --flag-blue:            #5ac8fa;
+  --flag-chequered:       #e2e6eb;
+
+  /* tyres: aliases so every compound has a token (label always shown) */
+  --tyre-intermediate:    var(--tyre-inter);
+  --tyre-unknown:         var(--unavailable);
+
+  /* selection & focus (neutral: selection is not a driver or a verdict) */
+  --focus-ink:            #dfe7f1;
+  --selection-rule:       #8fa4bb;
+
+  /* radius hierarchy: rows < panels < major surfaces */
+  --radius-row:           2px;
+  --radius-panel:         6px;
+  --radius-surface:       10px;
+
+  /* motion: enter slightly slower than exit; spatial moves use emphasized */
+  --motion-fast:          120ms;
+  --motion-normal:        200ms;
+  --motion-slow:          320ms;
+  --motion-exit:          140ms;
+  --ease-standard:        cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit:            cubic-bezier(0.4, 0, 1, 1);
 }
 
 /* ── Reduced motion ── */

@@ -1,33 +1,46 @@
 import { createRoot } from "react-dom/client";
-import { App } from "./components/App";
 import React, { Suspense, lazy } from "react";
 import "./styles.css";
 
-// Phase 10.6: /evidence is the Evidence Workbench (historical, REST only — it
-// never opens the live session socket). Loaded lazily as its own chunk.
+// Routes (pathname only; each is its own lazy chunk):
+//   /  and /sessions  Phase 11 Race Intelligence Command Center (REST timeline)
+//   /evidence         Phase 10.6 Evidence Workbench (REST only)
+//   /pitwall          legacy live pit wall (opens the realtime session socket)
+const CommandCenter = lazy(() =>
+  import("./components/command/CommandCenter").then((m) => ({ default: m.CommandCenter })));
 const EvidenceWorkbench = lazy(() =>
   import("./components/evidence/EvidenceWorkbench").then((m) => ({ default: m.EvidenceWorkbench })));
-const isEvidenceRoute = location.pathname.replace(/\/+$/, "") === "/evidence";
+const PitWall = lazy(() => import("./components/App").then((m) => ({ default: m.App })));
 
-class ErrorBoundary extends React.Component<{children: any}, {error: any}> {
-  constructor(props: any) { super(props); this.state = { error: null }; }
-  static getDerivedStateFromError(error: any) { return { error }; }
+const path = location.pathname.replace(/\/+$/, "") || "/";
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error: Error) { return { error }; }
   render() {
     if (this.state.error) {
-      return <div style={{ color: "red", padding: "20px", background: "#222", fontFamily: "monospace" }}>
-        <h1>Frontend Crash</h1>
-        <pre>{this.state.error.message}</pre>
-        <pre>{this.state.error.stack}</pre>
-      </div>;
+      return (
+        <div role="alert" style={{ color: "#e2e6eb", background: "#07090b", padding: 24, fontFamily: "system-ui, sans-serif", minHeight: "100vh" }}>
+          <h1 style={{ fontSize: 16, margin: "0 0 8px" }}>This view failed to render</h1>
+          <p style={{ margin: "0 0 16px", color: "#9aa3af" }}>{this.state.error.message}</p>
+          <a href="/" style={{ color: "#a0caff" }}>Back to the command center</a>
+        </div>
+      );
     }
     return this.props.children;
   }
 }
 
+function Route() {
+  if (path === "/evidence") return <EvidenceWorkbench />;
+  if (path === "/pitwall") return <PitWall />;
+  return <CommandCenter />;
+}
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    {isEvidenceRoute
-      ? <Suspense fallback={null}><EvidenceWorkbench /></Suspense>
-      : <App />}
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#07090b" }} />}>
+      <Route />
+    </Suspense>
   </ErrorBoundary>
 );
