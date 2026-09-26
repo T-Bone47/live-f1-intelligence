@@ -146,6 +146,17 @@ Verified in the browser on the real timeline at 375, 768, 1024, 1440 and
 | `test_timeline_api.py` / `test_discovery_api.py` | 6 / 5 | routes; hub frames = offline frames |
 | `frontend/tests/command/` | 37 | one session state at laps 10/20/30, tampering, no fabrication, spatial safety, keyboard, fail closed (7/7 mutations) |
 
+## 8a. Performance
+
+| measure | result | method |
+|---|---:|---|
+| command center chunk | 71.12 kB JS (21.16 kB gzip) + 32.09 kB CSS | `npm run build` |
+| timeline, first request | ~13–14 s, then served from `timeline_v1.json` | dev API on the Dutch GP recording |
+| lap step, keydown to DOM commit | median 39.2 ms, p90 58.3 ms, max 68.3 ms | 30 `ArrowRight` steps (lap 11 to 41) at 1440 px on the real timeline; a `MutationObserver` on the lap readout; 2,106 DOM nodes |
+
+The lap-step numbers end at the DOM commit. The browser pane was hidden while
+measuring, so paint was not included; no frame-rate claim is made.
+
 ## 9. Limitations
 
 - Frames are leader-lap boundaries: other cars are mid-lap, and values are
