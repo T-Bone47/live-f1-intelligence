@@ -70,6 +70,7 @@ class SpatialIndex:
     tracks: dict[int, DriverTrack]
     line_p95_m: dict[str, float] | None = None   # measured timing-line p95 (metres)
     corner_precision_met: bool = False           # CORNER gate; unknown counts as not met
+    line_fractions: dict[str, float] | None = None  # S1/S2 lap fractions from the finish line
     centerline: Centerline = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -86,17 +87,27 @@ def _metres(index: SpatialIndex, fraction: float | None) -> float | None:
     return fraction * index.lap_length_m
 
 
+def _sector(index: SpatialIndex, fraction: float | None) -> int | None:
+    """Phase 12B: the sector a lap fraction lies in, against the measured
+    S1/S2 lines (both measured from the finish line). No fraction, no sector."""
+    if fraction is None or index.line_fractions is None:
+        return None
+    if fraction < index.line_fractions["S1"]:
+        return 1
+    return 2 if fraction < index.line_fractions["S2"] else 3
+
+
 def _no_coverage(driver: int) -> dict:
     return {"driver_number": driver, "status": "NO_COVERAGE", "flag": None, "confidence": None,
             "x": None, "y": None, "reference_fraction": None, "distance_m": None,
-            "lap_number": None, "bracket": None, "age_s": None}
+            "sector": None, "lap_number": None, "bracket": None, "age_s": None}
 
 
 def _sample(index: SpatialIndex, trk: DriverTrack, i: int) -> dict:
     frac = None if math.isnan(trk.fraction[i]) else trk.fraction[i]
     return {"x": trk.x[i], "y": trk.y[i], "flag": _FLAGS[trk.flag[i]].value,
             "reference_fraction": frac, "distance_m": _metres(index, frac),
-            "lap_number": None if trk.lap[i] < 0 else trk.lap[i],
+            "sector": _sector(index, frac), "lap_number": None if trk.lap[i] < 0 else trk.lap[i],
             "confidence": _CONFS[trk.confidence[i]].value}
 
 
@@ -133,13 +144,14 @@ def _entry(index: SpatialIndex, driver: int, trk: DriverTrack, t: float) -> dict
             ((f + index.finish_fraction) % 1.0) * index.centerline.total_length)
         return {"driver_number": driver, "status": "POSITIONED", "flag": SampleFlag.ON_REFERENCE.value,
                 "confidence": conf.value, "x": x, "y": y, "reference_fraction": f,
-                "distance_m": _metres(index, f), "lap_number": None if lap < 0 else lap,
+                "distance_m": _metres(index, f), "sector": _sector(index, f),
+                "lap_number": None if lap < 0 else lap,
                 "bracket": bracket, "age_s": None}
     flag = max((flag_a, flag_b), key=_SEVERITY.__getitem__)
     return {"driver_number": driver, "status": "POSITIONED", "flag": flag.value,
             "confidence": conf.value,
             "x": trk.x[lo] + a * (trk.x[hi] - trk.x[lo]), "y": trk.y[lo] + a * (trk.y[hi] - trk.y[lo]),
-            "reference_fraction": None, "distance_m": None, "lap_number": None,
+            "reference_fraction": None, "distance_m": None, "sector": None, "lap_number": None,
             "bracket": bracket, "age_s": None}
 
 

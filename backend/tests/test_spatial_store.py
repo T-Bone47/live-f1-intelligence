@@ -116,6 +116,8 @@ def test_index_round_trips_exactly(root, tmp_path):
     assert back.ref_points == index.ref_points and sorted(back.tracks) == sorted(index.tracks)
     assert (back.line_p95_m, back.corner_precision_met) ==            (index.line_p95_m, index.corner_precision_met)
     assert index.line_p95_m is not None
+    assert set(index.line_fractions) == {"S1", "S2"}
+    assert back.line_fractions == index.line_fractions
     for d, trk in index.tracks.items():
         other = back.tracks[d]
         for field in ("t", "x", "y", "flag", "confidence", "lap"):
@@ -125,6 +127,19 @@ def test_index_round_trips_exactly(root, tmp_path):
     for _ in range(50):
         t = T0.timestamp() + rng.uniform(-10.0, 1400.0)
         assert state_at(back, t) == state_at(index, t)
+
+
+def test_cached_index_without_line_fractions_is_rebuilt(root, builds):
+    """Phase 12B: an index written before sectors existed cannot answer them;
+    it fails to read and is rebuilt rather than served."""
+    SpatialStore(root, CIRCUITS).get_index(SID)
+    path = _rec(root) / INDEX_CACHE
+    head, _, body = path.read_bytes().partition(b"\n")
+    header = json.loads(head)
+    header.pop("line_fractions", None)
+    path.write_bytes(json.dumps(header, separators=(",", ":")).encode() + b"\n" + body)
+    index = SpatialStore(root, CIRCUITS).get_index(SID)
+    assert index.line_fractions is not None and len(builds) == 2
 
 
 def test_a_recording_of_another_session_fails_closed(tmp_path):

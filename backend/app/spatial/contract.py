@@ -273,13 +273,16 @@ class DriverState(_M):
     y: float | None
     reference_fraction: float | None
     distance_m: float | None
+    sector: Literal[1, 2, 3] | None
     lap_number: int | None
     bracket: Bracket | None
     age_s: float | None
 
 
 def _position_rules(flag: str | None, fraction: float | None, distance: float | None,
-                    lap_length_m: float | None) -> None:
+                    lap_length_m: float | None, sector: int | None) -> None:
+    if (sector is None) != (fraction is None):
+        raise ValueError("a sector exists exactly when a lap fraction does")
     if fraction is not None and (flag != "ON_REFERENCE" or not 0.0 <= fraction < 1.0):
         raise ValueError("a lap fraction exists only on the reference, in [0, 1)")
     if distance is not None and (fraction is None or lap_length_m is None):
@@ -307,7 +310,7 @@ class SpatialStateV1(_M):
             raise ValueError("drivers must be sorted and unique")
         for d in self.drivers:
             values = (d.flag, d.confidence, d.x, d.y, d.reference_fraction, d.distance_m,
-                      d.lap_number, d.bracket, d.age_s)
+                      d.sector, d.lap_number, d.bracket, d.age_s)
             if d.status == "NO_COVERAGE":
                 if any(v is not None for v in values):
                     raise ValueError(f"#{d.driver_number}: NO_COVERAGE carries no value")
@@ -316,7 +319,8 @@ class SpatialStateV1(_M):
                 raise ValueError(f"#{d.driver_number}: {d.status} needs x, y, flag and a bracket")
             if (d.status == "STALE") != (d.age_s is not None):
                 raise ValueError(f"#{d.driver_number}: age_s exactly when STALE")
-            _position_rules(d.flag, d.reference_fraction, d.distance_m, self.lap_length_m)
+            _position_rules(d.flag, d.reference_fraction, d.distance_m, self.lap_length_m,
+                            d.sector)
         return self
 
 
@@ -327,6 +331,7 @@ class TraceSample(_M):
     flag: Flag
     reference_fraction: float | None
     distance_m: float | None
+    sector: Literal[1, 2, 3] | None
     lap_number: int | None
     confidence: Grade
 
@@ -349,7 +354,8 @@ class SpatialTraceV1(_M):
         if not _ordered_unique([s.ts for s in self.samples]):
             raise ValueError("samples must be in time order")
         for s in self.samples:
-            _position_rules(s.flag, s.reference_fraction, s.distance_m, self.lap_length_m)
+            _position_rules(s.flag, s.reference_fraction, s.distance_m, self.lap_length_m,
+                            s.sector)
         return self
 
 

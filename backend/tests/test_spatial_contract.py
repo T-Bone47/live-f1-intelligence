@@ -149,13 +149,17 @@ def _s_metres_uncited(_d, s): s["lap_length_m"] = None
 def _s_no_bracket(_d, s): s["drivers"][0]["bracket"] = None
 def _s_stale_no_age(_d, s): s["drivers"][0]["status"] = "STALE"
 def _s_duplicate(_d, s): s["drivers"].append(copy.deepcopy(s["drivers"][0]))
+def _s_sector_without_fraction(_d, s):
+    s["drivers"][0].update(reference_fraction=None, distance_m=None)
+def _s_fraction_without_sector(_d, s): s["drivers"][0]["sector"] = None
 
 
 @pytest.mark.parametrize("tamper", [_t_extra, _t_nan, _t_unvalidated_polyline,
                                     _t_unvalidated_line_position, _t_track_id,
                                     _t_status, _t_unvalidated_sectors, _t_sector_lengths,
                                     _t_sector_endpoint, _t_sector_order, _s_fraction_pit, _s_metres_uncited, _s_no_bracket,
-                                    _s_stale_no_age, _s_duplicate])
+                                    _s_stale_no_age, _s_duplicate, _s_sector_without_fraction,
+                                    _s_fraction_without_sector])
 def test_tampered_documents_are_rejected(valid, tamper):
     _inputs, doc, index = valid
     track, state = copy.deepcopy(doc), json.loads(json.dumps(_mid_state(index)))

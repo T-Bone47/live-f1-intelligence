@@ -292,3 +292,27 @@ def test_real_sectors_follow_the_measured_lines(built):
     s1, s2 = _line(doc, "S1")["distance_m"], _line(doc, "S2")["distance_m"]
     assert sectors[0]["length_m"] == pytest.approx(s1, abs=1e-9)
     assert sectors[1]["length_m"] == pytest.approx(s2 - s1, abs=1e-9)
+
+
+def test_real_sector_agrees_with_the_published_lines(built):
+    """Phase 12B: each positioned car's sector agrees with its distance and the
+    track's published S1/S2 distances (entries within 1e-6 m of a line are
+    skipped: the two are the same number up to rounding)."""
+    _inputs, doc, index = built
+    s1, s2 = _line(doc, "S1")["distance_m"], _line(doc, "S2")["distance_m"]
+    frames = json.loads(TIMELINE.read_text(encoding="utf-8"))["frames"]
+    t0 = datetime.fromisoformat(frames[0]["at"]).timestamp()
+    t1 = datetime.fromisoformat(frames[-1]["at"]).timestamp()
+    rng = random.Random(2026)
+    seen = {1: 0, 2: 0, 3: 0}
+    for _ in range(50):
+        for e in state_at(index, rng.uniform(t0, t1)):
+            if e["reference_fraction"] is None:
+                assert e["sector"] is None
+                continue
+            d = e["distance_m"]
+            if min(abs(d - s1), abs(d - s2)) < 1e-6:
+                continue
+            assert e["sector"] == (1 if d < s1 else 2 if d < s2 else 3)
+            seen[e["sector"]] += 1
+    assert all(n > 0 for n in seen.values())

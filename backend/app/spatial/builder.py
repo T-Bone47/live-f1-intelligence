@@ -183,7 +183,9 @@ def build_spatial(inputs: SpatialInputs,
                                  lap_length_m=length, tracks=tracks,
                                  line_p95_m=None if length is None else
                                  {m.line: m.dispersion_m["p95"] for m in lines.values()},
-                                 corner_precision_met=gates["CORNER"].passed)
+                                 corner_precision_met=gates["CORNER"].passed,
+                                 line_fractions={n: (lines[n].fraction - finish) % 1.0
+                                                 for n in ("S1", "S2")})
         else:
             reasons = list(gates["MAP_SECTOR"].reasons)
 

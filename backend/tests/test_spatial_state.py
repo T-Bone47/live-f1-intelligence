@@ -105,7 +105,7 @@ def test_trace_returns_the_raw_classified_samples_in_order():
     index = _index(inputs_from_rows(SID, synth_rows()))
     out = trace(index, 1, _t(60.0), _t(70.0))
     assert len(out) == 41 and [s["ts"] for s in out] == sorted(s["ts"] for s in out)
-    assert set(out[0]) == {"ts", "x", "y", "flag", "reference_fraction", "distance_m",
+    assert set(out[0]) == {"ts", "x", "y", "flag", "reference_fraction", "distance_m", "sector",
                            "lap_number", "confidence"}
     assert out[0]["ts"] == "2026-01-01T12:01:00+00:00"
 
@@ -132,3 +132,34 @@ def test_a_sample_in_the_gap_between_two_lap_rows_still_gets_a_fraction():
     assert before["confidence"] == "LOW"
     after = _entry(index, 1, 120.1)                        # bracket 120.0 (gap) / 120.25 (L3)
     assert after["reference_fraction"] is not None and after["lap_number"] == 3
+
+
+# --- Phase 12B: the sector of each entry -------------------------------------
+
+def _sector_index(rows, windows_mode=None):
+    import dataclasses
+    inputs = inputs_from_rows(SID, rows)
+    ref, finish, tol = _params(inputs)
+    lines = measure_lines(inputs, ref, None)
+    fractions = {n: (lines[n].fraction - finish) % 1.0 for n in ("S1", "S2")}
+    windows = pit_windows(inputs, windows_mode) if windows_mode else ()
+    index = _index(inputs, (ref, finish, tol), windows)
+    return dataclasses.replace(index, line_fractions=fractions), fractions
+
+
+def test_sector_follows_the_measured_lines():
+    index, fractions = _sector_index(synth_rows())
+    assert abs(fractions["S1"] - 1 / 3) < 1e-3 and abs(fractions["S2"] - 2 / 3) < 1e-3
+    assert [_entry(index, 1, s)["sector"] for s in (75.0, 85.0, 105.0)] == [1, 2, 3]
+    samples = trace(index, 1, _t(74.0), _t(76.0))
+    assert samples and all(s["sector"] == 1 for s in samples)
+    assert all(s["sector"] == 3 for s in trace(index, 1, _t(104.0), _t(106.0)))
+
+
+def test_no_fraction_means_no_sector():
+    index, _f = _sector_index(synth_rows(pits=(Pit(2, 3, exit_at_s=185.0),)), "EXIT")
+    pit = _entry(index, 2, 175.05)
+    assert pit["flag"] == "PIT_LANE" and pit["reference_fraction"] is None
+    assert pit["sector"] is None
+    early = next(e for e in state_at(index, _t(-10_000.0)) if e["driver_number"] == 1)
+    assert early["status"] == "NO_COVERAGE" and early["sector"] is None

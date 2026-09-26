@@ -45,6 +45,7 @@ def write_index(path: Path, index: SpatialIndex) -> None:
               "ref_points": [list(p) for p in index.ref_points],
               "line_p95_m": index.line_p95_m,
               "corner_precision_met": index.corner_precision_met,
+              "line_fractions": index.line_fractions,
               "drivers": [{"driver": d, "n": len(index.tracks[d].t)} for d in drivers]}
     with open(path, "wb") as fh:
         fh.write(json.dumps(header, separators=(",", ":")).encode() + b"\n")
@@ -79,7 +80,8 @@ def read_index(path: Path) -> SpatialIndex:
                         finish_fraction=float(header["finish_fraction"]),
                         lap_length_m=header["lap_length_m"], tracks=tracks,
                         line_p95_m=header["line_p95_m"],
-                        corner_precision_met=bool(header["corner_precision_met"]))
+                        corner_precision_met=bool(header["corner_precision_met"]),
+                        line_fractions=header["line_fractions"])
 
 
 @dataclass
