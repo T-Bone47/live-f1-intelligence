@@ -116,6 +116,13 @@ an undocumented unit.
   is impossible by construction and property-tested with a contaminated
   fixture.
 - Samples with null x or y are dropped and counted.
+- An exact (0, 0, 0) triple is a no-fix placeholder: the first raw location
+  row of the recording (12:15Z, before the session) is (0, 0, 0). These
+  samples are dropped and counted as `no_fix`, and the real-data test reports
+  when they occur.
+- The same pass counts `TelemetryCarSample` rows and those with
+  `"drs":null`. It uses a byte search, with no parsing, to evidence the DRS
+  capability.
 - **Duplicates:** if the same driver has the same ts with identical x and y,
   one sample is kept. If the same driver has the same ts with different x or
   y, both are dropped (no guess). Both counts go into provenance.
@@ -143,7 +150,8 @@ For each eligible lap (the §5.2 rules, without the coverage rule):
 - that position is projected onto the reference.
 
 Line location is the circular median of the projections. Dispersion is
-|Δ fraction| × cited length. For each line, report:
+|Δ fraction| × cited length. Percentiles are nearest-rank
+(`sorted[ceil(q·n) − 1]`). For each line, report:
 - n and the exclusion counts by reason (`LAP_1`, `PIT_ADJACENT`,
   `NO_SECTOR_TIME`, `NO_BRACKET`, `GAP`);
 - median, p90, p95, p99 and max in metres;
@@ -174,14 +182,16 @@ Each sample is projected with a windowed hint, per driver. Its flag:
 | flag | condition |
 |---|---|
 | `PIT_LANE` | inside a verified pit window (§5.7) |
-| `OFF_REFERENCE` | lateral offset > `ON_REFERENCE_TOL_M` (garage, red-flag pit lane, off track) |
+| `OFF_REFERENCE` | lateral offset > `ON_REFERENCE_TOL` (feed units; garage, red-flag pit lane, off track) |
 | `ON_REFERENCE` | otherwise |
 
 - Only `ON_REFERENCE` samples get a reference fraction, lap-relative
   distance and lap number. The others keep x, y with a null fraction.
-- **`ON_REFERENCE_TOL_M` is derived, not chosen.** It is the p99.9 of
-  lateral offsets of samples inside eligible green laps. The derivation must
-  show that fewer than 0.1% of pit-window samples fall inside it.
+- **`ON_REFERENCE_TOL` is derived, not chosen**, in feed units. Lateral
+  offsets are never converted to metres, because only along-track distance
+  has a cited length. It is the p99.9 of lateral offsets of samples inside
+  eligible laps. The derivation must show that fewer than 0.1% of
+  pit-window samples fall inside it.
   - If the two populations overlap, the tolerance is labelled PROVISIONAL
     and the overlap is reported.
 - The 10.3 continuity guards apply per lap:
@@ -207,12 +217,18 @@ never infers session state: race phase stays the timeline's job.
 
 ### 5.7 Pit windows (verify before relying)
 - Window = [`PitStop.ts`, `PitStop.ts + lane_duration_s`].
-- The semantics of `PitStop.ts` (pit entry or not) are **unverified**.
-  Implementation measures the share of in-window samples beyond
-  `ON_REFERENCE_TOL_M` for each hypothesis (ts = entry; ts = exit − lane
-  duration).
-- If neither hypothesis gives ≥ 90% off-reference samples, the pit window is
-  not used and pit lane is detected by offset only. This is reported.
+- The semantics of `PitStop.ts` are **unverified**. Two hypotheses are
+  measured:
+  - `ENTRY`: window = [ts, ts + lane];
+  - `EXIT`: window = [ts − lane, ts].
+- For each, implementation measures the share of in-window samples beyond
+  `ON_REFERENCE_TOL`. The mode with the higher share is used if it is
+  ≥ 90%. Otherwise the pit window is not used and pit lane is detected by
+  offset only. This is reported.
+- Prior evidence favours `EXIT`. #1's red-flag stop has ts 13:33:05Z and
+  lane 1,571.5 s: an EXIT window starts at 13:06:53Z, inside the red flag
+  (13:05:28-13:33:00Z). An ENTRY window would run to 13:59Z, past the
+  restart. The measurement decides.
 
 ### 5.8 Trace (`spatial_trace_v1`)
 For one driver over [from, to] (at most 600 s, a resource guard rather than
@@ -235,11 +251,12 @@ no resampling.
 - `timing_lines[]`: `FINISH | S1 | S2` with fraction, `distance_m`, x, y,
   n, exclusions, dispersion and worst crossings;
 - `validation`: per-claim gate results with thresholds, observed values and
-  reasons; reference independence; `on_reference_tol_m` with its
+  reasons; reference independence; `on_reference_tol_feed_units` with its
   derivation; pit-window hypothesis results;
 - `capabilities`, each measured or sourced:
-  - `racing_line: false` (on-line share);
-  - `drs_zones: false` (null count);
+  - `racing_line: false`, with lateral offset percentiles (feed units) of
+    eligible-lap samples;
+  - `drs_zones: false`, with the car-sample and DRS-null counts;
   - `corners: false` (no source);
   - `pit_lane_geometry: false`;
 - `limitations[]`: see §7;
@@ -365,9 +382,10 @@ length; gate failure; tampered cache key; corrupted cache; contract tamper
 ## 13. Open items measured during implementation
 
 1. The semantics of `PitStop.ts` (§5.7).
-2. The derivation of `ON_REFERENCE_TOL_M` and its population separation
+2. The derivation of `ON_REFERENCE_TOL` and its population separation
    (§5.5).
 3. The cause of each listed outlier, in particular the #14 S2 offsets
    (location stream gap, clock offset, or pit).
+4. When the no-fix (0, 0, 0) placeholders occur (§5.1).
 
 None of these is assumed. Each is reported in the validation doc.
