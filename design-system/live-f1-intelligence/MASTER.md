@@ -282,3 +282,37 @@ timing-line tag.
 `min(step / rate, 250 ms)` while playing only; a paused seek jumps. The info
 drawer rises 4 px. Nothing loops except the loading shimmer. Reduced motion
 removes all of it.
+
+## 15. Phase 12C — Car telemetry at the cursor, map ghost, track context
+
+Evidence: `docs/PHASE_12C_SPATIAL_EVIDENCE.md`. Every value drawn is a
+stored sample or a backend contract value; the browser only scales to pixels.
+
+**Car telemetry panel** (command center, below driver focus):
+
+| element | rule |
+|---|---|
+| channels | speed, throttle, brake (as delivered), gear, RPM; one row each, the `--telemetry-*` family colour **plus** the channel name - colour never carries meaning alone |
+| samples | markers (SVG vertex markers) joined by 1.4 px lines; a caption says lines join samples and nothing between them is measured |
+| gaps | two samples more than 2 s apart are never joined: a dashed band in the plot and the words "No samples hh:mm:ss.s–hh:mm:ss.s" |
+| cursor | the right edge of every plot, `--selection-rule`; nothing is drawn after it |
+| DRS | never plotted when absent: "DRS: not in this data (every sample in this window is null)" |
+| layout | ≥ 480 px panel: label column, plot, value column; narrower: label and value on one line above a full-width plot |
+| hover | a dashed vertical rule at the hovered sample; the readout lists that sample's own time and values (`no sample` where a channel has none) |
+| states | select a driver / loading skeleton / unavailable (live, no telemetry) / error with Retry / no samples in this minute |
+
+**Map ghost** (track map): a hollow dashed ring (`--text-primary`, 1.5 px) at
+the driver's own location sample at or before the hovered time, labelled
+"#NN at hh:mm:ss.s (hovered)"; never filled, never moved onto the line, gone
+when no sample lies within 2 s.
+
+**Track context** (Evidence Workbench, side column):
+
+| element | rule |
+|---|---|
+| circuit | the validated reference loop, `--border-active`, 6 px |
+| selected segment | driver A extent solid `--driver-a`, driver B dashed `--driver-b` (7 4), 4 px, with A/B monograms (A above, B below the end) |
+| other segments | a quiet dot at each placed segment's start; each is a button named "R05, #16 lap 60, placed by time" |
+| not placed | a text list with the reason in words; never drawn |
+| caption | "placed by each driver's own sample times …, not by the normalized distance axis" |
+| unavailable | "Track context unavailable" with the reason and the gate's codes; no map |

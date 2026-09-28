@@ -19,8 +19,22 @@ The response body is canonical JSON bytes, with these headers:
 - `X-Evidence-Contract: evidence_v1`
 - `X-Evidence-Id: <evidence_id>`
 - `Server-Timing: db, pipeline, serialize` (durations in ms)
+- `X-Data-Source: recording | database` (Phase 12C): where the laps and
+  samples came from. A session held by a recording is served from it. The
+  body does not carry the source: the same canonical rows give
+  byte-identical evidence from either source (tested on the Singapore
+  golden).
 
 The same rate limit applies as for every other `/api/v1` route.
+
+**Placement on the track (Phase 12C, optional).**
+`GET …/evidence/lap-comparison/spatial` takes the same query and returns
+`evidence_spatial_v1`: each segment's extent per driver, placed on the
+validated track by that driver's own sample times (never by the normalized
+distance axis), or NOT_PLACED with a reason. It names the same
+`evidence_id`. Status codes: 409 while the session's track is unvalidated,
+404 without a recording. evidence_v1 itself is unchanged. See
+`docs/PHASE_12C_SPATIAL_EVIDENCE.md` §3.
 
 ## 2. Request parameters
 

@@ -48,6 +48,7 @@ docker run -d --rm --name f1intel-test-pg -e POSTGRES_USER=f1intel -e POSTGRES_P
 ..\scripts\finalize_recording.py <dir> --note "..."   # meta.json for a stalled recording
 ..\scripts\spatial_report.py [--write-golden]         # 12A validation report (+ docs/spatial golden)
 ..\scripts\spatial_fixture.py [--measure]             # 12B real frontend fixture (+ window route timing)
+..\scripts\evidence_fixture.py [--measure]            # 12C real evidence/telemetry fixture (+ store and route timing)
 node ..\scripts\bench_playback.mjs                      # 12B playback in headless Chrome (dev API + Vite running)
 ..\scripts\bench_spatial.py        # 12A performance on the real recording
 cd ..\frontend; npm test; npm run build; npm run lint
@@ -84,6 +85,25 @@ lap_length_source`. There is no circuit geometry, so a lap length is never
 invented.
 
 ## Current state (2026-09-28)
+- **12C Spatial evidence + car telemetry at the cursor** (same branch, on top
+  of 12B; not pushed). Evidence: `docs/PHASE_12C_SPATIAL_EVIDENCE.md`.
+  - A recording that holds a session is its source (`app/storage/recording_store.py`,
+    caches next to the recording): `/laps`, `/telemetry/{driver}` and
+    `/evidence/lap-comparison` answer with `X-Data-Source`, and `/sessions`
+    lists `recorded[]` with the DB down. Singapore rows served from a
+    recording reproduce the evidence golden byte for byte.
+  - `evidence_spatial_v1` (`app/spatial/evidence_spatial.py`, route
+    `/evidence/lap-comparison/spatial`): each segment placed per driver by
+    its own sample times via 12A `driver_state`; NOT_PLACED with a reason.
+    Dutch GP pair (#16 L60 vs #81 L61, by rule): 4 of 11 segments
+    significant, all 10 covered placed for both.
+  - Command center: car telemetry panel below driver focus (samples ≤ t,
+    gaps > 2 s labelled, DRS stated absent) and a map ghost at the driver's
+    own location sample for a hovered sample. Workbench: lap pickers (work
+    from recordings), cited length prefilled from a validated track, Track
+    context map.
+  - Browser QA at 375–1920 px (headless Chrome); 21/21 mutations killed;
+    playback with the panel: 16× p95 20.9 ms, 64× p95 34.7 ms.
 - **12B Track map** (same branch, on top of 12A; not pushed). Command center:
   - The one cursor is race time `t`; lap frames derive from it (last frame
     at or before t). Replay plays race time 1x/4x/16x/64x (rAF, 250 ms tick
@@ -187,9 +207,15 @@ invented.
 - **Test baseline:** see "Baseline" at the end of this file.
 
 ## Next steps
-1. **12C telemetry/evidence spatial sync**, then 12D (battles, pit-lane
-   path). 12B's `TrackMap` already emits `onPositionSelect(driver, stateAt)`.
+1. **Race-craft on the map** (the agreed roadmap, item 2; brainstorm → spec
+   → plan first): OpenF1 `/overtakes` placed on the map, observed pit-cycle
+   outcomes (order and gap before vs after, never causal), battles on the
+   map, a pit-lane path measured from observed traversals. Then 2026 energy
+   and speed, qualifying mode, validated projections, team radio, season
+   explorer, production hardening (memory: roadmap-after-12b).
    - **Open 12A findings:** the lap-4 restart crossings (~35 m) and #14 lap 37.
+   - **Open 12C findings:** `/sessions` waits ~4 s for a refused Postgres
+     connection; 64× playback with the telemetry panel has p95 34.7 ms.
 1. **Recorder stall after HTTP 429.** Both Dutch GP recording runs stalled
    around 1.83M envelopes (see `finalize_interrupted`). Then record a
    qualifying and a sprint to exercise session-type layouts.
@@ -275,9 +301,18 @@ invented.
 
 ## Roadmap
 ~~10.6 evidence workbench~~ → ~~11 command center (observational)~~ →
-~~12A spatial foundation~~ → ~~12B track map~~ → 12C telemetry/evidence spatial
-sync → 12D battles / pit lane → 11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
+~~12A spatial foundation~~ → ~~12B track map~~ → ~~12C telemetry/evidence spatial
+sync~~ → race-craft on the map (12D battles / pit lane, overtakes, pit cycles) → 11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
+
+## Baseline (Phase 12C, verified 2026-09-28 on this machine, Postgres DOWN)
+- **Backend:** 977 passed, 23 skipped, 1 failed (7 min 20 s). The failure is
+  the known 10.3 S2 check (uncommitted fixture). Skips: 18 need Postgres plus
+  the known 5. 56 new 12C tests; the real-data ones need the Dutch GP
+  recording (the recording store's first build takes ~85 s, then 0.27 s).
+- **Frontend:** 374 passed (`npx vitest run --no-file-parallelism`), build OK
+  (command-center chunk 102.27 kB JS / 31.08 kB gzip), tsc OK, ESLint 0
+  errors (105 pre-existing warnings).
 
 ## Baseline (Phase 12B, verified 2026-09-28 on this machine, Postgres DOWN)
 - **Backend:** 921 passed, 23 skipped, 1 failed. The failure is the known
