@@ -160,7 +160,10 @@ a test asserts the lap runs clockwise on screen.
 ## 7. Browser QA (real API, real Dutch GP recording)
 
 Checked at 375, 768, 1024, 1440 and 1920 px: no horizontal overflow at any
-width (`scrollWidth = innerWidth`). Verified on the real data:
+width (`scrollWidth = innerWidth`). Continuous playback (1×/4×/16×/64×, a
+rate change, pause, stepping back) was run in headless Chrome with
+`scripts/bench_playback.mjs` after the in-app browser pane stayed hidden
+(§8). Verified on the real data:
 - LAP 40: 20 markers, VER and BEA not on the map; P1 NOR and "ANT OFF"
   labelled; starting playback issues one window request (120 s at 2 s).
 - LAP 2: RED FLAG banner from the timeline; NOR and ANT `PIT`, RUS and LEC
@@ -192,7 +195,11 @@ Defects found in the browser and fixed test-first:
 | map update after a step | median 328 ms, max 528 ms (includes the 120 ms debounce and the request) | 10 steps, MutationObserver |
 | cursor move inside a frame (a playback tick's render path), input to DOM | before the fix pass median 43.9 ms, p90 52 ms; after median 9.7 ms, p90 26.5 ms | 20 scrubber moves of 0.2 s at LAP 40, 1440 px, dev build |
 | command-center chunk | 100.27 kB JS (30.65 kB gzip), 39.81 kB CSS (Phase 11: 71.12 kB / 32.09 kB) | `npm run build` |
-| 16× playback frame budget | **not measured**: the browser pane was hidden, so `requestAnimationFrame` never ran | — |
+| playback 16×, 3.75 s wall (60.7 s race) | frames p50 6.9 ms, p95 13.8 ms, max 62.5 ms; 1 frame > 50 ms; 0 long tasks; 2 window requests (2 s step, ~475 kB, 44–58 ms), 0 exact requests | `scripts/bench_playback.mjs`, headless Chrome 153, 1440 px |
+| playback 64× (rate switched mid-play), 2.5 s (160 s race) | p50 7.0, p95 20.8, max 62.4 ms; 2 frames > 50 ms; 0 long tasks; 2 windows (4 s step, ~242 kB) | same |
+| playback 1× / 4×, 2.5 s each | p95 7.1 / 7.1 ms; 1 window each (0.5 s step 933 kB, 149 ms; 1 s step 939 kB, 116 ms) | same |
+| shown state vs cursor during all runs | never after the cursor, never back in time; lag ≤ one step (1.9 s at 16×, 3.9 s at 64×); 20 markers throughout; no error | sampled every 100 ms |
+| pause, then step back two frames | paused: exact state = cursor; right after stepping back: no markers ("loading positions"); 0.8 s later: exact state = cursor | same |
 
 ## 9. Tests
 
@@ -234,9 +241,6 @@ Two first survived; their killing tests were added.
 
 - Positions are the backend's states on a grid while playing (up to one step
   of race time behind the cursor, labelled); an exact state when paused.
-- The 16× frame budget is unmeasured (see §8): playback was exercised only
-  to its first window request and its first shown state, never run
-  continuously in a visible browser.
 - A map sector is geometric (against the measured S1/S2 lines, p95 12–18 m
   on the Dutch GP); a car that close to a line can be in a different sector
   than official timing says.

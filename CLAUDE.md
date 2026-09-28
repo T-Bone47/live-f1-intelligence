@@ -48,6 +48,7 @@ docker run -d --rm --name f1intel-test-pg -e POSTGRES_USER=f1intel -e POSTGRES_P
 ..\scripts\finalize_recording.py <dir> --note "..."   # meta.json for a stalled recording
 ..\scripts\spatial_report.py [--write-golden]         # 12A validation report (+ docs/spatial golden)
 ..\scripts\spatial_fixture.py [--measure]             # 12B real frontend fixture (+ window route timing)
+node ..\scripts\bench_playback.mjs                      # 12B playback in headless Chrome (dev API + Vite running)
 ..\scripts\bench_spatial.py        # 12A performance on the real recording
 cd ..\frontend; npm test; npm run build; npm run lint
 # npm run dev: / = command center, /sessions, /evidence = workbench, /pitwall = legacy
@@ -96,9 +97,10 @@ invented.
   - Verified in the browser on the real Dutch GP at 375-1920 px; 7 QA
     defects fixed test-first; 18/18 frontend mutations killed; the final
     review (with fixes) was answered by one fix pass (8 findings, each with a
-    red-first test). **Open:** continuous playback was never observed in a
-    visible browser; the 16x frame budget is NOT measured. Evidence:
-    `docs/PHASE_12B_TRACK_MAP.md`.
+    red-first test). Playback measured in headless Chrome
+    (`scripts/bench_playback.mjs`): 16x p95 frame 13.8 ms, 0 long tasks,
+    2 window requests per 60 s of race; never a state after the cursor.
+    Evidence: `docs/PHASE_12B_TRACK_MAP.md`.
 - **12A Spatial foundation** (branch `phase-12-spatial-intelligence`, stacked
   on phase 11; PR #2 still open). Backend only, no UI. `app/spatial/`:
   - The session's own OpenF1 `/location` feed gives a closed reference loop.
@@ -187,9 +189,6 @@ invented.
 ## Next steps
 1. **12C telemetry/evidence spatial sync**, then 12D (battles, pit-lane
    path). 12B's `TrackMap` already emits `onPositionSelect(driver, stateAt)`.
-   - **First, close 12B:** run playback (1x/4x/16x/64x, pause, rate change,
-     seek back) in a visible browser and measure the 16x frame budget and
-     request counts; record them in `docs/PHASE_12B_TRACK_MAP.md` §8.
    - **Open 12A findings:** the lap-4 restart crossings (~35 m) and #14 lap 37.
 1. **Recorder stall after HTTP 429.** Both Dutch GP recording runs stalled
    around 1.83M envelopes (see `finalize_interrupted`). Then record a
@@ -276,7 +275,7 @@ invented.
 
 ## Roadmap
 ~~10.6 evidence workbench~~ → ~~11 command center (observational)~~ →
-~~12A spatial foundation~~ → 12B track map (built; playback run pending) → 12C telemetry/evidence spatial
+~~12A spatial foundation~~ → ~~12B track map~~ → 12C telemetry/evidence spatial
 sync → 12D battles / pit lane → 11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
 
