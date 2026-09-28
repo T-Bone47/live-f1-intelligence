@@ -38,9 +38,15 @@ export function splitRuns(samples: Sample[]): { runs: Sample[][]; gaps: Gap[] } 
   return { runs, gaps };
 }
 
-/** The samples in [from, t], split at gaps; the last one is the latest at t. */
+/**
+ * The samples in [from, t], split at gaps; the last one is the latest at t.
+ * When the latest is more than MAX_GAP_MS before t, the stretch to the cursor
+ * is `trailing`: that value is not the car's value at t (never forward-filled).
+ */
 export function channelView(samples: Sample[], from: number, t: number, available: boolean): ChannelView {
   const shown = samples.slice(countUpTo(samples, from - 1), countUpTo(samples, t));
   const { runs, gaps } = splitRuns(shown);
-  return { available, runs, gaps, latest: shown.at(-1) ?? null };
+  const latest = shown.at(-1) ?? null;
+  const trailing = latest && t - latest.t > MAX_GAP_MS ? { from: latest.t, to: t } : null;
+  return { available, runs, gaps, latest, trailing };
 }

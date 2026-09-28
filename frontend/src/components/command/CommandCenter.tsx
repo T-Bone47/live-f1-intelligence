@@ -15,7 +15,7 @@ import { NUDGE_MS, parseUrlTime, readUrl, usePlayback, useUi, writeUrl, type Den
 import { dataOf, useResource } from "../../command/useResource";
 import { useSpatial } from "../../spatial/useSpatial";
 import { useGhost } from "../../telemetry/useGhost";
-import { useTelemetryWindow } from "../../telemetry/useTelemetryWindow";
+import { TELEMETRY_BACK_MS, useTelemetryWindow } from "../../telemetry/useTelemetryWindow";
 import { CarTelemetryPanel } from "../telemetry/CarTelemetryPanel";
 import { TrackMap } from "../spatial/TrackMap";
 import { BattlePanel } from "./BattlePanel";
@@ -134,7 +134,9 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
   const telemetry = useTelemetryWindow({ sid, driver: ui.driver, t: ready ? ui.t : null, playing: ui.playing,
                                          rate: ui.rate, live: !timeline || !!live });
   const [hover, setHover] = useState<{ driver: number; t: number } | null>(null);
-  const hovered = hover && hover.driver === ui.driver && hover.t <= ui.t ? hover.t : null;
+  // a hovered sample counts only while it is inside the shown minute (panel and ghost agree)
+  const hovered = hover && hover.driver === ui.driver && hover.t <= ui.t && hover.t >= ui.t - TELEMETRY_BACK_MS
+    ? hover.t : null;
   const onHoverSample = useCallback((t: number | null) => {
     setHover(t == null || ui.driver == null ? null : { driver: ui.driver, t });
   }, [ui.driver]);

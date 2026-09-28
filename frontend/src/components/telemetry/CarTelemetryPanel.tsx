@@ -46,7 +46,8 @@ function gapKey(g: Gap): string { return `${g.from}-${g.to}`; }
 function gapList(channels: Record<Channel, ChannelView>): { gap: Gap; labels: string[] }[] {
   const out = new Map<string, { gap: Gap; labels: string[] }>();
   for (const r of ROWS) {
-    for (const g of channels[r.channel].gaps) {
+    const ch = channels[r.channel];
+    for (const g of ch.trailing ? [...ch.gaps, ch.trailing] : ch.gaps) {
       const k = gapKey(g);
       if (!out.has(k)) out.set(k, { gap: g, labels: [] });
       out.get(k)!.labels.push(r.label);
@@ -122,7 +123,7 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
   const meta = driver == null ? null : (
     <>
       <span className="cc-mono">{code}</span>
-      {view && <span>samples to {fmtClockTenths(view.to)}</span>}
+      {view && times.length > 0 && <span>samples to {fmtClockTenths(times[times.length - 1])}</span>}
       {telemetry.dataSource && <span className="ct-source">{telemetry.dataSource}</span>}
     </>
   );
@@ -144,7 +145,9 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
                        why={`No stored car sample for ${code} in the 60 s before ${fmtClockTenths(view.to)}.`} />;
   } else {
     const height = ROWS.length * (head + ROW_H + ROW_GAP) + AXIS_H;
-    const hx = hovered != null && hovered <= view.to && hovered >= axisFrom ? x(hovered) : null;
+    // a hovered sample outside the shown minute is not read out (it would read as missing)
+    const hov = hovered != null && hovered <= view.to && hovered >= view.from ? hovered : null;
+    const hx = hov != null ? x(hov) : null;
     body = (
       <>
         <svg className="ct-chart" width={width} height={height} viewBox={`0 0 ${width} ${height}`} tabIndex={0}
@@ -167,13 +170,15 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
             const headY = narrow ? top + 12 : top + 15;
             return (
               <g key={r.channel} className={`ct-row ct-${r.channel}`} role="group"
-                 aria-label={`${r.label}, latest ${latest ? r.format(latest.value) : "no sample"}`}>
+                 aria-label={ch.trailing && latest
+                   ? `${r.label}, no sample in the last 2 s (last ${r.format(latest.value)} at ${fmtClockTenths(latest.t)})`
+                   : `${r.label}, latest ${latest ? r.format(latest.value) : "no sample"}`}>
                 <rect className="ct-band" x={plotX0} y={plotTop} width={plotW} height={ROW_H} />
                 <text className="ct-label" x={4} y={headY}>
                   {r.label}{narrow && r.unit && <tspan className="ct-unit">{`  ${r.unit}`}</tspan>}
                 </text>
                 {!narrow && r.unit && <text className="ct-unit" x={4} y={top + 29}>{r.unit}</text>}
-                {ch.gaps.map((g) => (
+                {(ch.trailing ? [...ch.gaps, ch.trailing] : ch.gaps).map((g) => (
                   <rect key={gapKey(g)} className="ct-gap" x={x(g.from)} y={plotTop} width={Math.max(1, x(g.to) - x(g.from))} height={ROW_H}>
                     <title>{`No samples ${fmtClockTenths(g.from)}–${fmtClockTenths(g.to)}`}</title>
                   </rect>
@@ -187,13 +192,13 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
                 {narrow && <line className="ct-cursor" x1={plotX0 + plotW} x2={plotX0 + plotW} y1={plotTop} y2={plotTop + ROW_H} />}
                 <text className="ct-value" x={width - (narrow ? 8 : 4)} y={narrow ? headY : top + 23} textAnchor="end"
                       data-testid={`latest-${r.channel}`}>
-                  {latest ? r.format(latest.value) : "—"}
+                  {latest && !ch.trailing ? r.format(latest.value) : "—"}
                 </text>
               </g>
             );
           })}
           {!narrow && <line className="ct-cursor" x1={plotX0 + plotW} x2={plotX0 + plotW} y1={0} y2={height - AXIS_H} />}
-          {hx != null && <line className="ct-hover" x1={hx} x2={hx} y1={0} y2={height - AXIS_H} data-t={hovered!} />}
+          {hx != null && <line className="ct-hover" x1={hx} x2={hx} y1={0} y2={height - AXIS_H} data-t={hov!} />}
           <text className="ct-axis" x={plotX0} y={height - 4}>{fmtClockTenths(axisFrom)}</text>
           <text className="ct-axis" x={plotX0 + plotW} y={height - 4} textAnchor="end">cursor {fmtClockTenths(view.to)}</text>
         </svg>
@@ -211,10 +216,10 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
           </ul>
         )}
         <p className="ct-readout cc-mono" role="status" aria-label="Hovered sample" aria-live="polite">
-          {hovered != null ? [
-            fmtClockTenths(hovered),
+          {hov != null ? [
+            fmtClockTenths(hov),
             ...ROWS.map((r) => {
-              const v = valueAt(view.channels[r.channel], hovered);
+              const v = valueAt(view.channels[r.channel], hov);
               return v == null ? `${r.label.toLowerCase()} no sample` : r.format(v);
             }),
             GHOST_WORDS[ghostStatus],

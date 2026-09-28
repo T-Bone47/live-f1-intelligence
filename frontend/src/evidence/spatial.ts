@@ -107,6 +107,15 @@ export interface TrackContextView {
 
 type Slot<T> = { key: string; value: T | null; error: ApiError | null };
 
+/** The evidence is the answer to this request (same session, drivers, laps and cited length). */
+function answers(r: EvidenceRequest, e: LapComparisonEvidenceV1): boolean {
+  const c = e.comparison;
+  return e.source.session_id === r.sessionId
+    && c.driver_a.driver_number === r.driverA && c.driver_a.lap_number === r.lapA
+    && c.driver_b.driver_number === r.driverB && c.driver_b.lap_number === r.lapB
+    && c.lap_length.m === r.lapLengthM && c.lap_length.source === r.lapLengthSource;
+}
+
 const asApiError = (e: unknown): ApiError =>
   (e instanceof ApiError ? e : new ApiError("unexpected", (e as Error)?.message || "Unexpected error.", null));
 
@@ -129,7 +138,9 @@ export function useTrackContext(request: EvidenceRequest | null, evidence: LapCo
 
   const track = trackSlot?.key === trackKey ? trackSlot.value : null;
   const validated = track?.status === "VALIDATED_MAP_SECTOR" ? track : null;
-  const placedKey = validated && evidence && request && evidence.source.session_id === request.sessionId
+  // place only the evidence this request produced: while a new request loads, the
+  // previous evidence is still shown and must not be paired with the new query
+  const placedKey = validated && evidence && request && answers(request, evidence)
     ? `${evidence.evidence_id}|${validated.track_id}|${reload}` : null;
 
   useEffect(() => {

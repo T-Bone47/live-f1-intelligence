@@ -38,6 +38,8 @@ export interface ChannelView {
   gaps: Gap[];
   /** The last sample at or before the cursor. */
   latest: Sample | null;
+  /** From the last sample to the cursor, when that is more than MAX_GAP_MS: the value is stale, not current. */
+  trailing: Gap | null;
 }
 
 export interface TelemetryWindow {

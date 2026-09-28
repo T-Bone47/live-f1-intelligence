@@ -69,6 +69,14 @@ describe("selection", () => {
     expect(v.latest).toEqual(s[100]);
   });
 
+  it("marks the stretch from the last sample to the cursor when it exceeds 2 s (final review)", () => {
+    const s = samples();
+    const last = s[100];
+    expect(channelView(s.slice(0, 101), last.t - 30_000, last.t + MAX_GAP_MS, true).trailing).toBeNull();
+    expect(channelView(s.slice(0, 101), last.t - 30_000, last.t + MAX_GAP_MS + 1, true).trailing)
+      .toEqual({ from: last.t, to: last.t + MAX_GAP_MS + 1 });
+  });
+
   it("splits at gaps over 2 s, and only there", () => {
     const s = samples();
     const cut = [...s.slice(0, 50), ...s.slice(70)];     // real samples, 20 removed

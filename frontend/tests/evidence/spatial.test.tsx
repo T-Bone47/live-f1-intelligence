@@ -111,6 +111,30 @@ describe("TrackContext", () => {
   });
 });
 
+describe("useTrackContext (final review)", () => {
+  it("never asks to place a new request with the previous evidence", async () => {
+    const { renderHook } = await import("@testing-library/react");
+    const { useTrackContext } = await import("../../src/evidence/spatial");
+    const fn = vi.fn(async (input: RequestInfo | URL) => {
+      const u = String(input);
+      if (u.includes("/lap-comparison/spatial")) return jsonResponse(placed(), 200, HEADERS());
+      if (u.endsWith("/track")) return jsonResponse(track(), 200, { "X-Spatial-Contract": "track_reference_v1" });
+      return jsonResponse({ detail: "not mocked" }, 404);
+    });
+    vi.stubGlobal("fetch", fn);
+    const r1 = request();
+    const r2 = { ...r1, driverA: r1.driverB, lapA: r1.lapB, driverB: r1.driverA, lapB: r1.lapA };   // swapped: E2 not loaded yet
+    const h = renderHook(({ req }) => useTrackContext(req, evidence()), { initialProps: { req: r2 } });
+    await new Promise((r) => setTimeout(r, 100));
+    const spatialCalls = () => fn.mock.calls.filter((c) => String(c[0]).includes("/lap-comparison/spatial"));
+    expect(spatialCalls()).toHaveLength(0);
+    expect(h.result.current.status).toBe("loading");
+    h.rerender({ req: r1 });
+    await waitFor(() => expect(h.result.current.status).toBe("ready"));
+    expect(spatialCalls()).toHaveLength(1);
+  });
+});
+
 describe("LapPickers", () => {
   const catalog = () => pair().catalog as unknown as { session_id: string; drivers: {
     driver_number: number; laps: { lap_number: number; duration_s: number | null; has_car_telemetry: boolean }[] }[] };

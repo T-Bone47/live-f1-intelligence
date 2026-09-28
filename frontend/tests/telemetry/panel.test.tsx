@@ -108,6 +108,26 @@ describe("CarTelemetryPanel", () => {
     expect(axis[1] - axis[0]).toBeGreaterThan(250);                                  // start and cursor labels apart
   });
 
+  it("a stale last sample is never shown as the value at the cursor (final review)", () => {
+    // real samples with the last 20 s before the cursor removed: the Dutch GP has a 26 s
+    // all-car feed gap at 14:29:33-14:29:59, where the cursor can sit
+    const all = samples();
+    const cut = Object.fromEntries(CHANNELS.map((c) =>
+      [c, all[c].filter((s) => s.t <= CURSOR - 20_000)])) as Record<Channel, Sample[]>;
+    const last = cut.speed.at(-1)!;
+    const { container } = panel(viewAt(CURSOR, cut));
+    expect(screen.getByTestId("latest-speed").textContent).toBe("—");
+    expect(screen.getAllByText(`No samples ${fmtClockTenths(last.t)}–${fmtClockTenths(CURSOR)}`).length).toBeGreaterThan(0);
+    expect(container.querySelector(".cc-panel-meta")!.textContent).toContain(`samples to ${fmtClockTenths(last.t)}`);
+    expect(screen.getByRole("group", { name: /^Speed, no sample in the last 2 s/ })).toBeInTheDocument();
+  });
+
+  it("a hovered sample outside the shown minute is not read as missing (final review)", () => {
+    panel(viewAt(CURSOR), { hovered: CURSOR - 70_000, ghostStatus: "ready" });
+    const out = screen.getByRole("status", { name: /hovered sample/i });
+    expect(out.textContent).not.toMatch(/no sample/);
+  });
+
   it("reads out the hovered sample at its own time", () => {
     const all = samples();
     const s = all.speed.filter((x) => x.t <= CURSOR).at(-5)!;
