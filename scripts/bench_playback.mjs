@@ -73,6 +73,10 @@ const MEASURE = String.raw`(async () => {
       longTasks: longs.length, longMax: longs.length ? Math.round(Math.max(...longs)) : 0,
       windowRequests: res.filter((e) => e.name.includes('/window')).map((e) => [decodeURIComponent(e.name).replace(/^.*step=/, 'step='), Math.round(e.duration), e.transferSize]),
       atRequests: res.filter((e) => !e.name.includes('/window')).length,
+      // Phase 12C: car telemetry windows while a driver is selected (LFI_URL with &driver=)
+      telemetryRequests: performance.getEntriesByType('resource')
+        .filter((e) => e.name.includes('/api/v1/') && e.name.includes('/telemetry/'))
+        .map((e) => [Math.round(e.duration), e.transferSize]),
       shownNeverAfterCursor: paired.every((s) => s[1] <= s[0] + 0.05),
       shownNeverBack: shown.every((x, i) => i === 0 || x >= shown[i - 1]),
       maxLagS: paired.length ? Math.max(...paired.map((s) => +(s[0] - s[1]).toFixed(1))) : null,

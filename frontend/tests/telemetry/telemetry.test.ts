@@ -167,6 +167,23 @@ describe("useTelemetryWindow", () => {
     expect(h.result.current.status).toBe("unavailable");
   });
 
+  it("after a driver change nothing of the previous driver is shown (mutation sweep)", async () => {
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    mockTelemetry(async (u) => {
+      if (u.pathname.endsWith(`/${DRIVER_B}`)) await held;
+      return serveTelemetry(u);
+    });
+    const h = mount();
+    await wait(120);
+    expect(h.result.current.status).toBe("ready");      // driver A's window has landed
+    h.rerender({ ...base, driver: DRIVER_B });
+    await wait(120);                                     // driver B requested, not answered yet
+    expect(h.result.current.view).toBeNull();
+    expect(h.result.current.status).toBe("loading");
+    release();
+  });
+
   it("while playing, fetches ahead without a request per tick", async () => {
     const f = mockTelemetry();
     const h = mount({ playing: true, rate: 16, t: CURSOR - 50_000 });

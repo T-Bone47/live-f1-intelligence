@@ -164,6 +164,38 @@ describe("LapPickers", () => {
     await waitFor(() => expect(draft.lapLengthM).toBe(String(track().circuit.lap_length_m)), { timeout: 2000 });
   });
 
+  it("never overwrites a lap length the user typed (mutation sweep)", async () => {
+    mockRoutes();
+    let draft: RequestDraft = { ...EMPTY_DRAFT, sessionId: "openf1:11353", lapLengthM: "4250",
+                                lapLengthSource: "my own citation" };
+    const onChange = vi.fn((d: RequestDraft) => { draft = d; });
+    render(<LapPickers draft={draft} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: /pick laps from a session/i }));
+    await screen.findByText(/Lap length prefilled from the validated track|enter the lap length/);
+    await new Promise((r) => setTimeout(r, 100));
+    expect(draft.lapLengthM).toBe("4250");
+    expect(draft.lapLengthSource).toBe("my own citation");
+  });
+
+  it("does not offer a timed lap without stored car telemetry (mutation sweep)", async () => {
+    // test-local change to the real catalog: one timed lap marked without telemetry
+    const fn = mockRoutes();
+    const base = fn.getMockImplementation()!;
+    const cat = catalog();
+    const [d0] = cat.drivers;
+    const victim = d0.laps.find((l) => l.duration_s != null)!;
+    victim.has_car_telemetry = false;
+    fn.mockImplementation(async (input: RequestInfo | URL) =>
+      (String(input).endsWith("/laps") ? jsonResponse(cat, 200, { "X-Data-Source": "recording" }) : base(input)));
+    const draft: RequestDraft = { ...EMPTY_DRAFT, sessionId: "openf1:11353", driverA: String(d0.driver_number) };
+    render(<LapPickers draft={draft} onChange={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: /pick laps from a session/i }));
+    const lapA = await screen.findByRole("combobox", { name: "Driver A lap" });
+    await waitFor(() => expect(within(lapA).getAllByRole("option").length).toBeGreaterThan(1));
+    const values = within(lapA).getAllByRole("option").map((o) => (o as HTMLOptionElement).value);
+    expect(values).not.toContain(String(victim.lap_number));
+  });
+
   it("offers only laps with a time and stored car telemetry", async () => {
     mockRoutes();
     let draft: RequestDraft = { ...EMPTY_DRAFT, sessionId: "openf1:11353" };
