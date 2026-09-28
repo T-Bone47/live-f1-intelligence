@@ -38,3 +38,6 @@
 .sm-ghost { pointer-events: none; }
 .sm-ghost-ring { fill: none; stroke: var(--text-primary); stroke-width: 1.5; stroke-dasharray: 3 2; }
 .sm-ghost-label { font-size: 10.5px; }
+.cc-telemetry .cc-panel-meta { display: flex; gap: 10px; flex-wrap: wrap; font-family: var(--font-mono);
+                               font-variant-numeric: tabular-nums; }
+.ct-measure { min-width: 0; }

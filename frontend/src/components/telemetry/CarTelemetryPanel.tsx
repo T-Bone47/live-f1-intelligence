@@ -31,6 +31,8 @@ const ROWS: Row[] = [
 ];
 
 const LABEL_W = 78, VALUE_W = 78, ROW_H = 38, ROW_GAP = 6, AXIS_H = 18;
+/** Below this width each channel's label and value sit on a line above a full-width plot. */
+const NARROW_PX = 480, HEAD_H = 16;
 
 const GHOST_WORDS: Record<GhostView["status"], string> = {
   idle: "", loading: "locating on the map…", ready: "shown on the map",
@@ -82,16 +84,19 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
   const gaps = useMemo(() => (view ? gapList(view.channels) : []), [view]);
 
   const axisFrom = view ? view.to - TELEMETRY_BACK_MS : 0;
-  const plotW = Math.max(40, width - LABEL_W - VALUE_W);
-  const x = useCallback((t: number) => LABEL_W + ((t - axisFrom) / TELEMETRY_BACK_MS) * plotW, [axisFrom, plotW]);
+  const narrow = width < NARROW_PX;
+  const plotX0 = narrow ? 4 : LABEL_W;
+  const plotW = Math.max(40, narrow ? width - 8 : width - LABEL_W - VALUE_W);
+  const head = narrow ? HEAD_H : 0;
+  const x = useCallback((t: number) => plotX0 + ((t - axisFrom) / TELEMETRY_BACK_MS) * plotW, [plotX0, axisFrom, plotW]);
 
   const nearest = useCallback((px: number): number | null => {
     if (!times.length) return null;
-    const t = axisFrom + ((px - LABEL_W) / plotW) * TELEMETRY_BACK_MS;
+    const t = axisFrom + ((px - plotX0) / plotW) * TELEMETRY_BACK_MS;
     let best = times[0];
     for (const s of times) if (Math.abs(s - t) < Math.abs(best - t)) best = s;
     return best;
-  }, [times, axisFrom, plotW]);
+  }, [times, axisFrom, plotX0, plotW]);
 
   const onMove = useCallback((e: PointerEvent<SVGSVGElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -138,7 +143,7 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
     body = <EmptyState title="No car samples in this minute"
                        why={`No stored car sample for ${code} in the 60 s before ${fmtClockTenths(view.to)}.`} />;
   } else {
-    const height = ROWS.length * (ROW_H + ROW_GAP) + AXIS_H;
+    const height = ROWS.length * (head + ROW_H + ROW_GAP) + AXIS_H;
     const hx = hovered != null && hovered <= view.to && hovered >= axisFrom ? x(hovered) : null;
     body = (
       <>
@@ -152,20 +157,24 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
           </defs>
           {ROWS.map((r, k) => {
             const ch = view.channels[r.channel];
-            const top = k * (ROW_H + ROW_GAP);
+            const top = k * (head + ROW_H + ROW_GAP);
+            const plotTop = top + head;
             let max = r.max;
             for (const run of ch.runs) for (const s of run) if (s.value > max) max = s.value;
-            const y = (v: number) => top + ROW_H - 3 - (v / max) * (ROW_H - 6);
+            const y = (v: number) => plotTop + ROW_H - 3 - (v / max) * (ROW_H - 6);
             const pts = (run: Sample[]) => run.map((s) => `${x(s.t).toFixed(1)},${y(s.value).toFixed(1)}`).join(" ");
             const latest = ch.latest;
+            const headY = narrow ? top + 12 : top + 15;
             return (
               <g key={r.channel} className={`ct-row ct-${r.channel}`} role="group"
                  aria-label={`${r.label}, latest ${latest ? r.format(latest.value) : "no sample"}`}>
-                <rect className="ct-band" x={LABEL_W} y={top} width={plotW} height={ROW_H} />
-                <text className="ct-label" x={4} y={top + 15}>{r.label}</text>
-                {r.unit && <text className="ct-unit" x={4} y={top + 29}>{r.unit}</text>}
+                <rect className="ct-band" x={plotX0} y={plotTop} width={plotW} height={ROW_H} />
+                <text className="ct-label" x={4} y={headY}>
+                  {r.label}{narrow && r.unit && <tspan className="ct-unit">{`  ${r.unit}`}</tspan>}
+                </text>
+                {!narrow && r.unit && <text className="ct-unit" x={4} y={top + 29}>{r.unit}</text>}
                 {ch.gaps.map((g) => (
-                  <rect key={gapKey(g)} className="ct-gap" x={x(g.from)} y={top} width={Math.max(1, x(g.to) - x(g.from))} height={ROW_H}>
+                  <rect key={gapKey(g)} className="ct-gap" x={x(g.from)} y={plotTop} width={Math.max(1, x(g.to) - x(g.from))} height={ROW_H}>
                     <title>{`No samples ${fmtClockTenths(g.from)}–${fmtClockTenths(g.to)}`}</title>
                   </rect>
                 ))}
@@ -175,16 +184,18 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
                 ) : (
                   <circle key={run[0].t} className="ct-single" cx={x(run[0].t)} cy={y(run[0].value)} r={1.8} data-t={run[0].t} />
                 )))}
-                <text className="ct-value" x={width - 4} y={top + 23} textAnchor="end" data-testid={`latest-${r.channel}`}>
+                {narrow && <line className="ct-cursor" x1={plotX0 + plotW} x2={plotX0 + plotW} y1={plotTop} y2={plotTop + ROW_H} />}
+                <text className="ct-value" x={width - (narrow ? 8 : 4)} y={narrow ? headY : top + 23} textAnchor="end"
+                      data-testid={`latest-${r.channel}`}>
                   {latest ? r.format(latest.value) : "—"}
                 </text>
               </g>
             );
           })}
-          <line className="ct-cursor" x1={LABEL_W + plotW} x2={LABEL_W + plotW} y1={0} y2={height - AXIS_H} />
+          {!narrow && <line className="ct-cursor" x1={plotX0 + plotW} x2={plotX0 + plotW} y1={0} y2={height - AXIS_H} />}
           {hx != null && <line className="ct-hover" x1={hx} x2={hx} y1={0} y2={height - AXIS_H} data-t={hovered!} />}
-          <text className="ct-axis" x={LABEL_W} y={height - 4}>{fmtClockTenths(axisFrom)}</text>
-          <text className="ct-axis" x={LABEL_W + plotW} y={height - 4} textAnchor="end">cursor {fmtClockTenths(view.to)}</text>
+          <text className="ct-axis" x={plotX0} y={height - 4}>{fmtClockTenths(axisFrom)}</text>
+          <text className="ct-axis" x={plotX0 + plotW} y={height - 4} textAnchor="end">cursor {fmtClockTenths(view.to)}</text>
         </svg>
         <p className="ct-drs">
           {view.channels.drs.available
@@ -237,7 +248,7 @@ export const CarTelemetryPanel = memo(function CarTelemetryPanel({
 
   return (
     <Panel id="cc-telemetry" title="Car telemetry" className="cc-telemetry" meta={meta}>
-      <div ref={frameRef} className="ct-frame">{body}</div>
+      <div className="ct-frame"><div ref={frameRef} className="ct-measure">{body}</div></div>
     </Panel>
   );
 });

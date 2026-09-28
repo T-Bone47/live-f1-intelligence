@@ -92,6 +92,22 @@ describe("CarTelemetryPanel", () => {
     expect(onHover).toHaveBeenLastCalledWith(null);
   });
 
+  it("a narrow panel stacks each label and value above a full-width plot (browser QA)", () => {
+    const { container } = panel(viewAt(CURSOR));   // jsdom width falls back to 420 px: narrow
+    const svg = container.querySelector("svg.ct-chart")!;
+    const width = Number(svg.getAttribute("width"));
+    const line = container.querySelector(".ct-speed polyline")!;
+    const xs = line.getAttribute("points")!.split(" ").map((p) => Number(p.split(",")[0]));
+    expect(Math.max(...xs)).toBeGreaterThan(width * 0.9);          // the plot reaches the right edge
+    const value = screen.getByTestId("latest-speed");
+    const label = container.querySelector(".ct-speed .ct-label")!;
+    expect(Number(value.getAttribute("y"))).toBe(Number(label.getAttribute("y")));   // one header line
+    const ys = line.getAttribute("points")!.split(" ").map((p) => Number(p.split(",")[1]));
+    expect(Math.min(...ys)).toBeGreaterThan(Number(label.getAttribute("y")));        // the plot sits below it
+    const axis = [...container.querySelectorAll(".ct-axis")].map((t) => Number(t.getAttribute("x")));
+    expect(axis[1] - axis[0]).toBeGreaterThan(250);                                  // start and cursor labels apart
+  });
+
   it("reads out the hovered sample at its own time", () => {
     const all = samples();
     const s = all.speed.filter((x) => x.t <= CURSOR).at(-5)!;

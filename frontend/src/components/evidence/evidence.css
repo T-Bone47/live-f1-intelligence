@@ -532,10 +532,14 @@
 /* ── Phase 12C: track context and lap pickers ── */
 .ewb-pick-open { margin-bottom: var(--sp-3); }
 .ewb-pickers {
-  display: grid; gap: var(--sp-3); margin-bottom: var(--sp-3);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  display: grid; gap: var(--sp-3); margin-bottom: var(--sp-3); align-items: start;
+  grid-template-columns: minmax(0, 1fr);
 }
-.ewb-pickers .ewb-pair { display: grid; gap: var(--sp-2); min-width: 0; }
+.ewb-pickers .ewb-pair { display: grid; gap: var(--sp-2); min-width: 0; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+@media (min-width: 760px) {
+  .ewb-pickers { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ewb-pickers > .ewb-field, .ewb-pickers > p { grid-column: 1 / -1; }
+}
 .tc-frame { display: grid; gap: var(--sp-2); min-width: 0; }
 .tc-map { display: block; width: 100%; height: auto; }
 .tc-circuit { fill: none; stroke: var(--border-active); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }

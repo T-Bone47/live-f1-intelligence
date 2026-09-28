@@ -44,17 +44,24 @@ export function LapPickers({ draft, onChange }: { draft: RequestDraft; onChange:
     return () => ctrl.abort();
   }, [open, sessions]);
 
+  // laps and track load independently: one landing must never cancel the other
   useEffect(() => {
     if (!open || !sid || laps?.sid === sid) return undefined;
     const ctrl = new AbortController();
     fetchLapCatalog(sid, ctrl.signal).then((value) => setLaps({ sid, value, error: null }), (e: unknown) => {
       if ((e as Error)?.name !== "AbortError") setLaps({ sid, value: null, error: e as ApiError });
     });
+    return () => ctrl.abort();
+  }, [open, sid, laps?.sid]);
+
+  useEffect(() => {
+    if (!open || !sid || track?.sid === sid) return undefined;
+    const ctrl = new AbortController();
     fetchTrack(sid, ctrl.signal).then((value) => setTrack({ sid, value }), (e: unknown) => {
       if ((e as Error)?.name !== "AbortError") setTrack({ sid, value: null });
     });
     return () => ctrl.abort();
-  }, [open, sid, laps?.sid]);
+  }, [open, sid, track?.sid]);
 
   // prefill the cited circuit length of a validated track into empty fields only
   const cited = track?.sid === sid && track.value?.status === "VALIDATED_MAP_SECTOR" ? track.value.circuit : null;

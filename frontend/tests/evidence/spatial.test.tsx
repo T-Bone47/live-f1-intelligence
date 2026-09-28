@@ -146,6 +146,24 @@ describe("LapPickers", () => {
     expect(draft.sessionId).toBe("openf1:11353");
   });
 
+  it("prefills even when the track answers after the laps (browser QA: the laps landing aborted the track)", async () => {
+    const fn = mockRoutes();
+    const base = fn.getMockImplementation()!;
+    fn.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/track")) {
+        await new Promise((r) => setTimeout(r, 60));
+        // like a browser: an aborted request rejects instead of answering
+        if (init?.signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
+      }
+      return base(input);
+    });
+    let draft: RequestDraft = { ...EMPTY_DRAFT, sessionId: "openf1:11353" };
+    const onChange = vi.fn((d: RequestDraft) => { draft = d; });
+    render(<LapPickers draft={draft} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: /pick laps from a session/i }));
+    await waitFor(() => expect(draft.lapLengthM).toBe(String(track().circuit.lap_length_m)), { timeout: 2000 });
+  });
+
   it("offers only laps with a time and stored car telemetry", async () => {
     mockRoutes();
     let draft: RequestDraft = { ...EMPTY_DRAFT, sessionId: "openf1:11353" };

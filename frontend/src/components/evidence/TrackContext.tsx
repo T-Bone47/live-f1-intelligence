@@ -72,7 +72,8 @@ export const TrackContext = memo(function TrackContext({ ctx, view, selected, on
           return (
             <g key={side}>
               <path className={`tc-extent is-${side}`} data-side={side} d={path(e.polyline!.map((p) => px(p)))} />
-              <text className={`tc-mono is-${side}`} x={tx + 6} y={ty - 6}>{side.toUpperCase()}</text>
+              {/* A above the path end, B below it: the feed reports one shared line, so ends often meet */}
+              <text className={`tc-mono is-${side}`} x={tx + 6} y={side === "a" ? ty - 6 : ty + 14}>{side.toUpperCase()}</text>
             </g>
           );
         })}
