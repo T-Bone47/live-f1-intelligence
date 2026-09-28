@@ -179,3 +179,12 @@ def test_dutch_gp_pair_is_placed_on_the_validated_track(recorded, client):
     assert placed == covered
     codes = {lim["code"] for lim in doc["limitations"]}
     assert "CORNER_PRECISION_NOT_MET" in codes  # the Dutch GP corner gate failed (12A)
+
+
+def test_frontend_fixture_pair_follows_the_rule(recorded):
+    """The committed frontend fixture (scripts/evidence_fixture.py) uses this
+    rule's pair; a changed recording or rule must regenerate it."""
+    fixture = REPO / "frontend" / "tests" / "fixtures" / "evidence" / "dutch_gp_pair.json"
+    _store, _catalog, (a, b) = recorded
+    pair = json.loads(fixture.read_text(encoding="utf-8"))["provenance"]["pair"]
+    assert pair == [list(a[:2]), list(b[:2])]
