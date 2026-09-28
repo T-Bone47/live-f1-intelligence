@@ -13,8 +13,8 @@
 
 import { ApiError, getJson, sessionPath } from "../command/api";
 import {
-  STATE_CONTRACT, TRACK_CONTRACT, WINDOW_CONTRACT,
-  type DriverState, type SpatialState, type SpatialWindow, type TrackReference,
+  STATE_CONTRACT, TRACE_CONTRACT, TRACK_CONTRACT, WINDOW_CONTRACT,
+  type DriverState, type SpatialState, type SpatialTrace, type SpatialWindow, type TrackReference,
 } from "./types";
 
 const refuse = (message: string): never => { throw new ApiError("unsupported", message, 200); };
@@ -99,6 +99,30 @@ export async function fetchWindow(sid: string, fromMs: number, toMs: number, ste
     checkDrivers(s.drivers, "Spatial window state");
   }
   return w as SpatialWindow;
+}
+
+/** Phase 12C: one driver's classified location samples in [from, to] (the map ghost). */
+export async function fetchTrace(sid: string, driver: number, fromMs: number, toMs: number, trackId: string,
+                                 signal?: AbortSignal, f: typeof fetch = fetch): Promise<SpatialTrace> {
+  const q = new URLSearchParams({ from: iso(fromMs), to: iso(toMs) });
+  const { body, response } = await getJson(`${sessionPath(sid)}/spatial/${driver}?${q}`, signal, f);
+  checkHeader(response, TRACE_CONTRACT);
+  const d = body as Partial<SpatialTrace> | null;
+  if (!d || d.contract_version !== TRACE_CONTRACT) refuse(`Response is not ${TRACE_CONTRACT}.`);
+  checkIdentity(d!, sid, trackId, "Spatial trace");
+  if (d!.driver_number !== driver) refuse(`Spatial trace is for #${d!.driver_number}, not #${driver}.`);
+  if (Date.parse(d!.from_ts ?? "") !== fromMs || Date.parse(d!.to_ts ?? "") !== toMs) {
+    refuse("Spatial trace does not answer the request.");
+  }
+  if (!Array.isArray(d!.samples)) refuse("Spatial trace has no samples.");
+  let prev = -Infinity;
+  for (const s of d!.samples!) {
+    const at = Date.parse(s?.ts ?? "");
+    if (!(at > prev) || at < fromMs || at > toMs) refuse("Spatial trace samples are out of order or out of range.");
+    if (!Number.isFinite(s.x) || !Number.isFinite(s.y)) refuse("Spatial trace has a sample without a position.");
+    prev = at;
+  }
+  return d as SpatialTrace;
 }
 
 /**

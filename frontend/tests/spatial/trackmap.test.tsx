@@ -8,6 +8,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { fmtClockTenths } from "../../src/command/format";
 import { buildMoment } from "../../src/command/moment";
 import { mapFit } from "../../src/components/spatial/geometry";
 import { TrackMap } from "../../src/components/spatial/TrackMap";
@@ -295,5 +296,29 @@ describe("the browser computes no spatial value (source scan)", () => {
       expect(src, f).not.toMatch(/(reference_fraction|distance_m|lap_length_m|length_m)\s*[-+*/]/);
       expect(src, f).not.toMatch(/[-+*/]\s*(\w+\.)?(reference_fraction|distance_m|lap_length_m|length_m)\b/);
     }
+  });
+});
+
+describe("the ghost of a hovered telemetry sample (Phase 12C)", () => {
+  const pair = JSON.parse(readFileSync(resolve(process.cwd(), "tests", "fixtures", "evidence", "dutch_gp_pair.json"),
+                                       "utf-8")) as { trace: { driver_number: number; samples: { ts: string; x: number; y: number }[] } };
+  const own = pair.trace.samples[40];
+  const ghost = { driver: pair.trace.driver_number, hovered: Date.parse(own.ts) + 150, at: Date.parse(own.ts),
+                  x: own.x, y: own.y };
+
+  it("sits at the driver's own location sample, labelled with that sample's time", () => {
+    const { container } = draw(view(), { ghost });
+    const g = container.querySelector<SVGGElement>("g.sm-ghost")!;
+    const [px, py] = mapFit(track(), 640).toPx(own.x, own.y);
+    expect(g.getAttribute("transform")).toBe(`translate(${px.toFixed(1)} ${py.toFixed(1)})`);
+    const label = `#${ghost.driver} at ${fmtClockTenths(ghost.at)} (hovered)`;
+    expect(g.getAttribute("aria-label")).toBe(label);
+    expect(within(g as unknown as HTMLElement).getByText(label)).toBeInTheDocument();
+  });
+
+  it("no ghost, nothing drawn; an unvalidated map draws no ghost either", () => {
+    expect(draw(view()).container.querySelector("g.sm-ghost")).toBeNull();
+    const { container } = draw(view({ status: "unavailable", reason: "UNVALIDATED", track: null, shown: null }), { ghost });
+    expect(container.querySelector("g.sm-ghost")).toBeNull();
   });
 });

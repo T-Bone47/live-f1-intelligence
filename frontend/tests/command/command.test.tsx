@@ -388,3 +388,40 @@ describe("final review fixes (Phase 12B)", () => {
     expect(vi.mocked(format.fmtAsOf)).not.toHaveBeenCalled();
   });
 });
+
+describe("car telemetry at the cursor (Phase 12C)", () => {
+  async function withTelemetry(extra: string) {
+    const { serveTelemetry, pair } = await import("../telemetry/fixture");
+    const api = mockApi();
+    const fn = vi.fn(async (input: RequestInfo | URL) => {
+      const u = new URL(String(input), "http://localhost");
+      return /\/telemetry\/\d+$/.test(decodeURIComponent(u.pathname)) ? serveTelemetry(u) : api(input);
+    });
+    vi.stubGlobal("fetch", fn);
+    render(<CommandCenter search={search(extra)} />);
+    await screen.findByRole("heading", { name: /netherlands · zandvoort/i }, { timeout: 8000 });
+    const telemetryCalls = () => fn.mock.calls.map((c) => new URL(String(c[0]), "http://x"))
+      .filter((u) => /\/telemetry\/\d+$/.test(decodeURIComponent(u.pathname)));
+    return { pair: pair(), telemetryCalls };
+  }
+
+  it("draws the selected car's stored samples up to the cursor", async () => {
+    const { pair, telemetryCalls } = await withTelemetry("&lap=40&driver=16");
+    const cursor = Date.parse(pair.provenance.cursor);
+    const last = pair.telemetry.series.speed!.filter((p) => Date.parse(p.ts) <= cursor).at(-1)!;
+    const panel = document.getElementById("cc-telemetry")!;
+    await waitFor(() => expect(within(panel).getByTestId("latest-speed").textContent).toBe(`${last.value} kph`),
+                  { timeout: 4000 });
+    const [u] = telemetryCalls();
+    expect(decodeURIComponent(u.pathname)).toMatch(/\/telemetry\/16$/);
+    expect(Date.parse(u.searchParams.get("start")!)).toBe(cursor - 60_000);
+    expect(within(panel).getByText(/DRS: not in this data/)).toBeInTheDocument();
+  });
+
+  it("no selected driver, no telemetry request", async () => {
+    const { telemetryCalls } = await withTelemetry("&lap=40");
+    expect(await screen.findByText("Select a driver to see car telemetry")).toBeInTheDocument();
+    await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+    expect(telemetryCalls()).toHaveLength(0);
+  });
+});

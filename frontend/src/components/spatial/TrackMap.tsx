@@ -12,6 +12,7 @@ import type { Moment } from "../../command/moment";
 import { windowForRate } from "../../spatial/api";
 import type { LineName } from "../../spatial/types";
 import type { SpatialView } from "../../spatial/useSpatial";
+import type { MapGhost } from "../../telemetry/useGhost";
 import { ErrorState, Panel } from "../command/ui";
 import { useWidth } from "../command/useWidth";
 import { lineTagBox, mapFit, placeLabels } from "./geometry";
@@ -35,10 +36,25 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
-export const TrackMap = memo(function TrackMap({ view, moment, selected, battle, playing, rate, onSelect, onPositionSelect }: {
+/** A hollow ring at the driver's own location sample, labelled with that sample's time. */
+function Ghost({ ghost, at, width }: { ghost: MapGhost; at: [number, number]; width: number }) {
+  const label = `#${ghost.driver} at ${fmtClockTenths(ghost.at)} (hovered)`;
+  const flip = at[0] > width - 190;
+  return (
+    <g className="sm-ghost" role="img" aria-label={label} transform={`translate(${at[0].toFixed(1)} ${at[1].toFixed(1)})`}>
+      <circle className="sm-ghost-ring" r={7.5} />
+      <text className="sm-label sm-ghost-label" x={flip ? -11 : 11} y={-10} textAnchor={flip ? "end" : "start"}>{label}</text>
+    </g>
+  );
+}
+
+export const TrackMap = memo(function TrackMap({ view, moment, selected, battle, playing, rate, onSelect, onPositionSelect,
+                                                ghost = null }: {
   view: SpatialView; moment: Moment; selected: number | null; battle: [number, number] | null;
   playing: boolean; rate: number; onSelect: (d: number | null) => void;
   onPositionSelect?: (driver: number, stateAt: string) => void;
+  /** Phase 12C: a hovered telemetry sample's driver at its own location sample (never interpolated). */
+  ghost?: MapGhost | null;
 }) {
   const [frameRef, width] = useWidth<HTMLDivElement>(640);
   const [info, setInfo] = useState(false);
@@ -154,6 +170,7 @@ export const TrackMap = memo(function TrackMap({ view, moment, selected, battle,
               <Marker key={m.d.driver_number} m={m} register={register} onPick={pick} onKey={onKey} onHover={setHover} />
             ))}
           </g>
+          {ghost && <Ghost ghost={ghost} at={fit.toPx(ghost.x, ghost.y)} width={fit.width} />}
         </svg>
         {tone !== "green" && tone !== "neutral" && (
           <p className={`sm-phase sm-phase-${tone}`}>{phaseLabel(moment.frame.phase)} <span>{fmtAsOf(moment.frame)}</span></p>

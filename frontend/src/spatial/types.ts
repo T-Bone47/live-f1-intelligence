@@ -107,6 +107,35 @@ export interface SpatialState {
   limitations: Limitation[];
 }
 
+/** Phase 12C: one driver's classified location samples (GET /spatial/{driver}?from&to). */
+export const TRACE_CONTRACT = "spatial_trace_v1";
+
+export interface TraceSample {
+  ts: string;
+  x: number;
+  y: number;
+  flag: SpatialFlag;
+  reference_fraction: number | null;
+  distance_m: number | null;
+  sector: 1 | 2 | 3 | null;
+  lap_number: number | null;
+  confidence: Grade;
+}
+
+export interface SpatialTrace {
+  contract_version: typeof TRACE_CONTRACT;
+  builder_version: string;
+  session_id: string;
+  track_id: string;
+  driver_number: number;
+  from_ts: string;
+  to_ts: string;
+  lap_length_m: number | null;
+  line_placement_p95_m: Record<string, number> | null;
+  samples: TraceSample[];
+  limitations: Limitation[];
+}
+
 export interface SpatialWindow {
   contract_version: typeof WINDOW_CONTRACT;
   builder_version: string;

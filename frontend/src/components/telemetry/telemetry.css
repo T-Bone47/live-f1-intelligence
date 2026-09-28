@@ -1,0 +1,40 @@
+/* Car telemetry panel (Phase 12C). Channel colours are the design system's
+   telemetry families and always come with a text label; gaps are a dashed
+   band plus words; the cursor is the right edge. */
+
+.ct-frame { position: relative; min-width: 0; padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+.ct-chart { display: block; width: 100%; height: auto; outline: none; touch-action: pan-y; }
+.ct-chart:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; border-radius: 4px; }
+
+.ct-band { fill: var(--background-inset); }
+.ct-label { font-family: var(--font-label); font-size: 11px; font-weight: 700; letter-spacing: var(--ls-wide);
+            text-transform: uppercase; fill: var(--text-secondary); }
+.ct-unit { font-family: var(--font-label); font-size: 10px; fill: var(--text-muted-aa); }
+.ct-value { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; fill: var(--text-primary);
+            font-variant-numeric: tabular-nums; }
+.ct-axis { font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-muted-aa); }
+
+.ct-line { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
+.ct-dot, .ct-single { fill: currentColor; }
+.ct-row { color: var(--telemetry-speed); }
+.ct-throttle { color: var(--telemetry-throttle); }
+.ct-brake { color: var(--telemetry-brake); }
+.ct-gear { color: var(--telemetry-gear); }
+.ct-rpm { color: var(--text-secondary); }
+
+.ct-gap { fill: var(--background-panel); stroke: var(--border-subtle); stroke-dasharray: 2 2; }
+.ct-cursor { stroke: var(--selection-rule); stroke-width: 1.5; }
+.ct-hover { stroke: var(--text-primary); stroke-width: 1; stroke-dasharray: 3 2; pointer-events: none; }
+
+.ct-drs, .ct-caption, .ct-gaps { margin: var(--sp-2) 0 0; font-size: 12px; color: var(--text-muted-aa); }
+.ct-gaps { padding-left: 1.1em; }
+.ct-gap-ch { color: var(--text-secondary); }
+.ct-readout { margin: var(--sp-2) 0 0; font-size: 12px; color: var(--text-primary); min-height: 1.4em; }
+.ct-source { text-transform: uppercase; letter-spacing: var(--ls-wide); font-family: var(--font-label); font-size: 10.5px; }
+
+.ct-skeleton { height: 240px; border-radius: 6px; background: var(--background-inset); }
+
+/* map ghost (drawn by the track map) */
+.sm-ghost { pointer-events: none; }
+.sm-ghost-ring { fill: none; stroke: var(--text-primary); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.sm-ghost-label { font-size: 10.5px; }

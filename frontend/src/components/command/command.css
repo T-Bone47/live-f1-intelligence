@@ -186,7 +186,7 @@
   grid-template-areas:
     "timing map     focus"
     "timing chart   focus"
-    "timing battles focus"
+    "timing battles telemetry"
     "strategy strategy rc"
     "strategy strategy weather";
   align-items: start;
@@ -196,6 +196,7 @@
 .cc-area-chart { grid-area: chart; }
 .cc-area-battles { grid-area: battles; }
 .cc-area-focus { grid-area: focus; }
+.cc-area-telemetry { grid-area: telemetry; }
 .cc-area-strategy { grid-area: strategy; }
 .cc-area-rc { grid-area: rc; }
 .cc-area-weather { grid-area: weather; }
@@ -535,6 +536,7 @@
       "timing chart"
       "timing battles"
       "focus  strategy"
+      "telemetry strategy"
       "rc     strategy"
       "weather strategy";
   }
@@ -543,7 +545,7 @@
 @media (max-width: 1023px) {
   .cc-grid {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "timing" "focus" "map" "chart" "battles" "strategy" "rc" "weather";
+    grid-template-areas: "timing" "focus" "telemetry" "map" "chart" "battles" "strategy" "rc" "weather";
   }
   .cc-session { grid-template-columns: minmax(0, 1fr) auto; }
   .cc-session-state { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; }

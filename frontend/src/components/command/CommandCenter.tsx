@@ -14,6 +14,9 @@ import {
 import { NUDGE_MS, parseUrlTime, readUrl, usePlayback, useUi, writeUrl, type Density } from "../../command/state";
 import { dataOf, useResource } from "../../command/useResource";
 import { useSpatial } from "../../spatial/useSpatial";
+import { useGhost } from "../../telemetry/useGhost";
+import { useTelemetryWindow } from "../../telemetry/useTelemetryWindow";
+import { CarTelemetryPanel } from "../telemetry/CarTelemetryPanel";
 import { TrackMap } from "../spatial/TrackMap";
 import { BattlePanel } from "./BattlePanel";
 import { FocusPanel } from "./FocusPanel";
@@ -126,6 +129,18 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
     const d = spatial.shown.drivers.find((x) => x.driver_number === ui.driver);
     return d ? { state: d, at: spatial.shown.at } : null;
   }, [ui.driver, spatial.status, spatial.shown]);
+  // Phase 12C: the selected car's stored telemetry up to the same cursor, and the
+  // map ghost for a hovered sample (the driver's own location sample at or before it)
+  const telemetry = useTelemetryWindow({ sid, driver: ui.driver, t: ready ? ui.t : null, playing: ui.playing,
+                                         rate: ui.rate, live: !timeline || !!live });
+  const [hover, setHover] = useState<{ driver: number; t: number } | null>(null);
+  const hovered = hover && hover.driver === ui.driver && hover.t <= ui.t ? hover.t : null;
+  const onHoverSample = useCallback((t: number | null) => {
+    setHover(t == null || ui.driver == null ? null : { driver: ui.driver, t });
+  }, [ui.driver]);
+  const validatedTrack = spatial.status !== "unavailable" && spatial.track?.status === "VALIDATED_MAP_SECTOR"
+    ? spatial.track.track_id : null;
+  const ghost = useGhost({ sid, driver: ui.driver, hovered, trackId: validatedTrack });
   const mode: Mode = !timeline ? { kind: "none" }
     : live ? { kind: "live", connected: res.status === "success" }
       : { kind: "historical", replaying: ui.playing || ui.t < (ui.frames[ui.frames.length - 1] ?? 0) };
@@ -174,7 +189,7 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
           </div>
           <div className="cc-area-map" data-tab="track">
             <TrackMap view={spatial} moment={moment} selected={ui.driver} battle={battlePair}
-                      playing={ui.playing} rate={ui.rate} onSelect={selectDriver} />
+                      playing={ui.playing} rate={ui.rate} onSelect={selectDriver} ghost={ghost.ghost} />
           </div>
           <div className="cc-area-chart" data-tab="race">
             <PositionChart moment={moment} selected={ui.driver} onSelect={selectDriver} onSeek={seek} />
@@ -185,6 +200,11 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
           <div className="cc-area-focus" data-tab="timing">
             <FocusPanel moment={moment} driver={ui.driver} spatial={focusSpatial}
                         onClose={closeFocus} onSeek={seek} />
+          </div>
+          <div className="cc-area-telemetry" data-tab="timing">
+            <CarTelemetryPanel telemetry={telemetry} driver={ui.driver}
+                               ident={ui.driver != null ? moment.driver.get(ui.driver) : undefined}
+                               playing={ui.playing} hovered={hovered} onHover={onHoverSample} ghostStatus={ghost.status} />
           </div>
           <div className="cc-area-strategy" data-tab="strategy">
             <StrategyPanel moment={moment} selected={ui.driver} onSelectDriver={selectDriver} onSeek={seek} />
