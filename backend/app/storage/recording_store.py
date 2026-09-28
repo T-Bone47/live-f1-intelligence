@@ -66,6 +66,10 @@ class RecordingStoreError(ValueError):
     """A cache file is unreadable or disagrees with its recording (rebuild)."""
 
 
+class UnknownRecordedItem(LookupError):
+    """The recording holds no such session, driver or lap (HTTP 404)."""
+
+
 def _us(value: datetime | str) -> int:
     dt = value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
     return (dt - _EPOCH) // _US
@@ -254,7 +258,7 @@ class RecordingStore:
     def _session(self, session_id: str) -> _Session:
         rec = self.recording_for(session_id)
         if rec is None:
-            raise LookupError(f"no recording holds session {session_id}")
+            raise UnknownRecordedItem(f"no recording holds session {session_id}")
         st = (rec / "frames.jsonl.zst").stat()
         key = f"{STORE_VERSION}|{st.st_size}|{st.st_mtime_ns}"
         with self._lock:
@@ -297,7 +301,7 @@ class RecordingStore:
             if entry["driver_number"] == driver and entry["lap_number"] == lap:
                 return Lap.model_validate({**entry["model"],
                                            "deleted": entry["deleted"] is True})
-        raise LookupError(f"lap {lap} unknown for driver {driver}")
+        raise UnknownRecordedItem(f"lap {lap} unknown for driver {driver}")
 
     def lap_catalog(self, session_id: str) -> dict:
         """The shape of Repository.session_lap_catalog, from the recording."""
@@ -325,6 +329,13 @@ class RecordingStore:
             return range(0)
         ts = cols[0]
         return range(bisect_left(ts, _us(t0)), bisect_right(ts, _us(t1)))
+
+    def car_span(self, session_id: str, driver: int) -> tuple[datetime, datetime] | None:
+        """First and last car sample time of a driver, None without samples."""
+        cols = self._session(session_id).car.get(driver)
+        if not cols or not cols[0]:
+            return None
+        return _dt(cols[0][0]), _dt(cols[0][-1])
 
     def car_rows(self, session_id: str, driver: int, t0: datetime, t1: datetime) -> list[dict]:
         """Car samples in [t0, t1] shaped like the telemetry_car table's rows."""

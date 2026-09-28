@@ -90,6 +90,7 @@ async def test_route_bytes_equal_the_builder_on_the_same_real_rows(seeded, clien
     assert resp.headers["X-Evidence-Contract"] == "evidence_v1"
     assert resp.headers["X-Evidence-Id"] == direct.evidence_id
     assert "db;dur=" in resp.headers["Server-Timing"]
+    assert resp.headers["X-Data-Source"] == "database"  # no recording holds this session
     assert client.get(_url(sid, meta)).content == resp.content  # deterministic
 
 

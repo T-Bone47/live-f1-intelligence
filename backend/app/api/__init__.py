@@ -196,6 +196,8 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             "stored": [],
         }
         settings = get_settings()
+        recorded = index_recordings(settings.recordings_dir)
+        out["recorded"] = [_recorded_entry(sid, rec) for sid, rec in sorted(recorded.items())]
         try:
             pool = await db_connect(settings.database_url)
         except Exception:  # noqa: BLE001 - discovery degrades, never crashes
@@ -205,7 +207,6 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             rows = await Repository(pool).session_catalog()
         finally:
             await pool.close()
-        recorded = index_recordings(settings.recordings_dir)
         out["stored"] = [{**r, "timeline_available": r["session_id"] in recorded
                           or r["session_id"] in hubs} for r in rows]
         return out
@@ -213,11 +214,18 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
     @app.get("/api/v1/sessions/{session_id}/laps")
     async def get_session_laps(session_id: str,
                                _: None = Depends(rate_limit_dependency)):
-        """Stored drivers and laps of one session (Phase 11 discovery)."""
+        """Drivers and laps of one session (Phase 11 discovery): from its
+        recording when one holds it (Phase 12C), else from the database."""
+        from fastapi.encoders import jsonable_encoder
+
         from app.storage.db import Repository
         from app.storage.db import connect as db_connect
 
         validate_session_id(session_id)
+        store = _recorded(session_id)
+        if store is not None:
+            body = await _recording_call(store.lap_catalog, session_id)
+            return JSONResponse(jsonable_encoder(body), headers={"X-Data-Source": "recording"})
         pool = await db_connect(get_settings().database_url)
         try:
             body = await Repository(pool).session_lap_catalog(session_id)
@@ -225,7 +233,7 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             await pool.close()
         if body is None:
             raise HTTPException(404, f"session {session_id} unknown")
-        return body
+        return JSONResponse(jsonable_encoder(body), headers={"X-Data-Source": "database"})
 
     @app.get("/api/v1/sessions/{session_id}/timeline")
     async def get_session_timeline(session_id: str,
@@ -461,7 +469,8 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
                             frequency: str = "MEDIUM",
                             fields: str | None = None):
         """Canonical telemetry query with RAW/HIGH/MEDIUM/LOW LTTB
-        downsampling. RAW windows are capped at 20 minutes."""
+        downsampling. RAW windows are capped at 20 minutes. A recorded
+        session is served from its recording (Phase 12C)."""
         from datetime import datetime, timedelta
 
         from app.storage.downsample import FREQ_TARGETS, lttb, normalize_frequency
@@ -469,46 +478,51 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
 
         freq = normalize_frequency(frequency)
         validate_session_id(session_id)
-        pool = await db_connect(get_settings().database_url)
-        try:
-            if lap:
-                win = await pool.fetchrow(
-                    "SELECT started_at, duration_s FROM laps WHERE session_id=$1"
-                    " AND driver_number=$2 AND lap_number=$3",
-                    session_id, driver_number, lap)
-                if not win or not win["started_at"]:
-                    raise HTTPException(404, f"lap {lap} unknown for driver")
-                start_dt = win["started_at"]
-                end_dt = (start_dt + timedelta(seconds=win["duration_s"])
-                          if win["duration_s"] else start_dt + timedelta(minutes=3))
-            else:
-                end_row = await pool.fetchrow(
-                    "SELECT max(ts) AS m FROM telemetry_car WHERE session_id=$1"
-                    " AND driver_number=$2", session_id, driver_number)
-                if not end_row or not end_row["m"]:
-                    raise HTTPException(404,
-                                        "no stored telemetry for this driver/session")
-                start_dt = end_row["m"] - timedelta(minutes=(20 if freq == "RAW" else 30))
-                end_dt = end_row["m"]
-            if start and end:
-                start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
-                end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
-                if freq == "RAW" and (end_dt - start_dt).total_seconds() > 1200:
-                    raise HTTPException(422, "RAW windows are capped at 20 minutes")
+        store = _recorded(session_id)
+        if store is not None:
+            rows, loc_rows, start_dt, end_dt = await _recorded_telemetry(
+                store, session_id, driver_number, start, end, lap, freq)
+        else:
+            pool = await db_connect(get_settings().database_url)
+            try:
+                if lap:
+                    win = await pool.fetchrow(
+                        "SELECT started_at, duration_s FROM laps WHERE session_id=$1"
+                        " AND driver_number=$2 AND lap_number=$3",
+                        session_id, driver_number, lap)
+                    if not win or not win["started_at"]:
+                        raise HTTPException(404, f"lap {lap} unknown for driver")
+                    start_dt = win["started_at"]
+                    end_dt = (start_dt + timedelta(seconds=win["duration_s"])
+                              if win["duration_s"] else start_dt + timedelta(minutes=3))
+                else:
+                    end_row = await pool.fetchrow(
+                        "SELECT max(ts) AS m FROM telemetry_car WHERE session_id=$1"
+                        " AND driver_number=$2", session_id, driver_number)
+                    if not end_row or not end_row["m"]:
+                        raise HTTPException(404,
+                                            "no stored telemetry for this driver/session")
+                    start_dt = end_row["m"] - timedelta(minutes=(20 if freq == "RAW" else 30))
+                    end_dt = end_row["m"]
+                if start and end:
+                    start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+                    end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+                    if freq == "RAW" and (end_dt - start_dt).total_seconds() > 1200:
+                        raise HTTPException(422, "RAW windows are capped at 20 minutes")
 
-            rows = await pool.fetch(
-                """SELECT ts, rpm, speed_kph, gear, throttle_pct, brake_pct, drs,
-                   provenance_class
-                   FROM telemetry_car WHERE session_id=$1 AND driver_number=$2
-                   AND ts BETWEEN $3 AND $4 ORDER BY ts""",
-                session_id, driver_number, start_dt, end_dt)
-            loc_rows = await pool.fetch(
-                """SELECT ts, x, y, z, provenance_class FROM telemetry_location
-                   WHERE session_id=$1 AND driver_number=$2
-                   AND ts BETWEEN $3 AND $4 ORDER BY ts""",
-                session_id, driver_number, start_dt, end_dt)
-        finally:
-            await pool.close()
+                rows = await pool.fetch(
+                    """SELECT ts, rpm, speed_kph, gear, throttle_pct, brake_pct, drs,
+                       provenance_class
+                       FROM telemetry_car WHERE session_id=$1 AND driver_number=$2
+                       AND ts BETWEEN $3 AND $4 ORDER BY ts""",
+                    session_id, driver_number, start_dt, end_dt)
+                loc_rows = await pool.fetch(
+                    """SELECT ts, x, y, z, provenance_class FROM telemetry_location
+                       WHERE session_id=$1 AND driver_number=$2
+                       AND ts BETWEEN $3 AND $4 ORDER BY ts""",
+                    session_id, driver_number, start_dt, end_dt)
+            finally:
+                await pool.close()
 
         key_map = {"speed": "speed_kph", "gear": "gear", "drs": "drs",
                    "throttle": "throttle_pct", "brake": "brake_pct", "rpm": "rpm"}
@@ -550,9 +564,10 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
             "frequency": freq, "lap": lap,
             "window": {"start": start_dt.isoformat(), "end": end_dt.isoformat()},
             "provenance": {"class": prov_class,
-                           "kind": "stored canonical telemetry"},
+                           "kind": ("recorded canonical telemetry" if store is not None
+                                    else "stored canonical telemetry")},
             "series": series_out,
-        })
+        }, headers={"X-Data-Source": "recording" if store is not None else "database"})
 
     @app.get("/api/v1/sessions/{session_id}/telemetry/compare")
     async def compare_telemetry(session_id: str, drivers: str,
@@ -667,14 +682,21 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
         except EvidenceInputError as exc:
             raise HTTPException(422, str(exc)) from exc
         t0 = perf_counter()
-        pool = await db_connect(get_settings().database_url)
-        try:
-            source = await _load_session_source(pool, session_id)
+        store = _recorded(session_id)
+        if store is not None:
+            source = await _recording_call(store.session_source, session_id)
             (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
-                await _load_lap_telemetry(pool, session_id, d, n)
+                await _recording_lap_telemetry(store, session_id, d, n)
                 for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
-        finally:
-            await pool.close()
+        else:
+            pool = await db_connect(get_settings().database_url)
+            try:
+                source = await _load_session_source(pool, session_id)
+                (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
+                    await _load_lap_telemetry(pool, session_id, d, n)
+                    for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
+            finally:
+                await pool.close()
         t1 = perf_counter()
         try:
             evidence = build_lap_comparison_evidence(
@@ -692,6 +714,7 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
         return Response(content=body, media_type="application/json", headers={
             "X-Evidence-Contract": evidence.contract_version,
             "X-Evidence-Id": evidence.evidence_id,
+            "X-Data-Source": "recording" if store is not None else "database",
             "Server-Timing": (f"db;dur={(t1 - t0) * 1000:.1f}, "
                               f"pipeline;dur={(t2 - t1) * 1000:.1f}, "
                               f"serialize;dur={(t3 - t2) * 1000:.1f}"),
@@ -908,6 +931,100 @@ def _spatial_store(recordings_dir):   # Path -> SpatialStore
     if key not in _spatial_stores:
         _spatial_stores[key] = SpatialStore(recordings_dir)
     return _spatial_stores[key]
+
+
+_recording_stores: dict[str, Any] = {}
+RECORDED_SESSION_KEYS = ("session_name", "session_type", "year", "meeting_name",
+                         "circuit_short_name", "country_code", "date_start", "date_end")
+
+
+def _recording_store(recordings_dir):   # Path -> RecordingStore
+    """One recording store (laps and car telemetry) per recordings directory."""
+    from app.storage.recording_store import RecordingStore
+
+    key = str(recordings_dir)
+    if key not in _recording_stores:
+        _recording_stores[key] = RecordingStore(recordings_dir)
+    return _recording_stores[key]
+
+
+def _recorded(session_id: str):
+    """The recording store when a recording holds the session (Phase 12C: the
+    recording is the source), else None (the database is the source)."""
+    store = _recording_store(get_settings().recordings_dir)
+    return store if store.recording_for(session_id) is not None else None
+
+
+def _recorded_entry(session_id: str, rec) -> dict:
+    """One recorded session for discovery, from its meta.json as recorded."""
+    try:
+        meta = json.loads((rec / "meta.json").read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        meta = {}
+    s = meta.get("session") or {}
+    return {"session_id": session_id, "provider": meta.get("provider"),
+            **{k: s.get(k) for k in RECORDED_SESSION_KEYS},
+            "interrupted": bool(meta.get("interrupted")), "source": "recording",
+            "timeline_available": True}
+
+
+async def _recording_call(fn, *args):
+    """Run recording-store work off the event loop. Unknown sessions, drivers
+    and laps are 404; identity failures withhold the output (500, fail closed)."""
+    from app.spatial.source import SpatialIdentityError
+    from app.storage.recording_store import UnknownRecordedItem
+
+    try:
+        return await asyncio.to_thread(fn, *args)
+    except UnknownRecordedItem as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except SpatialIdentityError as exc:
+        raise HTTPException(500, f"recorded data withheld (fail closed): {exc}") from exc
+
+
+async def _recording_lap_telemetry(store, session_id: str, driver: int, lap_number: int):
+    """_load_lap_telemetry from a recording: the same models, the same refusals."""
+    from datetime import timedelta
+
+    lap = await _recording_call(store.lap, session_id, driver, lap_number)
+    if lap.duration_s is None:
+        raise HTTPException(422, f"driver {driver} lap {lap_number} has no duration: "
+                                 "attribution needs a completed lap")
+    samples = await _recording_call(store.car_samples, session_id, driver, lap.started_at,
+                                    lap.started_at + timedelta(seconds=lap.duration_s))
+    if not samples:
+        raise HTTPException(422, f"no stored telemetry for driver {driver} lap {lap_number}")
+    return lap, samples
+
+
+async def _recorded_telemetry(store, session_id: str, driver: int, start: str | None,
+                              end: str | None, lap: int | None, freq: str):
+    """Car and location rows of a recorded session for the telemetry route.
+    A lap without a duration is refused: its window is never guessed."""
+    from datetime import timedelta
+
+    if lap:
+        lap_obj = await _recording_call(store.lap, session_id, driver, lap)
+        if lap_obj.duration_s is None:
+            raise HTTPException(422, f"driver {driver} lap {lap} has no duration: a recorded "
+                                     "session never guesses its telemetry window")
+        start_dt = lap_obj.started_at
+        end_dt = start_dt + timedelta(seconds=lap_obj.duration_s)
+    else:
+        span = await _recording_call(store.car_span, session_id, driver)
+        if span is None:
+            raise HTTPException(404, "no stored telemetry for this driver/session")
+        end_dt = span[1]
+        start_dt = end_dt - timedelta(minutes=(20 if freq == "RAW" else 30))
+    if start and end:
+        start_dt, end_dt = _utc_param("start", start), _utc_param("end", end)
+        if end_dt < start_dt:
+            raise HTTPException(422, "end must not precede start")
+        if freq == "RAW" and (end_dt - start_dt).total_seconds() > 1200:
+            raise HTTPException(422, "RAW windows are capped at 20 minutes")
+    rows = await _recording_call(store.car_rows, session_id, driver, start_dt, end_dt)
+    loc_rows = await _recording_call(store.location_rows, session_id, driver, start_dt, end_dt)
+    return rows, loc_rows, start_dt, end_dt
 
 
 def _no_spatial_recording(session_id: str) -> str:

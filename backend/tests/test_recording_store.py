@@ -191,3 +191,17 @@ def test_truncated_bin_rebuilds(tmp_path):
 def test_samples_carry_utc_timestamps(tmp_path):
     [s] = store_for(tmp_path, [car(1, 10.0)]).car_samples(SID, 1, at(9.0), at(11.0))
     assert s.ts.utcoffset() == timedelta(0) and s.ts.isoformat() == at(10.0).isoformat()
+
+
+def test_car_span_is_first_and_last_sample(tmp_path):
+    store = store_for(tmp_path, [car(1, 10.0), car(1, 12.5), car(1, 11.0)])
+    assert store.car_span(SID, 1) == (at(10.0), at(12.5))
+    assert store.car_span(SID, 3) is None  # no car samples: no span, never a guess
+
+
+def test_unknown_items_raise_the_store_lookup_error_only(tmp_path):
+    store = store_for(tmp_path)
+    with pytest.raises(recording_store.UnknownRecordedItem):
+        store.lap(SID, 1, 99)
+    with pytest.raises(recording_store.UnknownRecordedItem):
+        store.lap_catalog("openf1:404")
