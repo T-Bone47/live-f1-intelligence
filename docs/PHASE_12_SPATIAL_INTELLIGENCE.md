@@ -7,7 +7,7 @@ sub-projects, each with its own spec, plan and evidence:
 | sub-project | scope | status |
 |---|---|---|
 | **12A** | backend spatial foundation: track reference, measured timing lines, validation gate, per-car spatial state, API | **complete** (this document) |
-| 12B | track map in the command center, driven by the Phase 11 cursor (now race time) | **complete** (`docs/PHASE_12B_TRACK_MAP.md`) |
+| 12B | track map in the command center, driven by the Phase 11 cursor (now race time) | built and browser-verified; continuous playback run pending (`docs/PHASE_12B_TRACK_MAP.md`) |
 | 12C | telemetry ↔ map synchronization, spatial lap comparison, Evidence Workbench spatial context | planned |
 | 12D | battle spatialization, pit-lane geometry from observed traversals; corners only with a licensed source | planned |
 

@@ -47,9 +47,12 @@ frontend:
 
 ## 3. The race-time cursor (Phase 11 change)
 
-- `UiState.t` (epoch ms) is the cursor. The lap frame a panel shows is the
-  last frame at or before `t`; frame times come from each frame's `at`.
-  A timeline frame without a usable time is refused (fail closed).
+- `UiState.t` (whole epoch milliseconds) is the cursor. The lap frame a
+  panel shows is the last frame at or before `t`; frame times come from each
+  frame's `at`. A frame without a time (a live lap with no start) is never
+  placed at a guessed time: the cursor shows the next timed frame instead,
+  or, after the last timed frame, the newest one. A frame time that is not a
+  time, or that goes backwards, is refused.
 - Actions: `load{frames, t}`, `seekTime`, `seekFrame`, `step` (back goes to
   the lap's own frame first), `nudge{ms}` (Shift+←/→ = ±10 s), `play`,
   `pause`, `toggle`, `tick{wallMs}`, `rate`.
@@ -59,7 +62,10 @@ frontend:
   before `t`; engine events keep the frame the engine first knew them at
   (their own timestamp precedes that frame on 11 of 74 frames).
 - The moment object is reused between ticks that change nothing it lists
-  (`knownTime`), so 60 fps playback does not re-render every panel.
+  (`knownTime`); the frame-row panels, driver focus, the session header and
+  the map are memoized with stable callbacks, so a cursor move inside a frame
+  re-renders none of them (tested) - only the replay bar and, when the shown
+  state changes, the map.
 - URL: `?lap=` is the derived frame; `?t=` (ISO with an offset) only while
   the cursor sits between frames. A malformed or out-of-range `?t=` falls
   back to `?lap=`, then to the end.
@@ -94,9 +100,16 @@ track, it answers the request (state `at` = requested time; window `from` and
   | 16× | 120 s | 2 s | 61 | 125 ms | 8 |
   | 64× | 120 s | 4 s | 31 | 62 ms | 32 |
 
-- Nothing is requested before the cursor exists; a session change shows
-  nothing old; a live session is unavailable without a request (recordings
-  only); a failed window is not retried until the user retries.
+- A state after the cursor is never shown: after stepping back the map shows
+  nothing until the backend answers for the new moment.
+- Any cached window may be shown after a rate change (the latest state at or
+  before the cursor); only windows at the current step decide what to fetch.
+- Nothing is requested before the cursor exists or before the timeline says
+  whether the session is live; a session change shows nothing old; a live
+  session is unavailable without a request (recordings only).
+- A failed window stops window requests until the user retries (no request
+  storm against the 120 requests/minute limit); the map shows the error
+  with Retry. Paused, the exact state request is independent of it.
 
 ## 5. The map (`frontend/src/components/spatial/`)
 
@@ -124,7 +137,8 @@ a test asserts the lap runs clockwise on screen.
 | loading | track or first state loading | skeleton, nothing old |
 | ready | validated track and a state | the map, "positions at hh:mm:ss.s UTC" |
 | partial | some cars without coverage | markers plus "Not on map" |
-| lagging | shown state more than one step from the cursor | "positions lag the cursor" |
+| lagging | shown state more than one step before the cursor | "positions lag the cursor" |
+| catching up | the cursor stepped back before the last state | no markers, "Loading positions…" until the new state arrives |
 | no coverage | every car `NO_COVERAGE` (e.g. FINAL) | the circuit, no markers, "No position coverage at this moment" |
 | unavailable | 409 / unvalidated track, 404 no recording, live | the reason and the gate's reasons; no circuit |
 | error | 422 / 500 / network | the backend's message and Retry |
@@ -176,7 +190,8 @@ Defects found in the browser and fixed test-first:
 | first load | `/timeline` and `/track` in parallel, ~27 ms each; exact state 15 ms, 9.1 kB | browser resource timing, dev server |
 | lap step, keydown → DOM commit | median 75 ms, p90 102 ms (one long task per step); without the map 65 ms | 12 steps, 1440 px, Vite dev build |
 | map update after a step | median 328 ms, max 528 ms (includes the 120 ms debounce and the request) | 10 steps, MutationObserver |
-| command-center chunk | 100.04 kB JS (30.50 kB gzip), 39.81 kB CSS (Phase 11: 71.12 kB / 32.09 kB) | `npm run build` |
+| cursor move inside a frame (a playback tick's render path), input to DOM | before the fix pass median 43.9 ms, p90 52 ms; after median 9.7 ms, p90 26.5 ms | 20 scrubber moves of 0.2 s at LAP 40, 1440 px, dev build |
+| command-center chunk | 100.27 kB JS (30.65 kB gzip), 39.81 kB CSS (Phase 11: 71.12 kB / 32.09 kB) | `npm run build` |
 | 16× playback frame budget | **not measured**: the browser pane was hidden, so `requestAnimationFrame` never ran | — |
 
 ## 9. Tests
@@ -198,6 +213,15 @@ New tests (functions added since the 12B spec commit):
 | `tests/spatial/trackmap.test.tsx` | 24 | renderer, states, keyboard, words, no browser computation (source scan) |
 | `tests/spatial/geometry.test.ts` | 9 | fit, orientation, label placement |
 
+**Final review (fresh reviewer, whole branch):** "with fixes". One Critical
+(after playback every paused exact request failed: fractional `t` against the
+millisecond echo) and three Important findings (a request storm after a
+window failure, a state after the cursor shown, every panel re-rendered per
+tick) plus four minors re-graded to Important (rate change jumping back, a
+live session requesting `/track`, untimed frames refusing the page, a wrong
+STALE definition) were fixed test-first in one pass (8 new tests, each red
+first). Deferred minors and rulings are in the ledger and the final report.
+
 **Mutations (frontend, each alone):** 18 of 18 killed - frame derivation off
 by one, lists ignoring `ts`, session / track_id / request-time mismatch
 accepted, unvalidated track drawn (renderer and client), STALE styled as
@@ -210,7 +234,12 @@ Two first survived; their killing tests were added.
 
 - Positions are the backend's states on a grid while playing (up to one step
   of race time behind the cursor, labelled); an exact state when paused.
-- The 16× frame budget is unmeasured (see §8).
+- The 16× frame budget is unmeasured (see §8): playback was exercised only
+  to its first window request and its first shown state, never run
+  continuously in a visible browser.
+- A map sector is geometric (against the measured S1/S2 lines, p95 12–18 m
+  on the Dutch GP); a car that close to a line can be in a different sector
+  than official timing says.
 - Only the Dutch GP race is validated; other sessions show the map only
   once their geometry passes the 12A gate with a cited lap length.
 - Live sessions are not spatialized (12A is recording-only).

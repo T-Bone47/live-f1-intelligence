@@ -94,8 +94,10 @@ invented.
     `src/components/spatial/` (SVG `TrackMap`); map at the top of the centre
     column, Track tab on phones, Track position in driver focus.
   - Verified in the browser on the real Dutch GP at 375-1920 px; 7 QA
-    defects fixed test-first; 18/18 frontend mutations killed. The 16x
-    playback frame budget is NOT measured (pane hidden). Evidence:
+    defects fixed test-first; 18/18 frontend mutations killed; the final
+    review (with fixes) was answered by one fix pass (8 findings, each with a
+    red-first test). **Open:** continuous playback was never observed in a
+    visible browser; the 16x frame budget is NOT measured. Evidence:
     `docs/PHASE_12B_TRACK_MAP.md`.
 - **12A Spatial foundation** (branch `phase-12-spatial-intelligence`, stacked
   on phase 11; PR #2 still open). Backend only, no UI. `app/spatial/`:
@@ -185,7 +187,9 @@ invented.
 ## Next steps
 1. **12C telemetry/evidence spatial sync**, then 12D (battles, pit-lane
    path). 12B's `TrackMap` already emits `onPositionSelect(driver, stateAt)`.
-   - **Measure** the 16x playback frame budget with the browser visible.
+   - **First, close 12B:** run playback (1x/4x/16x/64x, pause, rate change,
+     seek back) in a visible browser and measure the 16x frame budget and
+     request counts; record them in `docs/PHASE_12B_TRACK_MAP.md` §8.
    - **Open 12A findings:** the lap-4 restart crossings (~35 m) and #14 lap 37.
 1. **Recorder stall after HTTP 429.** Both Dutch GP recording runs stalled
    around 1.83M envelopes (see `finalize_interrupted`). Then record a
@@ -272,7 +276,7 @@ invented.
 
 ## Roadmap
 ~~10.6 evidence workbench~~ → ~~11 command center (observational)~~ →
-~~12A spatial foundation~~ → ~~12B track map~~ → 12C telemetry/evidence spatial
+~~12A spatial foundation~~ → 12B track map (built; playback run pending) → 12C telemetry/evidence spatial
 sync → 12D battles / pit lane → 11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
 
@@ -280,8 +284,8 @@ explorer → session state machine → production hardening.
 - **Backend:** 921 passed, 23 skipped, 1 failed. The failure is the known
   10.3 S2 check (uncommitted fixture). Skips: 18 need Postgres plus the known
   5. The real-data spatial tests need the recording and take ~5 min in all.
-- **Frontend:** 306 passed (`npx vitest run --no-file-parallelism`), build OK
-  (command-center chunk 100.04 kB JS / 30.50 kB gzip, 39.81 kB CSS), tsc OK,
+- **Frontend:** 314 passed (`npx vitest run --no-file-parallelism`), build OK
+  (command-center chunk 100.27 kB JS / 30.65 kB gzip, 39.81 kB CSS), tsc OK,
   ESLint 0 errors (105 pre-existing warnings).
 
 ## Baseline (Phase 12A, verified 2026-09-26 on this machine, Postgres DOWN)
