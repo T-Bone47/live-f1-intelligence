@@ -194,6 +194,24 @@ describe("playing", () => {
   });
 });
 
+describe("starting playback (browser QA finding: the map stepped back 1.1 s on play)", () => {
+  it("keeps the exact state until a window state is newer, never showing an older one", async () => {
+    mockSpatial({ state: byTime });
+    const h = mount();                                   // paused at the real LAP 40 state
+    await flush();
+    await wait(120);
+    expect(h.result.current.shown?.at).toBe(LAP40);
+    h.rerender({ ...base, playing: true, t: LAP40 });
+    await flush();                                       // a 2 s window arrives, its latest state is older
+    expect(h.result.current.shown?.at).toBe(LAP40);
+    h.rerender({ ...base, playing: true, t: LAP40 + 2000 });
+    await flush();
+    const shown = h.result.current.shown!;
+    expect(shown.at).toBeGreaterThan(LAP40);
+    expect(shown.at).toBeLessThanOrEqual(LAP40 + 2000);
+  });
+});
+
 describe("selectState (pure selection, real window)", () => {
   const w = fixture().window;
   const at = (i: number) => Date.parse(w.states[i].at);

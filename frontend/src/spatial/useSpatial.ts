@@ -135,11 +135,14 @@ export function useSpatial({ sid, t, playing, rate, live }: {
       .finally(() => setPending((p) => p.filter((x) => x !== entry)));
   }, [need, sid, trackId, plan.stepS, spanMs, reload]);
 
-  // ---- what is shown: the exact state when it is at the cursor, else the
-  // window state at or before it, else the last exact state (flagged lagging)
+  // ---- what is shown: of the exact state and the window state, the latest at
+  // or before the cursor (so starting playback never steps back in time); with
+  // neither at or before it, the last exact state (flagged lagging)
   const exact = paused && trackId && ours(paused) ? paused.shown : null;
   const fromWindow = current && t != null ? selectState(current, t) : null;
-  const shown = t == null ? null : !playing && exact && exact.at === t ? exact : fromWindow ?? exact;
+  const latest = [exact, fromWindow].reduce<Shown | null>(
+    (best, s) => (s != null && t != null && s.at <= t && (best == null || s.at > best.at) ? s : best), null);
+  const shown = t == null ? null : latest ?? exact;
   const lagging = shown != null && t != null && Math.abs(t - shown.at) > stepMs;
 
   const retry = useCallback(() => setReload((r) => r + 1), []);
