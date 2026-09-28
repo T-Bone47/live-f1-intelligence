@@ -107,7 +107,7 @@
 .sm-offmap-why { font-size: 11px; color: var(--text-muted-aa); }
 
 .sm-info {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 10px; padding-top: 10px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; margin-top: 10px; padding-top: 10px;
   border-top: 1px solid var(--border-subtle); font-size: 12px;
   animation: sm-rise var(--motion-normal) var(--ease-standard);
 }
@@ -126,7 +126,6 @@
 .sm-glyph .sm-ring { fill: none; stroke: var(--text-secondary); stroke-width: 2; }
 .sm-info-btn[aria-expanded="true"] { border-color: var(--border-emphasis); }
 
-@media (max-width: 899px) { .sm-info { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) {
   .sm-marker, .sm-sector, .sm-halo { transition: none; }
   .sm-skeleton, .sm-info { animation: none; }
