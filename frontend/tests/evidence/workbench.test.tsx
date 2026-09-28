@@ -188,8 +188,16 @@ describe("comparison selector", () => {
     fireEvent.click(screen.getByRole("button", { name: "Swap driver A and driver B" }));
     expect(screen.getByText(/Selector differs from the loaded evidence/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Load evidence/ }));
-    await waitFor(() => expect(fetchFn.mock.calls.length).toBe(2));
-    expect(String(fetchFn.mock.calls[1][0])).toContain("driver_a=63&lap_a=16&driver_b=55&lap_b=19");
+    const evidenceCalls = () => fetchFn.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/evidence/lap-comparison?"));
+    await waitFor(() => expect(evidenceCalls()).toHaveLength(2));
+    expect(evidenceCalls()[1]).toContain("driver_a=63&lap_a=16&driver_b=55&lap_b=19");
+  });
+
+  it("without a validated track the map context says so and nothing is placed (Singapore has no recording)", async () => {
+    const fetchFn = mockFetch();
+    await renderLoaded();
+    expect(await screen.findByText("Track context unavailable")).toBeInTheDocument();
+    expect(fetchFn.mock.calls.map((c) => String(c[0])).some((u) => u.includes("/lap-comparison/spatial"))).toBe(false);
   });
   it("refuses to request without a cited lap length", () => {
     const fetchFn = mockFetch();

@@ -71,7 +71,7 @@ function CompareEntry({ moment, driver }: { moment: Moment; driver: number }) {
       ) : (
         <span className="cc-btn is-disabled" aria-disabled="true"><Icon name="compare" size={13} /> Open lap comparison</span>
       )}
-      <p className="cc-small cc-muted">Only laps with a time and stored telemetry are offered. The lap length and its source are entered in the workbench; no circuit geometry is stored.</p>
+      <p className="cc-small cc-muted">Only laps with a time and stored telemetry are offered. The workbench prefills the lap length and its source from a validated track's citation; otherwise enter them there.</p>
     </div>
   );
 }

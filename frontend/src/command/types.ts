@@ -230,17 +230,36 @@ export interface StoredSession {
   timeline_available: boolean;
 }
 
+/** Phase 12C: a session held by a recording (listed even with the database down). */
+export interface RecordedSession {
+  session_id: string;
+  provider: string | null;
+  session_name: string | null;
+  session_type: string | null;
+  year: number | null;
+  meeting_name: string | null;
+  circuit_short_name: string | null;
+  country_code: string | null;
+  date_start: string | null;
+  date_end: string | null;
+  interrupted: boolean;
+  source: "recording";
+  timeline_available: boolean;
+}
+
 export interface SessionCatalog {
   active: ActiveSession[];
   stored: StoredSession[];
   stored_error?: string;
+  recorded?: RecordedSession[];
 }
 
 export interface CatalogLap {
   lap_number: number;
   started_at: string | null;
   duration_s: number | null;
-  deleted: boolean;
+  /** true/false only from a lap correction; null = not recorded (a recording source). */
+  deleted: boolean | null;
   is_pit_out_lap: boolean | null;
   has_car_telemetry: boolean;
 }

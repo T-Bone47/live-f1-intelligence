@@ -11,6 +11,7 @@ import {
   draftFromSearch, sameRequest, searchFromState, selectedLabelFromSearch, validateDraft,
   type DraftErrors, type EvidenceRequest, type RequestDraft,
 } from "../../evidence/request";
+import { useTrackContext } from "../../evidence/spatial";
 import { useEvidence } from "../../evidence/useEvidence";
 import { buildView, stepLabel } from "../../evidence/viewModel";
 import { AccountingSummary } from "./AccountingSummary";
@@ -26,6 +27,7 @@ import { InvestigateWithRaceWiseButton } from "./RaceWiseButton";
 import { SectorEvidence } from "./SectorEvidence";
 import { SegmentInspector } from "./SegmentInspector";
 import { SegmentTimeline } from "./SegmentTimeline";
+import { TrackContext } from "./TrackContext";
 import "./evidence.css";
 
 function initialRequest(search: string): EvidenceRequest | null {
@@ -50,6 +52,8 @@ export function EvidenceWorkbench({ search = typeof location !== "undefined" ? l
   const state = useEvidence(request, reloadKey);
   const data = state.status === "success" ? state.data : state.status === "loading" ? state.previous : null;
   const view = useMemo(() => (data ? buildView(data.evidence) : null), [data]);
+  // Phase 12C: the validated track (per session) and this evidence placed on it (per evidence_id)
+  const trackCtx = useTrackContext(request, data?.evidence ?? null);
   const sel = view && selected && view.byLabel.has(selected) ? selected : null;
   const segment = sel && view ? view.byLabel.get(sel) ?? null : null;
   // Until evidence arrives the requested label cannot be checked; keep it in the URL meanwhile.
@@ -145,6 +149,9 @@ export function EvidenceWorkbench({ search = typeof location !== "undefined" ? l
                 <SegmentTimeline view={view} selected={sel} onSelect={select} />
               </Section>
               <div className="ewb-area-side">
+                <Section id="ewb-track" title="Track context" eyebrow="Placed by each driver's sample times">
+                  <TrackContext ctx={trackCtx} view={view} selected={sel} onSelect={select} />
+                </Section>
                 <SegmentInspector view={view} segment={segment} onStep={step} onClear={() => select(null)}
                                   drillOpen={drillOpen} onToggleDrill={() => setDrillOpen((o) => !o)} />
                 <InvestigateWithRaceWiseButton evidence={view.evidence} focusSegmentIds={segment ? [segment.segment_id] : []} />

@@ -1,7 +1,8 @@
 /**
- * Comparison selector. There is no stored-laps listing route, so the fields
- * are typed; the one validated real pair is offered as a preset. Swapping A
- * and B only swaps the request — the backend negates every change.
+ * Comparison selector. Laps can be picked from the backend's session and lap
+ * lists (Phase 12C, LapPickers) or typed; the one validated real pair is
+ * offered as a preset. Swapping A and B only swaps the request — the backend
+ * negates every change.
  */
 
 import type { FormEvent } from "react";
@@ -9,6 +10,7 @@ import {
   MAX_SOURCE_CHARS, REAL_PAIR_PRESET, swapDraft,
   type DraftErrors, type DraftField, type RequestDraft,
 } from "../../evidence/request";
+import { LapPickers } from "./LapPickers";
 import { Icon } from "./primitives";
 
 interface Props {
@@ -43,6 +45,7 @@ export function ComparisonForm({ draft, errors, stale, busy, onChange, onSubmit 
   const submit = (e: FormEvent) => { e.preventDefault(); onSubmit(); };
   return (
     <form className="ewb-form" onSubmit={submit} aria-label="Comparison selector" noValidate>
+      <LapPickers draft={draft} onChange={onChange} />
       <div className="ewb-form-grid">
         <Field id="sessionId" label="Session" value={draft.sessionId} error={errors.sessionId} onChange={set("sessionId")} hint="provider:key, e.g. openf1:9161" />
         <fieldset className="ewb-pair ewb-pair-a">

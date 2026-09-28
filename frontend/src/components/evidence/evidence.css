@@ -528,3 +528,32 @@
   .ewb-section { padding: var(--sp-2) var(--sp-3); }
   .ewb-kv > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
 }
+
+/* ── Phase 12C: track context and lap pickers ── */
+.ewb-pick-open { margin-bottom: var(--sp-3); }
+.ewb-pickers {
+  display: grid; gap: var(--sp-3); margin-bottom: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+.ewb-pickers .ewb-pair { display: grid; gap: var(--sp-2); min-width: 0; }
+.tc-frame { display: grid; gap: var(--sp-2); min-width: 0; }
+.tc-map { display: block; width: 100%; height: auto; }
+.tc-circuit { fill: none; stroke: var(--border-active); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.tc-extent { fill: none; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.tc-extent.is-a { stroke: var(--driver-a); }
+.tc-extent.is-b { stroke: var(--driver-b); stroke-dasharray: 7 4; }
+.tc-mono { font-family: var(--font-mono); font-size: 11px; font-weight: 700; paint-order: stroke;
+           stroke: var(--bg-panel); stroke-width: 3px; }
+.tc-mono.is-a { fill: var(--driver-a-ink); }
+.tc-mono.is-b { fill: var(--driver-b-ink); }
+.tc-tick { cursor: pointer; outline: none; }
+.tc-hit { fill: transparent; }
+.tc-dot { fill: var(--text-muted-aa); }
+.tc-tick:hover .tc-dot, .tc-tick.is-selected .tc-dot { fill: var(--text-primary); }
+.tc-tick:focus-visible .tc-hit { stroke: var(--border-focus); stroke-width: 2; }
+.tc-caption, .tc-muted { margin: 0; font-size: var(--text-sm); color: var(--text-muted-aa); }
+.tc-missing { margin: 0; padding-left: 1.1em; font-size: var(--text-sm); color: var(--text-secondary); }
+.tc-state { display: grid; gap: var(--sp-1); }
+.tc-state-title { margin: 0; font-weight: 600; color: var(--text-primary); }
+.tc-reasons { margin: 0; padding-left: 1.1em; font-size: var(--text-sm); }
+.tc-skeleton { height: 220px; border-radius: 6px; background: var(--bg-secondary); }
