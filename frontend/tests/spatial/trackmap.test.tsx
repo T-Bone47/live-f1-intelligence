@@ -65,6 +65,22 @@ describe("the validated circuit comes from the contract", () => {
     expect(markers(container)).toHaveLength(0);
   });
 
+  it("a 409 on the state draws no circuit even though the track itself loaded (mutation sweep)", () => {
+    const { container } = draw(view({ status: "unavailable", reason: "UNVALIDATED", shown: null,
+                                      reasons: ["NO_CITED_LAP_LENGTH"] }));
+    expect(screen.getByText("NO_CITED_LAP_LENGTH")).toBeInTheDocument();
+    expect(container.querySelector("path")).toBeNull();
+    expect(screen.queryByRole("button", { name: /map info/i })).toBeNull();
+  });
+
+  it("a track whose status is not validated is never drawn, whatever it carries", () => {
+    const t = track();
+    t.status = "UNVALIDATED";                              // geometry left in place on purpose
+    const { container } = draw(view({ status: "loading", shown: null }, S40.drivers, t));
+    expect(container.querySelector("path")).toBeNull();
+    expect(markers(container)).toHaveLength(0);
+  });
+
   it.each([["RECORDING_ONLY", /recordings/i], ["NO_RECORDING", /no recording/i]])("%s is unavailable, with no circuit", (reason, text) => {
     const { container } = draw(view({ status: "unavailable", reason: reason as SpatialView["reason"], track: null, shown: null }));
     expect(screen.getByText("Spatial map unavailable")).toBeInTheDocument();

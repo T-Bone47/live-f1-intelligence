@@ -212,6 +212,20 @@ describe("starting playback (browser QA finding: the map stepped back 1.1 s on p
   });
 });
 
+describe("a slow window (mutation sweep)", () => {
+  it("is not requested again while it is in flight", async () => {
+    const f = mockSpatial({ state: byTime, window: () => new Promise<Response>(() => {}) });
+    const h = mount({ playing: true, rate: 16 });
+    await flush();
+    for (let s = 0; s <= 10; s += 0.5) {
+      h.rerender({ ...base, playing: true, rate: 16, t: LAP40 + s * 1000 });
+      await flush();
+    }
+    expect(calls(f, "/spatial/window")).toHaveLength(1);
+    expect(h.result.current.status).toBe("loading");
+  });
+});
+
 describe("selectState (pure selection, real window)", () => {
   const w = fixture().window;
   const at = (i: number) => Date.parse(w.states[i].at);
