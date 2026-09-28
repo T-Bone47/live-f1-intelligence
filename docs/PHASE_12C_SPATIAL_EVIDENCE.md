@@ -255,6 +255,17 @@ Defects found in the browser and fixed:
 
 Three first survived; their killing tests were added.
 
+**Final review** (a fresh reviewer, whole branch): "with fixes"; no Critical.
+One pass fixed three findings, each with a red-first test:
+
+| finding (re-graded by effect) | fix | test |
+|---|---|---|
+| Important: after the last sample the panel kept printing that value at the cursor, with no age. The Dutch GP has a real 26 s all-car feed gap (14:29:33–14:29:59). | beyond 2 s the value reads "—"; the stretch to the cursor is drawn and labelled; the header names the last sample's time | `a stale last sample is never shown as the value at the cursor`; `marks the stretch from the last sample to the cursor` |
+| Important (was Minor): during a new request the track context paired the new query with the previous evidence, giving a false "could not be loaded" and a failing Retry | placement is requested only for the evidence that answers the current request | `never asks to place a new request with the previous evidence` |
+| Important (was Minor): a keyboard-held hovered sample that left the shown minute during playback was read out as "no sample" | a hovered sample counts only inside the shown minute (panel and ghost) | `a hovered sample outside the shown minute is not read as missing` |
+
+The deferred minors are listed in the final report.
+
 ## 9. Limitations
 
 - Extents are sample-bounded: consecutive extents leave the stretch between

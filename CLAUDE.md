@@ -310,9 +310,10 @@ explorer → session state machine → production hardening.
   the known 10.3 S2 check (uncommitted fixture). Skips: 18 need Postgres plus
   the known 5. 56 new 12C tests; the real-data ones need the Dutch GP
   recording (the recording store's first build takes ~85 s, then 0.27 s).
-- **Frontend:** 374 passed (`npx vitest run --no-file-parallelism`), build OK
-  (command-center chunk 102.27 kB JS / 31.08 kB gzip), tsc OK, ESLint 0
-  errors (105 pre-existing warnings).
+- **Frontend:** 378 passed after the final-review fix pass
+  (`npx vitest run --no-file-parallelism`), build OK (command-center chunk
+  102.27 kB JS / 31.08 kB gzip), tsc OK, ESLint 0 errors (105 pre-existing
+  warnings).
 
 ## Baseline (Phase 12B, verified 2026-09-28 on this machine, Postgres DOWN)
 - **Backend:** 921 passed, 23 skipped, 1 failed. The failure is the known
