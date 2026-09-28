@@ -53,6 +53,11 @@ describe("fetchStateAt", () => {
     expect(doc.drivers).toHaveLength(s.drivers.length);
   });
 
+  it("a fractional cursor is asked for, and accepted, to the millisecond (review #1)", async () => {
+    const doc = await fetchStateAt(SID, at(s) + 0.4, TRACK_ID, undefined, ok(s));
+    expect(Date.parse(doc.at)).toBe(at(s));
+  });
+
   it("asks for the exact time with a UTC offset", async () => {
     const f = ok(s);
     await fetchStateAt(SID, at(s), TRACK_ID, undefined, f);

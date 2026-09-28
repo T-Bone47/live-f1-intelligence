@@ -8,7 +8,7 @@
  * fastest-lap changes and pit-stop records.
  */
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { RC_FILTERS, driverCode, fmtClockUtc, fmtLapTime, phaseLabel, rcKind, type RcKind } from "../../command/format";
 import { frameTimes, type Moment } from "../../command/moment";
 import type { RaceControlMessage, TimelineEvent } from "../../command/types";
@@ -30,7 +30,7 @@ function derivedText(e: TimelineEvent, moment: Moment): string {
   return `${e.event_type.replace(/_/g, " ")}${who ? `: ${who}` : ""}`;
 }
 
-export function RaceControlPanel({ moment, selectedKey, onSelect }: {
+export const RaceControlPanel = memo(function RaceControlPanel({ moment, selectedKey, onSelect }: {
   moment: Moment; selectedKey: string | null;
   onSelect: (key: string | null, at?: number) => void;
 }) {
@@ -122,4 +122,4 @@ export function RaceControlPanel({ moment, selectedKey, onSelect }: {
       )}
     </Panel>
   );
-}
+});

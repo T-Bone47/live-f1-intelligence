@@ -63,11 +63,20 @@ function identities(t: Timeline): Map<number, DriverIdentity> {
 }
 
 const timesCache = new WeakMap<Timeline, number[]>();
-/** Each frame's `at` as epoch ms (checkTimeline guarantees every frame has one). */
+/**
+ * Each frame's `at` as epoch ms, for the race-time cursor. A frame without a
+ * time is never placed at a guessed moment: it takes the next timed frame's
+ * time, so the cursor always shows that later frame instead (the untimed one
+ * is skipped); after the last timed frame it takes the previous one's, so the
+ * newest frame of a live timeline stays reachable at the end.
+ */
 export function frameTimes(t: Timeline): number[] {
   let ms = timesCache.get(t);
   if (!ms) {
-    ms = t.frames.map((f) => Date.parse(f.at ?? ""));
+    const out = t.frames.map((f) => (f.at == null ? Number.NaN : Date.parse(f.at)));
+    for (let i = out.length - 2; i >= 0; i -= 1) if (Number.isNaN(out[i])) out[i] = out[i + 1];
+    for (let i = 1; i < out.length; i += 1) if (Number.isNaN(out[i])) out[i] = out[i - 1];
+    ms = out.map((x) => (Number.isNaN(x) ? 0 : x));
     timesCache.set(t, ms);
   }
   return ms;

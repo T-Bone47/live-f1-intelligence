@@ -6,7 +6,7 @@
  * joined by the backend. No strategy, window or undercut is inferred here.
  */
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { compoundInfo, driverCode, fmtInt } from "../../command/format";
 import type { Moment, VisibleStint } from "../../command/moment";
 import { AsOf, Badge, DriverChip, EmptyState, Panel, TyreChip } from "./ui";
@@ -21,7 +21,7 @@ function stintTitle(s: VisibleStint): string {
   return `Stint ${s.stint_number}: ${c}, L${s.lap_start ?? "?"}–${end}${age}`;
 }
 
-export function StrategyPanel({ moment, selected, onSelectDriver, onSeek }: {
+export const StrategyPanel = memo(function StrategyPanel({ moment, selected, onSelectDriver, onSeek }: {
   moment: Moment; selected: number | null;
   onSelectDriver: (n: number | null) => void; onSeek: (index: number) => void;
 }) {
@@ -135,4 +135,4 @@ export function StrategyPanel({ moment, selected, onSelectDriver, onSeek }: {
       )}
     </Panel>
   );
-}
+});

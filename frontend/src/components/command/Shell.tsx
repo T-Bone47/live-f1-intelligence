@@ -4,7 +4,7 @@
  * only: Command center, Sessions, Evidence, Pit wall (legacy live view).
  */
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { memo, useEffect, useRef, type ReactNode } from "react";
 import { flagLabel, fmtDate, phaseLabel, phaseTone } from "../../command/format";
 import type { Moment } from "../../command/moment";
 import { Badge, Icon } from "./ui";
@@ -68,7 +68,7 @@ export function AppHeader({ active, mode, commandHref, onHelp }: {
   );
 }
 
-export function SessionHeader({ moment }: { moment: Moment }) {
+export const SessionHeader = memo(function SessionHeader({ moment }: { moment: Moment }) {
   const s = moment.timeline.session;
   const place = [s?.country_name, s?.circuit_short_name].filter(Boolean).join(" · ") || "Session";
   const tone = phaseTone(moment.frame.phase);
@@ -92,7 +92,7 @@ export function SessionHeader({ moment }: { moment: Moment }) {
       </div>
     </div>
   );
-}
+});
 
 const SHORTCUTS: [string, string][] = [
   ["Space / K", "Play or pause the replay"],

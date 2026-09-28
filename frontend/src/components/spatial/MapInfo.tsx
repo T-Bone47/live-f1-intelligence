@@ -29,7 +29,7 @@ function Glyph({ kind }: { kind: "dot" | "ring" | "square" | "stale" | "uncertai
 
 const LEGEND: [Parameters<typeof Glyph>[0]["kind"], string][] = [
   ["dot", "on the reference line"], ["ring", "OFF - off the reference line"], ["square", "PIT - in the pit lane (no path drawn)"],
-  ["stale", "STALE - last sample more than 2 s old"], ["uncertain", "low or no confidence"],
+  ["stale", "STALE - the samples around the cursor are more than 2 s apart; the last one is shown"], ["uncertain", "low or no confidence"],
   ["selected", "selected driver or battle pair"], ["sector", "sector path (S1, S2, S3)"],
   ["line", "timing line (FINISH, S1, S2), measured from official timestamps"],
 ];

@@ -64,7 +64,7 @@ const Lines = memo(function Lines({ t, upTo, x, y, selected, hovered }: {
   );
 });
 
-export function PositionChart({ moment, selected, onSelect, onSeek }: {
+export const PositionChart = memo(function PositionChart({ moment, selected, onSelect, onSeek }: {
   moment: Moment; selected: number | null;
   onSelect: (n: number | null) => void; onSeek: (index: number) => void;
 }) {
@@ -171,4 +171,4 @@ export function PositionChart({ moment, selected, onSelect, onSeek }: {
       </table>
     </Panel>
   );
-}
+});

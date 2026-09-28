@@ -77,7 +77,7 @@ const Row = memo(function Row({ row, driver, selected, inBattle, fastest, densit
   );
 });
 
-export function TimingTower({ moment, selected, battlePair, density, onSelect, onDensity }: {
+export const TimingTower = memo(function TimingTower({ moment, selected, battlePair, density, onSelect, onDensity }: {
   moment: Moment; selected: number | null; battlePair: [number, number] | null; density: Density;
   onSelect: (n: number | null) => void; onDensity: (d: Density) => void;
 }) {
@@ -163,4 +163,4 @@ export function TimingTower({ moment, selected, battlePair, density, onSelect, o
       </div>
     </Panel>
   );
-}
+});

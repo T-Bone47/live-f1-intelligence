@@ -116,8 +116,10 @@ export function checkTimeline(body: unknown, sid: string): Timeline {
     if (f.index !== i || !Array.isArray(f.rows)) {
       throw new ApiError("unsupported", `Timeline frame ${i} is malformed.`, 200);
     }
-    // the one cursor is race time: a frame it cannot place is refused, never guessed
-    const at = f.at == null ? Number.NaN : Date.parse(f.at);
+    // the one cursor is race time: a frame time must be a time and never go back;
+    // a frame without one (a live lap with no start) is kept but never placed (frameTimes)
+    if (f.at == null) return;
+    const at = Date.parse(f.at);
     if (!Number.isFinite(at) || at < prev) {
       throw new ApiError("unsupported", `Timeline frame ${i} has no usable time.`, 200);
     }

@@ -270,6 +270,9 @@ describe("accessibility and motion", () => {
     }
     for (const c of Object.values(track().capabilities)) expect(drawer).toHaveTextContent(c.reason);
     expect(drawer).toHaveTextContent(/no corner-level distances/i);
+    // review #9: STALE means the samples around the cursor are more than 2 s apart
+    expect(drawer).toHaveTextContent(/more than 2 s apart/);
+    expect(drawer).not.toHaveTextContent(/more than 2 s old/);
   });
 
   it("names no corner, apex, DRS zone or racing line outside the unavailable list", () => {

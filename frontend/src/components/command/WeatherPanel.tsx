@@ -4,7 +4,7 @@
  * shows "—", never 0. No weather effect on pace is claimed.
  */
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { fmtClockUtc, fmtPct, fmtTemp, fmtWindKmh } from "../../command/format";
 import type { Moment } from "../../command/moment";
 import { EmptyState, Icon, Panel, type IconName } from "./ui";
@@ -20,7 +20,7 @@ function Cell({ icon, label, value, sub }: { icon: IconName; label: string; valu
   );
 }
 
-export function WeatherPanel({ moment }: { moment: Moment }) {
+export const WeatherPanel = memo(function WeatherPanel({ moment }: { moment: Moment }) {
   const [wrap, width] = useWidth<HTMLDivElement>(300);
   const w = moment.frame.weather;
   const samples = moment.weather;
@@ -70,4 +70,4 @@ export function WeatherPanel({ moment }: { moment: Moment }) {
       )}
     </Panel>
   );
-}
+});

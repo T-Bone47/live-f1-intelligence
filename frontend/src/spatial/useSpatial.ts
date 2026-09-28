@@ -13,7 +13,7 @@
  * - Live sessions: spatial evidence is built from recordings only.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../command/api";
 import { fetchStateAt, fetchTrack, fetchWindow, windowForRate } from "./api";
 import type { DriverState, SpatialWindow, TrackReference } from "./types";
@@ -37,17 +37,24 @@ export interface SpatialView {
   retry: () => void;
 }
 
-/** The window state with the largest time at or before t (selection only). */
-export function selectState(w: SpatialWindow, t: number): Shown | null {
+/** Index of the window state with the largest time at or before t; -1 when none. */
+function stateIndex(w: SpatialWindow, t: number): number {
   let lo = 0, hi = w.states.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
     if (Date.parse(w.states[mid].at) <= t) lo = mid + 1; else hi = mid;
   }
-  if (lo === 0) return null;
-  const s = w.states[lo - 1];
-  return { at: Date.parse(s.at), drivers: s.drivers };
+  return lo - 1;
 }
+
+/** The window state with the largest time at or before t (selection only). */
+export function selectState(w: SpatialWindow, t: number): Shown | null {
+  const i = stateIndex(w, t);
+  return i < 0 ? null : { at: Date.parse(w.states[i].at), drivers: w.states[i].drivers };
+}
+
+const NO_REASONS: string[] = [];
+const NO_WINDOWS: SpatialWindow[] = [];
 
 const asApiError = (e: unknown): ApiError =>
   (e instanceof ApiError ? e : new ApiError("unexpected", (e as Error)?.message || "Unexpected error.", null));
@@ -105,20 +112,26 @@ export function useSpatial({ sid, t, playing, rate, live }: {
   const plan = windowForRate(rate);
   const stepMs = plan.stepS * 1000, spanMs = plan.spanS * 1000;
   const ours = <T extends { sid: string; trackId: string }>(x: T) => x.sid === sid && x.trackId === trackId;
-  const list = wins && trackId && ours(wins) ? wins.list.filter((w) => w.step_s === plan.stepS) : [];
-  const current = t == null ? null : list.find((w) => Date.parse(w.from_ts) <= t && t <= Date.parse(w.to_ts)) ?? null;
+  const all = wins && trackId && ours(wins) ? wins.list : NO_WINDOWS;
+  const list = all.filter((w) => w.step_s === plan.stepS);
+  // any cached window may be shown (a rate change keeps the latest state);
+  // only windows at the current step count for what to fetch next
+  const covering = (ws: SpatialWindow[]) => (t == null ? null
+    : ws.find((w) => Date.parse(w.from_ts) <= t && t <= Date.parse(w.to_ts)) ?? null);
+  const current = covering(list);
+  const showFrom = current ?? covering(all);
   const flight = pending.filter((p) => ours(p) && p.step === plan.stepS);
-  const blocked = (from: number) => failed.some((f) => ours(f) && f.step === plan.stepS && f.from === from
-                                                   && f.reload === reload);
+  // a failed window stops window requests until the user retries (no request storm)
+  const windowError = failed.filter((f) => ours(f) && f.reload === reload).at(-1)?.error ?? null;
   let need: number | null = null;
-  if (playing && trackId && t != null) {
+  if (playing && trackId && t != null && !windowError) {
     if (!current) {
       const from = Math.floor(t / stepMs) * stepMs;
-      if (!flight.some((p) => p.from <= t && t <= p.from + spanMs) && !blocked(from)) need = from;
+      if (!flight.some((p) => p.from <= t && t <= p.from + spanMs)) need = from;
     } else {
       const next = Date.parse(current.to_ts);
       if (t > Date.parse(current.from_ts) + spanMs / 2 && !list.some((w) => Date.parse(w.from_ts) === next)
-          && !flight.some((p) => p.from === next) && !blocked(next)) need = next;
+          && !flight.some((p) => p.from === next)) need = next;
     }
   }
 
@@ -136,39 +149,49 @@ export function useSpatial({ sid, t, playing, rate, live }: {
   }, [need, sid, trackId, plan.stepS, spanMs, reload]);
 
   // ---- what is shown: of the exact state and the window state, the latest at
-  // or before the cursor (so starting playback never steps back in time); with
-  // neither at or before it, the last exact state (flagged lagging)
+  // or before the cursor. A state after the cursor is never shown: stepping
+  // back shows nothing until the backend answers for the new moment.
   const exact = paused && trackId && ours(paused) ? paused.shown : null;
-  const fromWindow = current && t != null ? selectState(current, t) : null;
-  const latest = [exact, fromWindow].reduce<Shown | null>(
-    (best, s) => (s != null && t != null && s.at <= t && (best == null || s.at > best.at) ? s : best), null);
-  const shown = t == null ? null : latest ?? exact;
-  const lagging = shown != null && t != null && Math.abs(t - shown.at) > stepMs;
+  const winIndex = showFrom && t != null ? stateIndex(showFrom, t) : -1;
+  // one object per window state, so the map re-renders when the state changes, not every tick
+  const fromWindow = useMemo(() => (showFrom && winIndex >= 0
+    ? { at: Date.parse(showFrom.states[winIndex].at), drivers: showFrom.states[winIndex].drivers } : null),
+  [showFrom, winIndex]);
+  let shown: Shown | null = null;
+  for (const s of [exact, fromWindow]) {
+    if (s != null && t != null && s.at <= t && (shown == null || s.at > shown.at)) shown = s;
+  }
+  if (!trackId) shown = null;
+  const lagging = shown != null && t != null && t - shown.at > stepMs;
 
   const retry = useCallback(() => setReload((r) => r + 1), []);
 
   // ---- status
-  const base = { track, shown: trackId ? shown : null, lagging, retry, reasons: [] as string[], error: null };
-  if (live) return { ...base, track: null, shown: null, lagging: false, status: "unavailable", reason: "RECORDING_ONLY" };
-  if (mine?.error) {
-    const e = mine.error;
-    if (e.kind === "not_found") return { ...base, status: "unavailable", reason: "NO_RECORDING", error: e };
-    if (e.kind === "unvalidated") return { ...base, status: "unavailable", reason: "UNVALIDATED", reasons: e.reasons, error: e };
-    return { ...base, status: "error", reason: null, error: e };
+  let status: SpatialView["status"] = "loading";
+  let reason: SpatialReason | null = null;
+  let reasons: string[] = NO_REASONS;
+  let error: ApiError | null = null;
+  const stateError = playing ? windowError : paused && ours(paused) ? paused.error : null;
+  if (live) {
+    status = "unavailable"; reason = "RECORDING_ONLY";
+  } else if (mine?.error) {
+    error = mine.error;
+    if (error.kind === "not_found") { status = "unavailable"; reason = "NO_RECORDING"; }
+    else if (error.kind === "unvalidated") { status = "unavailable"; reason = "UNVALIDATED"; reasons = error.reasons; }
+    else status = "error";
+  } else if (track && !trackId) {
+    status = "unavailable"; reason = "UNVALIDATED"; reasons = track.validation.reasons;
+  } else if (track && stateError) {
+    error = stateError;
+    if (error.kind === "unvalidated") { status = "unavailable"; reason = "UNVALIDATED"; reasons = error.reasons; }
+    else if (error.kind === "not_found") { status = "unavailable"; reason = "NO_RECORDING"; }
+    else status = "error";
+  } else if (track && shown) {
+    status = "ready";
   }
-  if (!track) return { ...base, status: "loading", reason: null };
-  if (!trackId) {
-    return { ...base, status: "unavailable", reason: "UNVALIDATED", reasons: track.validation.reasons };
-  }
-  const stateError = playing
-    ? failed.filter((f) => ours(f) && f.reload === reload).at(-1)?.error ?? null
-    : paused && ours(paused) ? paused.error : null;
-  if (stateError) {
-    if (stateError.kind === "unvalidated") {
-      return { ...base, status: "unavailable", reason: "UNVALIDATED", reasons: stateError.reasons, error: stateError };
-    }
-    if (stateError.kind === "not_found") return { ...base, status: "unavailable", reason: "NO_RECORDING", error: stateError };
-    return { ...base, status: "error", reason: null, error: stateError };
-  }
-  return { ...base, status: shown ? "ready" : "loading", reason: null };
+  const outTrack = live ? null : track;
+  const outShown = live ? null : shown;
+  const outLagging = live ? false : lagging;
+  return useMemo(() => ({ status, track: outTrack, shown: outShown, lagging: outLagging, reason, reasons, error, retry }),
+    [status, outTrack, outShown, outLagging, reason, reasons, error, retry]);
 }

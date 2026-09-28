@@ -72,7 +72,9 @@ export async function fetchStateAt(sid: string, atMs: number, trackId: string, s
   const d = body as Partial<SpatialState> | null;
   if (!d || d.contract_version !== STATE_CONTRACT) refuse(`Response is not ${STATE_CONTRACT}.`);
   checkIdentity(d!, sid, trackId, "Spatial state");
-  if (Date.parse(d!.at ?? "") !== atMs) refuse(`Spatial state is for ${d!.at}, not the requested ${iso(atMs)}.`);
+  if (Date.parse(d!.at ?? "") !== Date.parse(iso(atMs))) {
+    refuse(`Spatial state is for ${d!.at}, not the requested ${iso(atMs)}.`);
+  }
   checkDrivers(d!.drivers, "Spatial state");
   return d as SpatialState;
 }
@@ -85,7 +87,9 @@ export async function fetchWindow(sid: string, fromMs: number, toMs: number, ste
   const w = body as Partial<SpatialWindow> | null;
   if (!w || w.contract_version !== WINDOW_CONTRACT) refuse(`Response is not ${WINDOW_CONTRACT}.`);
   checkIdentity(w!, sid, trackId, "Spatial window");
-  if (Date.parse(w!.from_ts ?? "") !== fromMs || w!.step_s !== stepS) refuse("Spatial window does not answer the request.");
+  if (Date.parse(w!.from_ts ?? "") !== Date.parse(iso(fromMs)) || w!.step_s !== stepS) {
+    refuse("Spatial window does not answer the request.");
+  }
   if (!Array.isArray(w!.states) || w!.states.length === 0) refuse("Spatial window has no states.");
   let prev = -Infinity;
   for (const s of w!.states!) {

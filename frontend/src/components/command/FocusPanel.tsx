@@ -5,7 +5,7 @@
  * summary: fastest lap, sector bests, provenance and limitations.
  */
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { fetchLapCatalog } from "../../command/api";
 import { compoundInfo, driverCode, fmtClockTenths, fmtGap, fmtInt, fmtInterval, fmtLapTime, fmtSigned } from "../../command/format";
 import type { Moment } from "../../command/moment";
@@ -232,7 +232,7 @@ function SessionSummary({ moment }: { moment: Moment }) {
   );
 }
 
-export function FocusPanel({ moment, driver, spatial = null, onClose, onSeek }: {
+export const FocusPanel = memo(function FocusPanel({ moment, driver, spatial = null, onClose, onSeek }: {
   moment: Moment; driver: number | null; spatial?: FocusSpatial | null; onClose: () => void; onSeek: (index: number) => void;
 }) {
   return (
@@ -243,4 +243,4 @@ export function FocusPanel({ moment, driver, spatial = null, onClose, onSeek }: 
         : <SessionSummary moment={moment} />}
     </Panel>
   );
-}
+});

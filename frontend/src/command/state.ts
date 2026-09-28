@@ -44,7 +44,8 @@ export type UiAction =
 
 const tMin = (s: UiState) => s.frames[0] ?? 0;
 const tMax = (s: UiState) => s.frames[s.frames.length - 1] ?? 0;
-const clampT = (s: UiState, t: number) => Math.max(tMin(s), Math.min(tMax(s), t));
+// whole milliseconds: the backend echoes times to the millisecond, and rAF ticks are fractional
+const clampT = (s: UiState, t: number) => Math.round(Math.max(tMin(s), Math.min(tMax(s), t)));
 const frameT = (s: UiState, i: number) =>
   s.frames[Math.max(0, Math.min(s.frames.length - 1, Math.trunc(i)))] ?? 0;
 

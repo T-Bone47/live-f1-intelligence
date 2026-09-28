@@ -8,7 +8,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { selectState, useSpatial } from "../../src/spatial/useSpatial";
-import { calls, contractHeader, fixture, json, mockSpatial, SID, stateAt, track } from "./fixture";
+import { calls, contractHeader, echoWindow, fixture, json, mockSpatial, SID, stateAt, track } from "./fixture";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
@@ -235,5 +235,54 @@ describe("selectState (pure selection, real window)", () => {
     expect(selectState(w, at(0) - 1)).toBeNull();
     expect(selectState(w, at(20) + 100)!.at).toBe(at(20));
     expect(selectState(w, at(3))!.drivers).toBe(w.states[3].drivers);
+  });
+});
+
+describe("final review fixes (Phase 12B)", () => {
+  it("a failing window stops window requests until Retry, then recovers (review #2)", async () => {
+    let fail = true;
+    const f = mockSpatial({ state: byTime,
+      window: (url) => (fail ? json({ detail: "spatial output withheld" }, 500)
+                             : json(echoWindow(url), 200, contractHeader("spatial_window_v1"))) });
+    const h = mount({ playing: true, rate: 16 });
+    await flush();
+    for (let s = 0; s <= 60; s += 0.5) {
+      h.rerender({ ...base, playing: true, rate: 16, t: LAP40 + s * 1000 });
+      await flush();
+    }
+    expect(calls(f, "/spatial/window")).toHaveLength(1);
+    expect(h.result.current.status).toBe("error");
+    fail = false;
+    act(() => h.result.current.retry());
+    await flush();
+    await flush();
+    expect(calls(f, "/spatial/window").length).toBeGreaterThanOrEqual(2);
+    expect(h.result.current.status).toBe("ready");
+  });
+
+  it("never shows a state after the cursor (review #3)", async () => {
+    mockSpatial({ state: byTime });
+    const h = mount();
+    await flush();
+    await wait(120);
+    expect(h.result.current.shown?.at).toBe(LAP40);
+    h.rerender({ ...base, t: LAP10 });                 // step back: the LAP 40 state is in the future
+    expect(h.result.current.shown).toBeNull();
+    expect(h.result.current.status).toBe("loading");
+    await wait(120);
+    expect(h.result.current.shown?.at).toBe(LAP10);
+  });
+
+  it("a rate change mid-play keeps the latest state at or before the cursor (review #5)", async () => {
+    mockSpatial({ state: byTime });
+    const h = mount();
+    await flush();
+    await wait(120);
+    h.rerender({ ...base, playing: true, rate: 16, t: LAP40 + 4000 });
+    await flush();
+    const before = h.result.current.shown!.at;
+    expect(before).toBeGreaterThan(LAP40);
+    h.rerender({ ...base, playing: true, rate: 64, t: LAP40 + 4100 });
+    expect(h.result.current.shown!.at).toBeGreaterThanOrEqual(before);
   });
 });

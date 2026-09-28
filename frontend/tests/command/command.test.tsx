@@ -5,6 +5,13 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as format from "../../src/command/format";
+
+// review #4: count renders of the frame-row panels through a formatter only they call
+vi.mock("../../src/command/format", async (orig) => {
+  const m = await orig<typeof import("../../src/command/format")>();
+  return { ...m, fmtAsOf: vi.fn(m.fmtAsOf) };
+});
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { CommandCenter } from "../../src/components/command/CommandCenter";
 import { fmtAsOf, fmtClockTenths, fmtGap } from "../../src/command/format";
@@ -350,5 +357,34 @@ describe("track map in the command center (Phase 12B)", () => {
     expect(screen.getByRole("button", { name: "Track" })).toHaveAttribute("aria-pressed", "true");
     expect(document.querySelector(".cc-tab-track")).not.toBeNull();
     expect(map().closest("[data-tab]")).toHaveAttribute("data-tab", "track");
+  });
+});
+
+describe("final review fixes (Phase 12B)", () => {
+  it("a live session asks for no spatial data (review #7)", async () => {
+    const live = () => { const t = golden(); t.source.kind = "LIVE_HUB"; return t; };
+    const fetchMock = mockApi({ timeline: () => json(live(), 200, { "X-Timeline-Contract": "session_timeline_v1" }) });
+    render(<CommandCenter search={search("&lap=40")} />);
+    await screen.findByRole("heading", { name: /netherlands · zandvoort/i }, { timeout: 8000 });
+    await new Promise((r) => setTimeout(r, 400));
+    const spatial = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => /\/track$|\/spatial/.test(u));
+    expect(spatial).toEqual([]);
+    expect(within(document.getElementById("cc-map")!).getByText("Spatial map unavailable")).toBeInTheDocument();
+  });
+
+  it("moving the cursor within a frame re-renders no frame-row panel (review #4)", async () => {
+    const { container } = await renderAt("&lap=40");
+    const t = golden();
+    const times = frameTimes(t);
+    const i = frameIndex(t, 40);
+    const stamps = [...t.race_control, ...t.pit_stops, ...t.weather].map((x) => Date.parse(x.ts!));
+    let target = times[i] + 1000;
+    while (stamps.some((ms) => ms > times[i] && ms <= target)) target += 1000;
+    expect(target).toBeLessThan(times[i + 1]);
+    vi.mocked(format.fmtAsOf).mockClear();
+    const input = container.querySelector<HTMLInputElement>(".cc-scrub-input")!;
+    fireEvent.change(input, { target: { value: String((target - times[0]) / 1000) } });
+    expect(container.querySelector(".cc-replay-time")).toHaveTextContent(fmtClockTenths(target));
+    expect(vi.mocked(format.fmtAsOf)).not.toHaveBeenCalled();
   });
 });

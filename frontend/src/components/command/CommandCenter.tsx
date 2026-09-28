@@ -96,6 +96,8 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
   const selectDriver = useCallback((n: number | null) => dispatch({ type: "driver", driver: n }), [dispatch]);
   const selectBattle = useCallback((key: string | null) => dispatch({ type: "battle", key }), [dispatch]);
   const selectEvent = useCallback((key: string | null, at?: number) => dispatch({ type: "event", key, t: at }), [dispatch]);
+  const setDensity = useCallback((d: Density) => dispatch({ type: "density", density: d }), [dispatch]);
+  const closeFocus = useCallback(() => dispatch({ type: "driver", driver: null }), [dispatch]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -117,7 +119,8 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
 
   const live = timeline?.source.kind === "LIVE_HUB";
   // Phase 12B: the backend's spatial state for the same cursor (never computed here)
-  const spatial = useSpatial({ sid, t: ready ? ui.t : null, playing: ui.playing, rate: ui.rate, live: !!live });
+  // until the timeline says whether the session is live, nothing spatial is asked for
+  const spatial = useSpatial({ sid, t: ready ? ui.t : null, playing: ui.playing, rate: ui.rate, live: !timeline || !!live });
   const focusSpatial = useMemo(() => {
     if (ui.driver == null || spatial.status !== "ready" || !spatial.shown) return null;
     const d = spatial.shown.drivers.find((x) => x.driver_number === ui.driver);
@@ -167,7 +170,7 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
         <div className="cc-grid">
           <div className="cc-area-timing" data-tab="timing">
             <TimingTower moment={moment} selected={ui.driver} battlePair={battlePair} density={ui.density}
-                         onSelect={selectDriver} onDensity={(d: Density) => dispatch({ type: "density", density: d })} />
+                         onSelect={selectDriver} onDensity={setDensity} />
           </div>
           <div className="cc-area-map" data-tab="track">
             <TrackMap view={spatial} moment={moment} selected={ui.driver} battle={battlePair}
@@ -181,7 +184,7 @@ function Workspace({ sid, search }: { sid: string; search: string }) {
           </div>
           <div className="cc-area-focus" data-tab="timing">
             <FocusPanel moment={moment} driver={ui.driver} spatial={focusSpatial}
-                        onClose={() => selectDriver(null)} onSeek={seek} />
+                        onClose={closeFocus} onSeek={seek} />
           </div>
           <div className="cc-area-strategy" data-tab="strategy">
             <StrategyPanel moment={moment} selected={ui.driver} onSelectDriver={selectDriver} onSeek={seek} />

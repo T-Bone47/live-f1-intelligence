@@ -114,7 +114,6 @@ describe("the timeline contract fails closed", () => {
     ["another session", (t: ReturnType<typeof golden>) => { t.session!.session_id = "openf1:1"; }],
     ["a frame out of order", (t: ReturnType<typeof golden>) => { t.frames[3].index = 7; }],
     ["no race-control list", (t: ReturnType<typeof golden>) => { (t as unknown as Record<string, unknown>).race_control = null; }],
-    ["a frame without a time", (t: ReturnType<typeof golden>) => { t.frames[5].at = null; }],
     ["a frame time that goes backwards", (t: ReturnType<typeof golden>) => { t.frames[5].at = t.frames[2].at; }],
   ])("refuses %s", (_name, mutate) => {
     const t = golden();
@@ -240,3 +239,36 @@ describe("race-time cursor (Phase 12B)", () => {
 function frameIndexAtLap(t: ReturnType<typeof golden>, lap: number) {
   return t.frames.findIndex((f) => f.kind === "LAP" && f.lap === lap);
 }
+
+describe("final review fixes (Phase 12B)", () => {
+  const t = golden();
+  const frames = frameTimes(t);
+
+  it("race time stays in whole milliseconds, even after fractional playback ticks (review #1)", () => {
+    let s = initialUi({ frames, t: frames[10], rate: 16, playing: true });
+    for (let i = 0; i < 30; i += 1) s = uiReducer(s, { type: "tick", wallMs: 16.7 });
+    expect(Number.isInteger(s.t)).toBe(true);
+    expect(Number.isInteger(uiReducer(s, { type: "seekTime", t: frames[20] + 0.3 }).t)).toBe(true);
+    expect(Number.isInteger(uiReducer(s, { type: "nudge", ms: 0.6 }).t)).toBe(true);
+  });
+
+  it("a frame without a time opens and is never shown at a guessed time (review #8)", () => {
+    const u = golden();
+    u.frames[5].at = null;
+    u.frames[u.frames.length - 1].at = null;
+    expect(() => checkTimeline(u, SID)).not.toThrow();
+    const ms = frameTimes(u);
+    const last = ms.length - 1;
+    expect(ms.every((x) => Number.isFinite(x))).toBe(true);
+    expect(ms[5]).toBe(ms[6]);                       // hidden behind the next timed frame
+    expect(frameIndexAt(ms, ms[5])).toBe(6);
+    expect(ms[last]).toBe(ms[last - 1]);             // the newest frame stays reachable at the end
+    expect(frameIndexAt(ms, ms[last])).toBe(last);
+  });
+
+  it("a frame time that is not a time is still refused", () => {
+    const u = golden();
+    u.frames[5].at = "lap five";
+    expect(() => checkTimeline(u, SID)).toThrow(ApiError);
+  });
+});

@@ -6,7 +6,7 @@
  * the camera never moves, and nothing old survives a session change.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { driverCode, fmtClockTenths, fmtAsOf, phaseLabel, phaseTone, teamColour } from "../../command/format";
 import type { Moment } from "../../command/moment";
 import { windowForRate } from "../../spatial/api";
@@ -35,7 +35,7 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
-export function TrackMap({ view, moment, selected, battle, playing, rate, onSelect, onPositionSelect }: {
+export const TrackMap = memo(function TrackMap({ view, moment, selected, battle, playing, rate, onSelect, onPositionSelect }: {
   view: SpatialView; moment: Moment; selected: number | null; battle: [number, number] | null;
   playing: boolean; rate: number; onSelect: (d: number | null) => void;
   onPositionSelect?: (driver: number, stateAt: string) => void;
@@ -183,4 +183,4 @@ export function TrackMap({ view, moment, selected, battle, playing, rate, onSele
       {info && drawable && <MapInfo id="cc-map-info" track={drawable} />}
     </Panel>
   );
-}
+});

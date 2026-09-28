@@ -8,7 +8,7 @@
  * the two cars were neighbours (points only; not a fitted curve).
  */
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { battleState, driverCode, fmtLapTime, fmtSigned, teamColour } from "../../command/format";
 import { battleKey, pairIntervalHistory, type Moment } from "../../command/moment";
 import type { Battle } from "../../command/types";
@@ -99,7 +99,7 @@ function GapHistory({ moment, battle }: { moment: Moment; battle: Battle }) {
   );
 }
 
-export function BattlePanel({ moment, selected, onSelect }: {
+export const BattlePanel = memo(function BattlePanel({ moment, selected, onSelect }: {
   moment: Moment; selected: string | null; onSelect: (key: string | null) => void;
 }) {
   const battles = useMemo(() => [...moment.battles].sort((p, q) =>
@@ -126,4 +126,4 @@ export function BattlePanel({ moment, selected, onSelect }: {
       )}
     </Panel>
   );
-}
+});
