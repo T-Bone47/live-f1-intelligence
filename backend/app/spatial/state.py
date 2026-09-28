@@ -155,6 +155,13 @@ def _entry(index: SpatialIndex, driver: int, trk: DriverTrack, t: float) -> dict
             "bracket": bracket, "age_s": None}
 
 
+def driver_state(index: SpatialIndex, driver: int, t: float) -> dict | None:
+    """Phase 12C: one driver's state at t, exactly as state_at gives it; None
+    for a driver the session has no track for."""
+    trk = index.tracks.get(driver)
+    return None if trk is None else _entry(index, driver, trk, t)
+
+
 def state_at(index: SpatialIndex, t: float) -> list[dict]:
     """One entry per driver of the session, sorted by driver number."""
     return [_entry(index, d, index.tracks[d], t) for d in sorted(index.tracks)]

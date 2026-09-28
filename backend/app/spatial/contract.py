@@ -406,6 +406,76 @@ class SpatialTraceV1(_M):
         return self
 
 
+EVIDENCE_SPATIAL_CONTRACT = "evidence_spatial_v1"
+PlacementReason = Literal["NO_TELEMETRY", "NO_COVERAGE", "STALE", "PIT_LANE", "OFF_REFERENCE",
+                          "NO_FRACTION"]
+
+
+class Extent(_M):
+    """Phase 12C: one driver's extent of one evidence segment on the track."""
+    status: Literal["PLACED", "NOT_PLACED"]
+    reason: PlacementReason | None
+    from_ts: str | None
+    to_ts: str | None
+    from_fraction: float | None
+    to_fraction: float | None
+    from_xy: list[float] | None
+    to_xy: list[float] | None
+    polyline: list[list[float]] | None
+
+    @model_validator(mode="after")
+    def _rules(self) -> Extent:
+        placed = (self.from_fraction, self.to_fraction, self.from_xy, self.to_xy, self.polyline)
+        if self.status == "NOT_PLACED":
+            if self.reason is None or any(v is not None for v in placed):
+                raise ValueError("a NOT_PLACED extent has a reason and no position")
+            if (self.from_ts is None) != (self.reason == "NO_TELEMETRY") \
+                    or (self.to_ts is None) != (self.reason == "NO_TELEMETRY"):
+                raise ValueError("an extent has times exactly when it has telemetry")
+            return self
+        if self.reason is not None or self.from_ts is None or self.to_ts is None \
+                or any(v is None for v in placed):
+            raise ValueError("a PLACED extent has times, fractions, points and a path")
+        if not (0.0 <= self.from_fraction < 1.0 and 0.0 <= self.to_fraction < 1.0):
+            raise ValueError("lap fractions lie in [0, 1)")
+        if datetime.fromisoformat(self.to_ts) < datetime.fromisoformat(self.from_ts):
+            raise ValueError("an extent runs forward in time")
+        pts = [self.from_xy, self.to_xy, *self.polyline]
+        if len(self.polyline) < 2 or any(len(p) != 2 for p in pts):
+            raise ValueError("points are [x, y] and a path has at least two")
+        if self.polyline[0] != self.from_xy or self.polyline[-1] != self.to_xy:
+            raise ValueError("the path runs from the first point to the last")
+        return self
+
+
+class PlacedSegment(_M):
+    segment_id: str
+    label: str
+    a: Extent
+    b: Extent
+
+
+class EvidenceSpatialV1(_M):
+    contract_version: Literal["evidence_spatial_v1"]
+    builder_version: str
+    evidence_id: str
+    session_id: str
+    track_id: str
+    driver_a: int
+    driver_b: int
+    lap_length_m: float | None
+    line_placement_p95_m: dict[str, float] | None
+    segments: list[PlacedSegment]
+    limitations: list[Limitation]
+
+    @model_validator(mode="after")
+    def _rules(self) -> EvidenceSpatialV1:
+        ids = [s.segment_id for s in self.segments]
+        if len(set(ids)) != len(ids):
+            raise ValueError("segment ids are unique")
+        return self
+
+
 def _validate(model: type[_M], doc: dict) -> None:
     try:
         model.model_validate(doc)

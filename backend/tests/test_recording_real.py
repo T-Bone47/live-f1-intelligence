@@ -141,3 +141,41 @@ def test_catalog_matches_the_raw_rows(recorded, raw):
     counts = store.counts(SID)
     assert counts["corrections"] >= len(corrections)
     assert counts["car_duplicate_conflicting"] == 0  # so the database's first-row rule agrees
+
+
+def test_dutch_gp_pair_is_placed_on_the_validated_track(recorded, client):
+    from datetime import datetime
+
+    from app.api import _spatial_store
+    from app.spatial.evidence_spatial import validate_evidence_spatial
+    from app.spatial.state import state_at
+
+    _store, _catalog, (a, b) = recorded
+    cited = json.loads(CIRCUITS.read_text(encoding="utf-8"))["Zandvoort"]
+    q = {"driver_a": a[0], "lap_a": a[1], "driver_b": b[0], "lap_b": b[1],
+         "lap_length_m": cited["lap_length_m"], "lap_length_source": cited["source"]}
+    ev = client.get(f"/api/v1/sessions/{SID}/evidence/lap-comparison", params=q)
+    r = client.get(f"/api/v1/sessions/{SID}/evidence/lap-comparison/spatial", params=q)
+    assert r.status_code == 200, r.text
+    assert r.headers["X-Evidence-Id"] == ev.headers["X-Evidence-Id"]
+    doc, evidence = json.loads(r.content), json.loads(ev.content)
+    validate_evidence_spatial(doc, evidence)
+    index = _spatial_store(RECORDING.parent).get_index(SID)
+    placed = 0
+    for seg in doc["segments"]:
+        for side, driver in (("a", a[0]), ("b", b[0])):
+            ext = seg[side]
+            if ext["status"] != "PLACED":
+                continue
+            placed += 1
+            for ts, frac, xy in ((ext["from_ts"], ext["from_fraction"], ext["from_xy"]),
+                                 (ext["to_ts"], ext["to_fraction"], ext["to_xy"])):
+                entry = next(e for e in state_at(index, datetime.fromisoformat(ts).timestamp())
+                             if e["driver_number"] == driver)
+                assert entry["reference_fraction"] == frac and [entry["x"], entry["y"]] == xy
+    # every covered segment of two timed racing laps lies on the reference
+    covered = sum(2 for s in evidence["attribution"]["segments"]
+                  if s["attribution_status"] != "NO_DATA")
+    assert placed == covered
+    codes = {lim["code"] for lim in doc["limitations"]}
+    assert "CORNER_PRECISION_NOT_MET" in codes  # the Dutch GP corner gate failed (12A)

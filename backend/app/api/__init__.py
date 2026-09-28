@@ -665,60 +665,53 @@ def create_app(registry: HubRegistry | None = None) -> FastAPI:
 
         from fastapi.responses import Response
 
-        from app.evidence import (
-            EvidenceContractError,
-            EvidenceInputError,
-            build_lap_comparison_evidence,
-            to_canonical_json,
-            validate_request,
-        )
-        from app.storage.db import connect as db_connect
+        from app.evidence import to_canonical_json
 
         validate_session_id(session_id)
-        try:
-            validate_request(driver_a=driver_a, lap_a=lap_a, driver_b=driver_b, lap_b=lap_b,
-                             lap_length_m=lap_length_m, lap_length_source=lap_length_source,
-                             contract_version=contract_version)
-        except EvidenceInputError as exc:
-            raise HTTPException(422, str(exc)) from exc
-        t0 = perf_counter()
-        store = _recorded(session_id)
-        if store is not None:
-            source = await _recording_call(store.session_source, session_id)
-            (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
-                await _recording_lap_telemetry(store, session_id, d, n)
-                for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
-        else:
-            pool = await db_connect(get_settings().database_url)
-            try:
-                source = await _load_session_source(pool, session_id)
-                (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
-                    await _load_lap_telemetry(pool, session_id, d, n)
-                    for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
-            finally:
-                await pool.close()
-        t1 = perf_counter()
-        try:
-            evidence = build_lap_comparison_evidence(
-                lap_obj_a, samples_a, lap_obj_b, samples_b, lap_length_m=lap_length_m,
-                lap_length_source=lap_length_source, source=source,
-                contract_version=contract_version)
-        except EvidenceInputError as exc:
-            raise HTTPException(422, str(exc)) from exc
-        except EvidenceContractError as exc:
-            raise HTTPException(500, f"evidence withheld - failed {contract_version} "
-                                     f"validation (fail closed): {exc}") from exc
+        _check_evidence_request(driver_a, lap_a, driver_b, lap_b, lap_length_m,
+                                lap_length_source, contract_version)
+        evidence, data_source, t_load, t_pipeline = await _lap_comparison_evidence(
+            session_id, driver_a, lap_a, driver_b, lap_b, lap_length_m, lap_length_source,
+            contract_version)
         t2 = perf_counter()
         body = to_canonical_json(evidence)
         t3 = perf_counter()
         return Response(content=body, media_type="application/json", headers={
             "X-Evidence-Contract": evidence.contract_version,
             "X-Evidence-Id": evidence.evidence_id,
-            "X-Data-Source": "recording" if store is not None else "database",
-            "Server-Timing": (f"db;dur={(t1 - t0) * 1000:.1f}, "
-                              f"pipeline;dur={(t2 - t1) * 1000:.1f}, "
+            "X-Data-Source": data_source,
+            "Server-Timing": (f"db;dur={t_load * 1000:.1f}, "
+                              f"pipeline;dur={t_pipeline * 1000:.1f}, "
                               f"serialize;dur={(t3 - t2) * 1000:.1f}"),
         })
+
+    @app.get("/api/v1/sessions/{session_id}/evidence/lap-comparison/spatial")
+    async def get_lap_comparison_spatial(
+            session_id: str, driver_a: int, lap_a: int, driver_b: int, lap_b: int,
+            lap_length_m: float, lap_length_source: str,
+            contract_version: str = "evidence_v1",
+            _: None = Depends(rate_limit_dependency)):
+        """Phase 12C evidence_spatial_v1: the same request's evidence_v1
+        segments placed on the validated 12A track by each driver's own sample
+        times. 404 without a recording, 409 while the track is unvalidated
+        (with the gate's reasons), 422 for a bad request, 500 fail closed."""
+        from fastapi.responses import Response
+
+        from app.analysis.timeline import to_canonical_json as canonical
+        from app.evidence import to_canonical_json
+        from app.spatial.evidence_spatial import CONTRACT, place_evidence
+
+        validate_session_id(session_id)
+        _check_evidence_request(driver_a, lap_a, driver_b, lap_b, lap_length_m,
+                                lap_length_source, contract_version)
+        index = await _spatial_index(session_id)
+        evidence, data_source, _load, _pipeline = await _lap_comparison_evidence(
+            session_id, driver_a, lap_a, driver_b, lap_b, lap_length_m, lap_length_source,
+            contract_version)
+        doc = await _spatial_call(place_evidence, json.loads(to_canonical_json(evidence)), index)
+        return Response(content=canonical(doc), media_type="application/json", headers={
+            "X-Spatial-Contract": CONTRACT, "X-Evidence-Id": evidence.evidence_id,
+            "X-Data-Source": data_source})
 
     @app.get("/api/v1/sessions/{session_id}/intelligence")
     async def get_intelligence(session_id: str,
@@ -1025,6 +1018,65 @@ async def _recorded_telemetry(store, session_id: str, driver: int, start: str | 
     rows = await _recording_call(store.car_rows, session_id, driver, start_dt, end_dt)
     loc_rows = await _recording_call(store.location_rows, session_id, driver, start_dt, end_dt)
     return rows, loc_rows, start_dt, end_dt
+
+
+def _check_evidence_request(driver_a: int, lap_a: int, driver_b: int, lap_b: int,
+                            lap_length_m: float, lap_length_source: str,
+                            contract_version: str) -> None:
+    from app.evidence import EvidenceInputError, validate_request
+
+    try:
+        validate_request(driver_a=driver_a, lap_a=lap_a, driver_b=driver_b, lap_b=lap_b,
+                         lap_length_m=lap_length_m, lap_length_source=lap_length_source,
+                         contract_version=contract_version)
+    except EvidenceInputError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+async def _lap_comparison_evidence(session_id: str, driver_a: int, lap_a: int, driver_b: int,
+                                   lap_b: int, lap_length_m: float, lap_length_source: str,
+                                   contract_version: str):
+    """evidence_v1 for a validated request, from the session's recording when
+    one holds it (Phase 12C), else from the database. Returns the evidence,
+    the data source and the load and pipeline durations (seconds)."""
+    from time import perf_counter
+
+    from app.evidence import (
+        EvidenceContractError,
+        EvidenceInputError,
+        build_lap_comparison_evidence,
+    )
+    from app.storage.db import connect as db_connect
+
+    t0 = perf_counter()
+    store = _recorded(session_id)
+    if store is not None:
+        source = await _recording_call(store.session_source, session_id)
+        (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
+            await _recording_lap_telemetry(store, session_id, d, n)
+            for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
+    else:
+        pool = await db_connect(get_settings().database_url)
+        try:
+            source = await _load_session_source(pool, session_id)
+            (lap_obj_a, samples_a), (lap_obj_b, samples_b) = [
+                await _load_lap_telemetry(pool, session_id, d, n)
+                for d, n in ((driver_a, lap_a), (driver_b, lap_b))]
+        finally:
+            await pool.close()
+    t1 = perf_counter()
+    try:
+        evidence = build_lap_comparison_evidence(
+            lap_obj_a, samples_a, lap_obj_b, samples_b, lap_length_m=lap_length_m,
+            lap_length_source=lap_length_source, source=source,
+            contract_version=contract_version)
+    except EvidenceInputError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except EvidenceContractError as exc:
+        raise HTTPException(500, f"evidence withheld - failed {contract_version} "
+                                 f"validation (fail closed): {exc}") from exc
+    data_source = "recording" if store is not None else "database"
+    return evidence, data_source, t1 - t0, perf_counter() - t1
 
 
 def _no_spatial_recording(session_id: str) -> str:
