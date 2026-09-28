@@ -5,6 +5,7 @@ between sessions: keep "Current state" and "Next steps" true whenever a
 phase lands. Detailed evidence lives in the docs below; read on demand,
 don't re-derive.
 
+@docs/PHASE_12B_TRACK_MAP.md
 @docs/PHASE_12_SPATIAL_INTELLIGENCE.md
 @docs/PHASE_11_RACE_INTELLIGENCE_COMMAND_CENTER.md
 @docs/PHASE_10_6_FRONTEND_EVIDENCE_WORKBENCH.md
@@ -46,6 +47,7 @@ docker run -d --rm --name f1intel-test-pg -e POSTGRES_USER=f1intel -e POSTGRES_P
 ..\scripts\timeline_report.py      # rebuild the Phase 11 golden from the recording
 ..\scripts\finalize_recording.py <dir> --note "..."   # meta.json for a stalled recording
 ..\scripts\spatial_report.py [--write-golden]         # 12A validation report (+ docs/spatial golden)
+..\scripts\spatial_fixture.py [--measure]             # 12B real frontend fixture (+ window route timing)
 ..\scripts\bench_spatial.py        # 12A performance on the real recording
 cd ..\frontend; npm test; npm run build; npm run lint
 # npm run dev: / = command center, /sessions, /evidence = workbench, /pitwall = legacy
@@ -80,7 +82,21 @@ Both require `driver_a, lap_a, driver_b, lap_b, lap_length_m,
 lap_length_source`. There is no circuit geometry, so a lap length is never
 invented.
 
-## Current state (2026-09-26)
+## Current state (2026-09-28)
+- **12B Track map** (same branch, on top of 12A; not pushed). Command center:
+  - The one cursor is race time `t`; lap frames derive from it (last frame
+    at or before t). Replay plays race time 1x/4x/16x/64x (rAF, 250 ms tick
+    cap); Shift+arrows = 10 s; `?t=` between frames.
+  - Backend exposes 12A only: `sectors[]` on the track, `sector` per
+    state/trace entry, `/spatial/window` (`spatial_window_v1`). Builder
+    version and track_id unchanged; golden gained `sectors`.
+  - Frontend `src/spatial/` (fail-closed client, `useSpatial`) and
+    `src/components/spatial/` (SVG `TrackMap`); map at the top of the centre
+    column, Track tab on phones, Track position in driver focus.
+  - Verified in the browser on the real Dutch GP at 375-1920 px; 7 QA
+    defects fixed test-first; 18/18 frontend mutations killed. The 16x
+    playback frame budget is NOT measured (pane hidden). Evidence:
+    `docs/PHASE_12B_TRACK_MAP.md`.
 - **12A Spatial foundation** (branch `phase-12-spatial-intelligence`, stacked
   on phase 11; PR #2 still open). Backend only, no UI. `app/spatial/`:
   - The session's own OpenF1 `/location` feed gives a closed reference loop.
@@ -167,12 +183,9 @@ invented.
 - **Test baseline:** see "Baseline" at the end of this file.
 
 ## Next steps
-1. **12B track map** (brainstorm → spec → plan first). It is the command
-   center panel on `/track` + `/spatial?at=`, driven by the Phase 11 cursor.
-   - **Decide first:** the cursor is lap-granular today. Car movement needs a
-     sub-lap time on the same single cursor, with no second clock.
-   - **Then:** 12C (telemetry/evidence sync) and 12D (battles, pit-lane
-     path).
+1. **12C telemetry/evidence spatial sync**, then 12D (battles, pit-lane
+   path). 12B's `TrackMap` already emits `onPositionSelect(driver, stateAt)`.
+   - **Measure** the 16x playback frame budget with the browser visible.
    - **Open 12A findings:** the lap-4 restart crossings (~35 m) and #14 lap 37.
 1. **Recorder stall after HTTP 429.** Both Dutch GP recording runs stalled
    around 1.83M envelopes (see `finalize_interrupted`). Then record a
@@ -259,9 +272,17 @@ invented.
 
 ## Roadmap
 ~~10.6 evidence workbench~~ → ~~11 command center (observational)~~ →
-~~12A spatial foundation~~ → 12B track map → 12C telemetry/evidence spatial
+~~12A spatial foundation~~ → ~~12B track map~~ → 12C telemetry/evidence spatial
 sync → 12D battles / pit lane → 11.x predictive intelligence (pace/degradation projection, scenarios) → replay clock/seek → qualifying Q1/Q2/Q3 → historical
 explorer → session state machine → production hardening.
+
+## Baseline (Phase 12B, verified 2026-09-28 on this machine, Postgres DOWN)
+- **Backend:** 921 passed, 23 skipped, 1 failed. The failure is the known
+  10.3 S2 check (uncommitted fixture). Skips: 18 need Postgres plus the known
+  5. The real-data spatial tests need the recording and take ~5 min in all.
+- **Frontend:** 306 passed (`npx vitest run --no-file-parallelism`), build OK
+  (command-center chunk 100.04 kB JS / 30.50 kB gzip, 39.81 kB CSS), tsc OK,
+  ESLint 0 errors (105 pre-existing warnings).
 
 ## Baseline (Phase 12A, verified 2026-09-26 on this machine, Postgres DOWN)
 - **Backend:** 895 passed, 23 skipped, 1 failed (after the final-review

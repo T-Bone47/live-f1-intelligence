@@ -7,7 +7,7 @@ sub-projects, each with its own spec, plan and evidence:
 | sub-project | scope | status |
 |---|---|---|
 | **12A** | backend spatial foundation: track reference, measured timing lines, validation gate, per-car spatial state, API | **complete** (this document) |
-| 12B | track map in the command center, driven by the Phase 11 cursor | next |
+| 12B | track map in the command center, driven by the Phase 11 cursor (now race time) | **complete** (`docs/PHASE_12B_TRACK_MAP.md`) |
 | 12C | telemetry ↔ map synchronization, spatial lap comparison, Evidence Workbench spatial context | planned |
 | 12D | battle spatialization, pit-lane geometry from observed traversals; corners only with a licensed source | planned |
 
@@ -165,6 +165,7 @@ dispersion and the claim-scoped gate.
 | `GET /api/v1/sessions/{sid}/track` | `track_reference_v1` | 404 no recording · 500 withheld |
 | `GET /api/v1/sessions/{sid}/spatial?at=` | `spatial_state_v1` (every car at `at`) | 422 naive or malformed time · 404 · 409 unvalidated (with the gate's reasons) · 500 |
 | `GET /api/v1/sessions/{sid}/spatial/{driver}?from=&to=` | `spatial_trace_v1` (window ≤ 600 s) | 422 bad range or driver · 404 no recording or driver · 409 · 500 |
+| `GET /api/v1/sessions/{sid}/spatial/window?from=&to=&step=` (12B) | `spatial_window_v1` (≤ 120 s, step 0.25–10 s) | 422 · 404 · 409 · 500 |
 
 - Responses are canonical bytes with an `X-Spatial-Contract` header.
 - State and trace documents carry `line_placement_p95_m` (the measured

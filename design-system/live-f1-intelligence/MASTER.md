@@ -223,3 +223,62 @@ is missing, why) and error (what failed, retry) states. Missing values are
 - Not in the data = said so: DRS availability, undercut/overcut, scheduled
   distance, retirement status, event name.
 - No track map, corner names or "track position" from normalized distance.
+  The Phase 12B map is drawn from validated feed geometry, never from
+  normalized distance (§14).
+
+## 14. Phase 12B — Track map
+
+The map shows the validated 12A spatial evidence at the one cursor. It is an
+instrument plate, not a decorative circuit: every line on it is a contract
+value (`track_reference_v1`, `spatial_state_v1`). Page override:
+`pages/command-center.md`.
+
+**What is drawn, bottom to top.**
+
+| layer | drawing | source |
+|---|---|---|
+| frame | inset field, 1 px hairline, four registration corner ticks | — |
+| circuit | the reference loop, one quiet 7 px `--background-hover` stroke | `reference.polyline` |
+| sectors | three 2 px `--border-emphasis` paths; `S1 S2 S3` in Plex Condensed, 14 px outside the loop | `sectors[]` |
+| timing lines | a 2 px tick across the path; the contract name (`FINISH`, `S1`, `S2`) in a **boxed** mono tag | `timing_lines[]` |
+| battle link | 1 px dashed `--selection-rule` between the pair | Phase 11 `ui.battle` |
+| cars | one marker per positioned car | `spatial_state_v1.drivers[]` |
+| phase | a banner with the flag colour bar, only for red flag / SC / VSC / chequered, "as of LAP k" | the timeline frame |
+
+Boxed tag = timing line; plain name = sector. The legend says so.
+
+**Markers.** Colour is the provider's team colour and nothing else; state
+is shape plus words.
+
+| state | marker | words |
+|---|---|---|
+| on the reference | solid dot, 1.25 px `--background-root` ring | — |
+| off the reference | hollow ring | `OFF` tag |
+| pit lane | 8 px square (no path drawn) | `PIT` tag |
+| stale | 50 % opacity + clock glyph | `STALE` tag, age in the tooltip |
+| low / no confidence | dashed ring | grade in the tooltip, name and table |
+| no coverage | **no marker** | listed under "Not on map" |
+| selected / battle pair | `--selection-rule` halo (dashed for the pair) | persistent label |
+
+Persistent labels: the selected car, the battle pair, P1 of the current
+frame and every tagged state. Others label on hover or focus. Labels are
+placed greedily on four offsets, never over another label or a
+timing-line tag.
+
+**Rules.**
+- Feed y is drawn upward so the lap runs in the circuit's cited direction
+  (Zandvoort: clockwise). One scale for x and y; the camera never moves.
+- No metric axes, no scale bar: feed units are undocumented. Metres appear
+  only as the contract's `distance_m` ("from the line", cited lap length).
+- No corner, apex, DRS zone, racing line or pit-lane path; the info drawer
+  lists them as unavailable with the contract's own reason.
+- An unvalidated track, a 409 on the state, a live session or a missing
+  recording draws **no circuit**: it says why.
+- The map always names the time it shows ("positions at 14:26:09.3 UTC")
+  and says "positions lag the cursor" when the shown state is more than one
+  state step away.
+
+**Motion.** Markers glide with a CSS `transform` transition of
+`min(step / rate, 250 ms)` while playing only; a paused seek jumps. The info
+drawer rises 4 px. Nothing loops except the loading shimmer. Reduced motion
+removes all of it.
