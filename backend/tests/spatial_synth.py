@@ -94,7 +94,8 @@ def lap_row(driver: int, lap: int, start: datetime, duration: float | None,
                        "started_at": start.isoformat(), "duration_s": duration,
                        "sector1_s": third if s1 is None else s1,
                        "sector2_s": third if s2 is None else s2,
-                       "sector3_s": third, "is_pit_out_lap": pit_out, "deleted": False},
+                       "sector3_s": third, "is_pit_out_lap": pit_out, "deleted": False,
+                       "provenance": {"provider": "openf1", "provenance_class": "B"}},
                driver, sid)
 
 

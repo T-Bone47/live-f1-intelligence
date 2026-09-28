@@ -88,6 +88,9 @@ def _check(session_id: str, meta: dict, model: dict) -> None:
                                    f"disagrees with row driver {row_d}")
 
 
+check_row = _check  # the identity guard, shared with the Phase 12C recording store
+
+
 def _digest(laps: dict[int, tuple[LapRow, ...]], pits: dict[int, tuple[PitRow, ...]],
             samples: dict[int, tuple[Sample, ...]]) -> str:
     payload = {
